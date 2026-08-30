@@ -105,10 +105,14 @@ public struct LoomProjectRunner: Sendable {
     let outputURL =
       outputDirectory.map { URL(fileURLWithPath: $0) }
       ?? manifestDirectory.appendingPathComponent("Generated", isDirectory: true)
+    guard let source = try? String(contentsOfFile: sourceURL.path, encoding: .utf8) else {
+      throw LoomError.unreadableSource(sourceURL.path)
+    }
 
     let frontend = SwiftUIFrontend()
     let analyses = try components.map { component in
       try frontend.analyze(
+        source: source,
         sourcePath: sourceURL.path,
         rootView: manifest.rootView,
         component: component
@@ -326,17 +330,26 @@ public struct LoomProjectValidator: Sendable {
           detail: "Swift source does not exist at \(sourceURL.path).",
           fix: "Correct source or --project-root."))
     } else {
-      for component in components {
-        do {
-          _ = try SwiftUIFrontend().analyze(
-            sourcePath: sourceURL.path, rootView: manifest.rootView, component: component)
-        } catch {
-          issues.append(
-            issue(
-              "error", code: "component.unresolved", path: "components.\(component)",
-              detail: String(describing: error),
-              fix: "Correct rootView/component or remove the stale component entry."))
+      if let source = try? String(contentsOfFile: sourceURL.path, encoding: .utf8) {
+        for component in components {
+          do {
+            _ = try SwiftUIFrontend().analyze(
+              source: source, sourcePath: sourceURL.path, rootView: manifest.rootView,
+              component: component)
+          } catch {
+            issues.append(
+              issue(
+                "error", code: "component.unresolved", path: "components.\(component)",
+                detail: String(describing: error),
+                fix: "Correct rootView/component or remove the stale component entry."))
+          }
         }
+      } else {
+        issues.append(
+          issue(
+            "error", code: "source.unreadable", path: "source",
+            detail: "Swift source exists but could not be read as UTF-8 at \(sourceURL.path).",
+            fix: "Check file permissions and encoding."))
       }
     }
     if let existingXaml = manifest.existingXaml {

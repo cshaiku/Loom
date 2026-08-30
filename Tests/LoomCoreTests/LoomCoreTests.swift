@@ -42,6 +42,21 @@ private let sample = """
   #expect(analysis.layout.count(kind: .button) == 1)
 }
 
+@Test func deepLayoutAggregationDoesNotRequireRecursiveStackFrames() throws {
+  var node = LoomNode(kind: .component, expression: "Leaf")
+  for index in 0..<2_000 {
+    node = LoomNode(
+      kind: index.isMultiple(of: 2) ? .verticalStack : .horizontalStack,
+      expression: "node\(index)",
+      children: [node]
+    )
+  }
+
+  #expect(node.recursiveNodeCount == 2_001)
+  #expect(node.count(kind: .component) == 1)
+  #expect(node.componentReferences == ["Leaf"])
+}
+
 @Test func extractsComputedSubview() throws {
   let analysis = try SwiftUIFrontend().analyze(
     source: sample,

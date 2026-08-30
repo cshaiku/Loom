@@ -251,6 +251,8 @@ public struct LoomComponentGraphBuilder: Sendable {
 
   private func swiftFiles(at root: URL, options: LoomComponentGraphOptions) throws -> [URL] {
     let fileManager = FileManager.default
+    let includeExpressions = options.include.map(glob)
+    let excludeExpressions = options.exclude.map(glob)
     var isDirectory: ObjCBool = false
     guard fileManager.fileExists(atPath: root.path, isDirectory: &isDirectory) else {
       throw LoomError.unreadableSource(root.path)
@@ -284,8 +286,8 @@ public struct LoomComponentGraphBuilder: Sendable {
 
     return files.filter { file in
       let relative = relativePath(file.path, root: root)
-      return matchesAny(relative, patterns: options.include)
-        && !matchesAny(relative, patterns: options.exclude)
+      return matchesAny(relative, expressions: includeExpressions)
+        && !matchesAny(relative, expressions: excludeExpressions)
     }.sorted { $0.path < $1.path }
   }
 
@@ -310,8 +312,8 @@ public struct LoomComponentGraphBuilder: Sendable {
     ]
   }
 
-  private func matchesAny(_ path: String, patterns: [String]) -> Bool {
-    patterns.contains { pattern in glob(pattern).matches(path) }
+  private func matchesAny(_ path: String, expressions: [NSRegularExpression]) -> Bool {
+    expressions.contains { $0.matches(path) }
   }
 
   private func glob(_ pattern: String) -> NSRegularExpression {

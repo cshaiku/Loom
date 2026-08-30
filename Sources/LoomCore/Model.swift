@@ -60,16 +60,33 @@ public struct LoomNode: Codable, Equatable, Sendable {
   }
 
   public var recursiveNodeCount: Int {
-    1 + children.reduce(0) { $0 + $1.recursiveNodeCount }
+    var count = 0
+    var stack = [self]
+    while let node = stack.popLast() {
+      count += 1
+      stack.append(contentsOf: node.children)
+    }
+    return count
   }
 
   public func count(kind target: LoomNodeKind) -> Int {
-    (kind == target ? 1 : 0) + children.reduce(0) { $0 + $1.count(kind: target) }
+    var count = 0
+    var stack = [self]
+    while let node = stack.popLast() {
+      if node.kind == target { count += 1 }
+      stack.append(contentsOf: node.children)
+    }
+    return count
   }
 
   public var componentReferences: [String] {
-    let local = kind == .component ? [expression] : []
-    return local + children.flatMap(\.componentReferences)
+    var references: [String] = []
+    var stack = [self]
+    while let node = stack.popLast() {
+      if node.kind == .component { references.append(node.expression) }
+      stack.append(contentsOf: node.children.reversed())
+    }
+    return references
   }
 }
 

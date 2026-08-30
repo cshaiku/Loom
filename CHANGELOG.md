@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Replaced recursive `LoomNode` aggregation helpers with iterative traversals
+  to avoid stack growth on deeply nested generated layout trees.
+- Precompiled component-graph include/exclude glob expressions once per scan
+  instead of rebuilding regexes for every candidate file.
+- Reused manifest Swift source contents across multi-component validation and
+  project builds to avoid repeated source-file reads.
+- Added a deep-layout regression test for node counting and component-reference
+  traversal.
+
 ## 0.9.0 — 2026-08-30
 
 - Added global `--quiet` / `-q` and `--verbose` / `-v` runtime output controls.
