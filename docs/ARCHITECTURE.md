@@ -59,6 +59,12 @@ synthetic roots and unsupported-source placeholders are intentionally excluded.
 `patterns:lint` adds operational mapping rules, and the XAML emitter can load a
 Pattern registry to trace which pattern drives an emitted WinUI node.
 
+`patterns:export` derives interoperability views from the canonical Pattern
+files. DTCG-style tokens, Open UI-style component metadata, ARIA summaries, and
+Style Dictionary-compatible packages are export shapes for external tools;
+they are not alternate sources of truth. Changes should be made in
+`*.pattern.json` first and then re-exported.
+
 ## Component Graphs
 
 `graph:components` builds a deterministic dependency graph over reachable

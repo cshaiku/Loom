@@ -53,6 +53,14 @@ private struct ValidationOptions {
   var format = "text"
 }
 
+private struct PatternOptions {
+  var directory = "Patterns"
+  var json = false
+  var format = LoomPatternExportFormat.loom
+  var outputPath: String?
+  var positional: [String] = []
+}
+
 private struct RuntimeOptions {
   var quiet = false
   var verbose = false
@@ -103,7 +111,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.12.0")
+      print("loom 0.13.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -132,7 +140,7 @@ private enum LoomCommand {
     }
 
     if arguments[0].hasPrefix("patterns:") {
-      try runPatternCommand(arguments)
+      try runPatternCommand(arguments, runtime: runtime)
       return
     }
 
@@ -353,7 +361,7 @@ private enum LoomCommand {
     print(output, terminator: "")
   }
 
-  private static func runPatternCommand(_ arguments: [String]) throws {
+  private static func runPatternCommand(_ arguments: [String], runtime: RuntimeOptions) throws {
     guard let command = LoomCommandCatalog.resolve(arguments[0]) else {
       throw LoomError.invalidArguments("Unknown pattern command \(arguments[0]).")
     }
@@ -361,62 +369,110 @@ private enum LoomCommand {
       print(LoomCommandCatalog.manual(command.command) ?? "", terminator: "")
       return
     }
-    var directory = "Patterns"
-    var json = false
-    var positional: [String] = []
+    var options = try parsePatternOptions(arguments)
+
+    let catalog = LoomPatternCatalog()
+    switch command.command {
+    case "patterns:list":
+      guard options.positional.isEmpty else {
+        throw LoomError.invalidArguments("patterns:list accepts no positional arguments.")
+      }
+      let patterns = try catalog.load(directory: options.directory)
+      let output = options.json ? try catalog.json(patterns) : catalog.listText(patterns)
+      try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+    case "patterns:show":
+      guard options.positional.count == 1 else {
+        throw LoomError.invalidArguments("patterns:show requires one pattern id.")
+      }
+      guard let pattern = try catalog.find(options.positional[0], directory: options.directory)
+      else {
+        throw LoomError.invalidPattern(
+          "No pattern named \(options.positional[0]) in \(options.directory).")
+      }
+      try writeOrPrint(try catalog.json(pattern), path: options.outputPath, runtime: runtime)
+    case "patterns:validate":
+      guard options.positional.count <= 1 else {
+        throw LoomError.invalidArguments("patterns:validate accepts at most one directory.")
+      }
+      if let suppliedDirectory = options.positional.first { options.directory = suppliedDirectory }
+      let report = catalog.validate(directory: options.directory)
+      let output = options.json ? try catalog.json(report) : catalog.text(report)
+      try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+      if report.status != "ok" { exit(1) }
+    case "patterns:lint":
+      guard options.positional.count <= 1 else {
+        throw LoomError.invalidArguments("patterns:lint accepts at most one directory.")
+      }
+      if let suppliedDirectory = options.positional.first { options.directory = suppliedDirectory }
+      let report = catalog.lint(directory: options.directory)
+      let output = options.json ? try catalog.json(report) : catalog.text(report)
+      try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+      if report.status != "ok" { exit(1) }
+    case "patterns:export":
+      guard options.positional.isEmpty else {
+        throw LoomError.invalidArguments("patterns:export accepts no positional arguments.")
+      }
+      let patterns = try catalog.load(directory: options.directory)
+      let output = try catalog.export(patterns, format: options.format)
+      try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+    default:
+      throw LoomError.invalidArguments("Unknown pattern command \(command.command).")
+    }
+  }
+
+  private static func parsePatternOptions(_ arguments: [String]) throws -> PatternOptions {
+    var options = PatternOptions()
     var index = 1
     while index < arguments.count {
-      switch arguments[index] {
+      let argument = arguments[index]
+      switch argument {
       case "--json":
-        json = true
+        options.json = true
         index += 1
       case "--directory":
         guard index + 1 < arguments.count else {
           throw LoomError.invalidArguments("Missing value for --directory.")
         }
-        directory = arguments[index + 1]
+        options.directory = arguments[index + 1]
+        index += 2
+      case "--format":
+        guard index + 1 < arguments.count else {
+          throw LoomError.invalidArguments("Missing value for --format.")
+        }
+        guard let format = LoomPatternExportFormat(rawValue: arguments[index + 1]) else {
+          throw LoomError.invalidArguments(
+            "--format must be loom, dtcg, open-ui, aria, or style-dictionary.")
+        }
+        options.format = format
+        index += 2
+      case "--output":
+        guard index + 1 < arguments.count else {
+          throw LoomError.invalidArguments("Missing value for --output.")
+        }
+        options.outputPath = arguments[index + 1]
         index += 2
       default:
-        positional.append(arguments[index])
-        index += 1
+        if argument.hasPrefix("--directory=") {
+          options.directory = String(argument.dropFirst("--directory=".count))
+          index += 1
+        } else if argument.hasPrefix("--format=") {
+          let value = String(argument.dropFirst("--format=".count))
+          guard let format = LoomPatternExportFormat(rawValue: value) else {
+            throw LoomError.invalidArguments(
+              "--format must be loom, dtcg, open-ui, aria, or style-dictionary.")
+          }
+          options.format = format
+          index += 1
+        } else if argument.hasPrefix("--output=") {
+          options.outputPath = String(argument.dropFirst("--output=".count))
+          index += 1
+        } else {
+          options.positional.append(argument)
+          index += 1
+        }
       }
     }
-
-    let catalog = LoomPatternCatalog()
-    switch command.command {
-    case "patterns:list":
-      guard positional.isEmpty else {
-        throw LoomError.invalidArguments("patterns:list accepts no positional arguments.")
-      }
-      let patterns = try catalog.load(directory: directory)
-      print(json ? try catalog.json(patterns) : catalog.listText(patterns), terminator: "")
-    case "patterns:show":
-      guard positional.count == 1 else {
-        throw LoomError.invalidArguments("patterns:show requires one pattern id.")
-      }
-      guard let pattern = try catalog.find(positional[0], directory: directory) else {
-        throw LoomError.invalidPattern("No pattern named \(positional[0]) in \(directory).")
-      }
-      print(try catalog.json(pattern), terminator: "")
-    case "patterns:validate":
-      guard positional.count <= 1 else {
-        throw LoomError.invalidArguments("patterns:validate accepts at most one directory.")
-      }
-      if let suppliedDirectory = positional.first { directory = suppliedDirectory }
-      let report = catalog.validate(directory: directory)
-      print(json ? try catalog.json(report) : catalog.text(report), terminator: "")
-      if report.status != "ok" { exit(1) }
-    case "patterns:lint":
-      guard positional.count <= 1 else {
-        throw LoomError.invalidArguments("patterns:lint accepts at most one directory.")
-      }
-      if let suppliedDirectory = positional.first { directory = suppliedDirectory }
-      let report = catalog.lint(directory: directory)
-      print(json ? try catalog.json(report) : catalog.text(report), terminator: "")
-      if report.status != "ok" { exit(1) }
-    default:
-      throw LoomError.invalidArguments("Unknown pattern command \(command.command).")
-    }
+    return options
   }
 
   private static func runDiagnosticCommand(_ command: String, arguments: [String]) throws {

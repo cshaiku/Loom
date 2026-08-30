@@ -152,6 +152,7 @@ private let sample = """
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
   #expect(catalog.contains("patterns:lint"))
+  #expect(catalog.contains("patterns:export"))
   #expect(catalog.contains("setup\n"))
   #expect(catalog.contains("r/w"))
 
@@ -159,6 +160,37 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func patternCatalogExportsExternalMetadataShapes() throws {
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let directory = repository.appendingPathComponent("Patterns").path
+  let catalog = LoomPatternCatalog()
+  let patterns = try catalog.load(directory: directory)
+
+  let dtcg = try catalog.export(patterns, format: .dtcg)
+  #expect(dtcg.contains("\"$type\" : \"other\""))
+  #expect(dtcg.contains("\"$value\""))
+  #expect(dtcg.contains("\"$extensions\""))
+  #expect(dtcg.contains("\"text\""))
+
+  let openUI = try catalog.export(patterns, format: .openUI)
+  #expect(openUI.contains("\"source\" : \"loom\""))
+  #expect(openUI.contains("\"components\""))
+  #expect(openUI.contains("\"mappings\""))
+
+  let aria = try catalog.export(patterns, format: .aria)
+  #expect(aria.contains("\"patterns\""))
+  #expect(aria.contains("\"role\""))
+  #expect(aria.contains("\"focusBehavior\""))
+
+  let styleDictionary = try catalog.export(patterns, format: .styleDictionary)
+  #expect(styleDictionary.contains("\"type\" : \"loom.pattern\""))
+  #expect(styleDictionary.contains("\"value\" : \"text\""))
+  #expect(styleDictionary.contains("\"platforms\""))
 }
 
 @Test func diagnosticsCommandsReportReadinessAndGuards() throws {

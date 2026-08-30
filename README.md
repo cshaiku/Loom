@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.12.0**
+Current version: **0.13.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -60,6 +60,9 @@ The current usable slice includes:
   control semantics independently of SwiftUI and WinUI spellings.
 - An operational Pattern registry and stricter lint gate for bidirectional
   platform mappings.
+- Pattern export for Loom-native JSON plus DTCG-style tokens, Open UI-style
+  component metadata, ARIA accessibility summaries, and Style
+  Dictionary-compatible token packages.
 
 ## Build and test
 
@@ -119,6 +122,7 @@ swift run loom patterns:list
 swift run loom patterns:show split-view
 swift run loom patterns:validate
 swift run loom patterns:lint
+swift run loom patterns:export --format dtcg --output Generated/loom.tokens.json
 ```
 
 The root [`Patterns`](Patterns) directory contains one precise metadata file
@@ -126,6 +130,9 @@ for each meaningful layout or control kind Loom currently recognizes. Each
 file defines intent, child and sizing semantics, typed attributes, valid
 ranges, constraints, accessibility behavior, and platform mappings. The
 pattern remains canonical; platform mappings are implementations of it.
+`patterns:export` provides integration-oriented JSON views for design-token
+pipelines, component inventories, accessibility review, and design-system
+tooling without changing the canonical `.pattern.json` source files.
 
 Analyze a SwiftUI view:
 

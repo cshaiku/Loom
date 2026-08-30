@@ -28,6 +28,9 @@
   manifest, and Pattern issues.
 - AI-agent operating guidance for safe sequencing, JSON output, write guards,
   and translation boundaries.
+- Pattern export for Loom-native JSON, DTCG-style tokens, Open UI-style
+  component metadata, ARIA summaries, and Style Dictionary-compatible token
+  packages.
 
 ## 0.4 — Recursive component graph
 
@@ -123,6 +126,16 @@ Status: shipped in 0.12.0.
   `--output`, and `--fail-on none|error|warning`.
 - Added `docs/AI_AGENTS.md` with safe command sequencing, JSON-first
   automation guidance, write-guard expectations, and translation boundaries.
+
+## 0.13 — Pattern export interop
+
+Status: shipped in 0.13.0.
+
+- Added `patterns:export` for integration-oriented Pattern catalog exports.
+- Supports `loom`, `dtcg`, `open-ui`, `aria`, and `style-dictionary` formats.
+- Keeps `.pattern.json` as the canonical source while exposing derived shapes
+  for design-token pipelines, component inventories, accessibility review, and
+  design-system tooling.
 
 ## 1.0 — Pattern-driven emitters
 

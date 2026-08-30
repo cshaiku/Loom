@@ -93,6 +93,7 @@ loom status --json
 loom verify --json
 loom inspect:errors ContentView.swift --json
 loom generate:contracts ContentView.swift --json
+loom patterns:export --format dtcg
 ```
 
 Use global runtime flags for clean automation logs:
@@ -104,6 +105,22 @@ loom --verbose generate:xaml ContentView.swift --output Generated/ContentView.xa
 
 `--quiet` suppresses successful write chatter. Fatal errors still print to
 stderr. `--verbose` adds write details on stderr.
+
+## Pattern export
+
+Use `patterns:export` when another tool needs Loom's semantic vocabulary:
+
+```sh
+loom patterns:export --format loom
+loom patterns:export --format dtcg
+loom patterns:export --format open-ui
+loom patterns:export --format aria
+loom patterns:export --format style-dictionary
+```
+
+Exports are derived from the canonical `Patterns/*.pattern.json` files. Do not
+edit exported files and treat them as disposable build artifacts unless a
+project explicitly commits generated metadata.
 
 ## Translation boundaries
 

@@ -106,6 +106,14 @@ public struct LoomPatternValidationReport: Codable, Sendable {
   }
 }
 
+public enum LoomPatternExportFormat: String, CaseIterable, Sendable {
+  case loom
+  case dtcg
+  case openUI = "open-ui"
+  case aria
+  case styleDictionary = "style-dictionary"
+}
+
 public struct LoomPatternRegistry: Sendable {
   private let patternsByKind: [LoomNodeKind: LoomPattern]
 
@@ -317,6 +325,21 @@ public struct LoomPatternCatalog: Sendable {
     }.joined(separator: "\n") + (patterns.isEmpty ? "" : "\n")
   }
 
+  public func export(_ patterns: [LoomPattern], format: LoomPatternExportFormat) throws -> String {
+    switch format {
+    case .loom:
+      return try json(patterns)
+    case .dtcg:
+      return try json(DTCGPatternExport(patterns: patterns))
+    case .openUI:
+      return try json(OpenUIPatternExport(patterns: patterns))
+    case .aria:
+      return try json(ARIAPatternExport(patterns: patterns))
+    case .styleDictionary:
+      return try json(StyleDictionaryPatternExport(patterns: patterns))
+    }
+  }
+
   private func issue(_ code: String, _ path: String, _ detail: String) -> LoomPatternIssue {
     LoomPatternIssue(severity: .error, code: code, path: path, detail: detail)
   }
@@ -327,5 +350,215 @@ public struct LoomPatternCatalog: Sendable {
     LoomPatternValidationReport(
       status: issues.isEmpty ? "ok" : "error", directory: directory,
       patternCount: count, issues: issues)
+  }
+}
+
+private struct DTCGPatternExport: Codable {
+  var schemaVersion = "1"
+  var description = "Loom OS-agnostic UI Pattern catalog exported as Design Tokens Community Group-compatible token objects."
+  var loom: [String: DTCGPatternToken]
+
+  enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case description = "$description"
+    case loom
+  }
+
+  init(patterns: [LoomPattern]) {
+    self.loom = Dictionary(
+      uniqueKeysWithValues: patterns.map {
+        (
+          $0.id,
+          DTCGPatternToken(
+            value: DTCGPatternValue(pattern: $0),
+            description: $0.intent.summary,
+            extensions: DTCGPatternExtensions(loom: $0)
+          )
+        )
+      })
+  }
+}
+
+private struct DTCGPatternToken: Codable {
+  var type = "other"
+  var value: DTCGPatternValue
+  var description: String
+  var extensions: DTCGPatternExtensions
+
+  enum CodingKeys: String, CodingKey {
+    case type = "$type"
+    case value = "$value"
+    case description = "$description"
+    case extensions = "$extensions"
+  }
+}
+
+private struct DTCGPatternValue: Codable {
+  var id: String
+  var name: String
+  var kind: String
+  var category: String
+  var status: String
+  var attributes: [DTCGPatternAttribute]
+  var platforms: [String]
+
+  init(pattern: LoomPattern) {
+    id = pattern.id
+    name = pattern.name
+    kind = pattern.kind.rawValue
+    category = pattern.category
+    status = pattern.status.rawValue
+    attributes = pattern.attributes.map(DTCGPatternAttribute.init(attribute:))
+    platforms = pattern.mappings.map(\.platform).sorted()
+  }
+}
+
+private struct DTCGPatternAttribute: Codable {
+  var name: String
+  var type: String
+  var required: Bool
+  var defaultValue: String?
+  var allowedValues: [String]?
+  var minimum: Double?
+  var maximum: Double?
+  var units: [String]?
+
+  init(attribute: LoomPatternAttribute) {
+    name = attribute.name
+    type = attribute.valueType.rawValue
+    required = attribute.required
+    defaultValue = attribute.defaultValue
+    allowedValues = attribute.allowedValues
+    minimum = attribute.minimum
+    maximum = attribute.maximum
+    units = attribute.units
+  }
+}
+
+private struct DTCGPatternExtensions: Codable {
+  var loom: LoomPattern
+}
+
+private struct OpenUIPatternExport: Codable {
+  var schemaVersion = "1"
+  var source = "loom"
+  var components: [OpenUIComponent]
+
+  enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case source, components
+  }
+
+  init(patterns: [LoomPattern]) {
+    components = patterns.map(OpenUIComponent.init(pattern:))
+  }
+}
+
+private struct OpenUIComponent: Codable {
+  var id: String
+  var name: String
+  var category: String
+  var status: String
+  var intent: LoomPatternIntent
+  var semantics: LoomPatternSemantics
+  var attributes: [LoomPatternAttribute]
+  var mappings: [LoomPatternMapping]
+  var tags: [String]
+
+  init(pattern: LoomPattern) {
+    id = pattern.id
+    name = pattern.name
+    category = pattern.category
+    status = pattern.status.rawValue
+    intent = pattern.intent
+    semantics = pattern.semantics
+    attributes = pattern.attributes
+    mappings = pattern.mappings
+    tags = pattern.tags
+  }
+}
+
+private struct ARIAPatternExport: Codable {
+  var schemaVersion = "1"
+  var source = "loom"
+  var patterns: [ARIAPattern]
+
+  enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case source, patterns
+  }
+
+  init(patterns: [LoomPattern]) {
+    self.patterns = patterns.map(ARIAPattern.init(pattern:))
+  }
+}
+
+private struct ARIAPattern: Codable {
+  var id: String
+  var name: String
+  var role: String
+  var nameSource: String
+  var focusBehavior: String
+  var notes: [String]
+  var useWhen: [String]
+  var avoidWhen: [String]
+
+  init(pattern: LoomPattern) {
+    id = pattern.id
+    name = pattern.name
+    role = pattern.accessibility.role
+    nameSource = pattern.accessibility.nameSource
+    focusBehavior = pattern.accessibility.focusBehavior
+    notes = pattern.accessibility.notes
+    useWhen = pattern.intent.useWhen
+    avoidWhen = pattern.intent.avoidWhen
+  }
+}
+
+private struct StyleDictionaryPatternExport: Codable {
+  var loom: [String: StyleDictionaryPatternToken]
+
+  init(patterns: [LoomPattern]) {
+    loom = Dictionary(
+      uniqueKeysWithValues: patterns.map { ($0.id, StyleDictionaryPatternToken(pattern: $0)) })
+  }
+}
+
+private struct StyleDictionaryPatternToken: Codable {
+  var value: String
+  var type = "loom.pattern"
+  var comment: String
+  var attributes: StyleDictionaryPatternAttributes
+
+  init(pattern: LoomPattern) {
+    value = pattern.id
+    comment = pattern.intent.summary
+    attributes = StyleDictionaryPatternAttributes(pattern: pattern)
+  }
+}
+
+private struct StyleDictionaryPatternAttributes: Codable {
+  var name: String
+  var kind: String
+  var category: String
+  var status: String
+  var role: String
+  var childPolicy: String
+  var sizing: String
+  var ordering: String
+  var tags: [String]
+  var platforms: [String]
+
+  init(pattern: LoomPattern) {
+    name = pattern.name
+    kind = pattern.kind.rawValue
+    category = pattern.category
+    status = pattern.status.rawValue
+    role = pattern.semantics.role
+    childPolicy = pattern.semantics.childPolicy
+    sizing = pattern.semantics.sizing
+    ordering = pattern.semantics.ordering
+    tags = pattern.tags
+    platforms = pattern.mappings.map(\.platform).sorted()
   }
 }

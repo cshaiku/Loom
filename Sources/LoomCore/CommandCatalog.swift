@@ -217,32 +217,51 @@ public enum LoomCommandCatalog {
       name: "List Semantic Patterns",
       description: "List OS-agnostic layout and control patterns",
       category: "patterns",
-      access: .read,
-      synopsis: ["loom patterns:list [--directory path] [--json]"]
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: ["loom patterns:list [--directory path] [--json] [--output path]"]
     ),
     LoomCommandInfo(
       command: "patterns:show",
       name: "Show Semantic Pattern",
       description: "Print one complete pattern definition",
       category: "patterns",
-      access: .read,
-      synopsis: ["loom patterns:show <id> [--directory path]"]
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: ["loom patterns:show <id> [--directory path] [--output path]"]
     ),
     LoomCommandInfo(
       command: "patterns:validate",
       name: "Validate Semantic Patterns",
       description: "Validate pattern metadata, constraints, identity, and uniqueness",
       category: "patterns",
-      access: .read,
-      synopsis: ["loom patterns:validate [directory] [--json]"]
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: ["loom patterns:validate [directory] [--json] [--output path]"]
     ),
     LoomCommandInfo(
       command: "patterns:lint",
       name: "Lint Operational Patterns",
       description: "Enforce operational quality rules for bidirectional pattern mappings",
       category: "patterns",
-      access: .read,
-      synopsis: ["loom patterns:lint [directory] [--json]"]
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: ["loom patterns:lint [directory] [--json] [--output path]"]
+    ),
+    LoomCommandInfo(
+      command: "patterns:export",
+      name: "Export Semantic Patterns",
+      description: "Export Patterns as Loom, DTCG, Open UI, ARIA, or Style Dictionary JSON",
+      category: "patterns",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: [
+        "loom patterns:export [--directory path] [--format loom|dtcg|open-ui|aria|style-dictionary] [--output path]"
+      ],
+      examples: [
+        "loom patterns:export --format dtcg --output Generated/loom.tokens.json",
+        "loom patterns:export --format open-ui",
+      ]
     ),
     LoomCommandInfo(
       command: "config:validate",

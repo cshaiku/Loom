@@ -23,4 +23,17 @@ Validate the complete catalog with:
 swift run loom patterns:validate
 ```
 
+Export derived integration views with:
+
+```sh
+swift run loom patterns:export --format dtcg
+swift run loom patterns:export --format open-ui
+swift run loom patterns:export --format aria
+swift run loom patterns:export --format style-dictionary
+```
+
+The export formats are downstream compatibility shapes for design-token,
+component-inventory, accessibility-review, and design-system tooling. The
+`*.pattern.json` files remain canonical.
+
 The normative metadata contract is `pattern.schema.json`.

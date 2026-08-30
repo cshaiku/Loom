@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 — 2026-08-30
+
+- Added `patterns:export` to derive integration-oriented JSON from the
+  canonical Pattern catalog.
+- Added export formats for Loom-native JSON, DTCG-style token objects, Open
+  UI-style component metadata, ARIA accessibility summaries, and Style
+  Dictionary-compatible token packages.
+- Added `--format`, `--directory`, and `--output` handling for Pattern exports.
+- Added tests for external export shapes and command catalog visibility.
+
 ## 0.12.0 — 2026-08-30
 
 - Added `inspect:errors` to report Swift parser diagnostics, Loom extraction

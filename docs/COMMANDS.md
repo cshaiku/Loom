@@ -45,10 +45,11 @@ repository-policy domain. The shared conventions are:
 | `checks:command-catalog` | `r` | — |
 | `guards:summary` | `r` | — |
 | `self-heal:plan` | `r` | — |
-| `patterns:list` | `r` | — |
-| `patterns:show` | `r` | — |
-| `patterns:validate` | `r` | — |
-| `patterns:lint` | `r` | — |
+| `patterns:list` | `r/w` through `--output` | — |
+| `patterns:show` | `r/w` through `--output` | — |
+| `patterns:validate` | `r/w` through `--output` | — |
+| `patterns:lint` | `r/w` through `--output` | — |
+| `patterns:export` | `r/w` through `--output` | — |
 | `config:validate` | `r` | — |
 | `config:schema` | `r` | — |
 
@@ -125,6 +126,21 @@ are skipped by default.
 `patterns:validate` checks structural correctness and semantic-kind coverage.
 `patterns:lint` adds operational rules for mappings that can support both
 SwiftUI-to-XAML and XAML-to-SwiftUI translation paths.
+
+`patterns:export` converts the canonical `.pattern.json` files into
+integration-oriented JSON shapes:
+
+```sh
+loom patterns:export --format loom
+loom patterns:export --format dtcg --output loom.tokens.json
+loom patterns:export --format open-ui
+loom patterns:export --format aria
+loom patterns:export --format style-dictionary
+```
+
+Supported formats are `loom`, `dtcg`, `open-ui`, `aria`, and
+`style-dictionary`. Pattern commands print to stdout by default and write only
+when `--output` is supplied.
 
 `generate:xaml --patterns-dir Patterns --pattern-comments` loads the Pattern
 registry and annotates emitted nodes with the pattern id and WinUI mapping that
