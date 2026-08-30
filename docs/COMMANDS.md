@@ -28,6 +28,7 @@ repository-policy domain. The shared conventions are:
 | Canonical command | Access | Alias |
 | --- | --- | --- |
 | `inspect:source` | `r/w` through `--output` | `analyze` |
+| `inspect:xaml` | `r/w` through `--output` | `xaml` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
 | `generate:xaml` | `r/w` through `--output` | `generate` |
@@ -41,6 +42,17 @@ repository-policy domain. The shared conventions are:
 
 Aliases preserve the 0.1 command surface, but documentation and automation
 should use canonical names.
+
+## XAML inspection command
+
+`inspect:xaml` parses WinUI XAML and normalizes supported elements into Loom's
+shared layout tree. It is the ingestion half of the future Windows-to-macOS
+translation path.
+
+```sh
+loom inspect:xaml MainWindow.xaml
+loom inspect:xaml MainWindow.xaml --format json --output mainwindow.analysis.json
+```
 
 ## Component graph command
 

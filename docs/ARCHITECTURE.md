@@ -17,14 +17,16 @@ incorrect conversion.
 4. **Component graph**: recursive discovery starts from a root `View`
    component, resolves same-view computed properties and custom SwiftUI `View`
    structs across source files, and reports cycles or missing custom views.
-5. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
+5. **XAML frontend**: WinUI XAML is parsed as XML and normalized into the same
+   `LoomNode` IR used by SwiftUI extraction.
+6. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
    `StackPanel`, `Grid`, collection control, layered container, or placeholder.
-6. **XAML emission**: Loom emits a valid, reviewable fragment with comments at
+7. **XAML emission**: Loom emits a valid, reviewable fragment with comments at
    every semantic boundary that still needs a human decision.
-7. **Parity checking**: source-derived constraints and component references are
+8. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-8. **Project workflow**: a validated `loom.json` manifest selects components,
+9. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
 
 ## Command architecture
@@ -59,6 +61,15 @@ references only become graph edges when they match a computed property on the
 current view, which prevents action calls from becoming visual dependencies.
 Upper-case references become edges when they match a custom SwiftUI `View` with
 an extractable `body`.
+
+## XAML Ingestion
+
+`inspect:xaml` converts WinUI controls into the same platform-neutral IR used
+by `inspect:source`. The first supported set covers `Grid`, `StackPanel`,
+`TextBlock`, `Button`, `TextBox`, `Image`, `ScrollViewer`, `ListView`, sliders,
+toggles, dividers, and background borders. Original attributes are retained
+under `xaml.*` properties so later emitters can preserve platform detail when
+generating SwiftUI scaffolds.
 
 ## Trust boundaries
 

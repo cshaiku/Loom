@@ -76,6 +76,19 @@ public enum LoomCommandCatalog {
       ]
     ),
     LoomCommandInfo(
+      command: "inspect:xaml",
+      name: "Inspect WinUI XAML",
+      description: "Normalize WinUI XAML into Loom's OS-agnostic layout tree",
+      category: "inspection",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["xaml"],
+      synopsis: [
+        "loom inspect:xaml <xaml-file> [--format text|json] [--output path]"
+      ],
+      examples: ["loom inspect:xaml MainWindow.xaml --format json"]
+    ),
+    LoomCommandInfo(
       command: "graph:components",
       name: "Graph SwiftUI Components",
       description: "Discover reachable SwiftUI computed views and custom View dependencies",

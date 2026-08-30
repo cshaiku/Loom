@@ -8,7 +8,7 @@ public struct AnalysisReporter: Sendable {
     lines.append("Loom analysis")
     lines.append("Source: \(analysis.sourcePath)")
     lines.append("View: \(analysis.rootView).\(analysis.component)")
-    lines.append("Swift syntax nodes: \(analysis.syntaxNodeCount)")
+    lines.append("Source nodes: \(analysis.syntaxNodeCount)")
     lines.append("Layout nodes: \(analysis.layout.recursiveNodeCount)")
     lines.append("Component references: \(Set(analysis.layout.componentReferences).count)")
     lines.append("")

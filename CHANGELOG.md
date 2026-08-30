@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0 — 2026-08-30
+
+- Added `inspect:xaml` to parse WinUI XAML into Loom's platform-neutral
+  `LoomNode` layout tree.
+- Added XAML mappings for common WinUI controls including `Grid`, `StackPanel`,
+  `TextBlock`, `Button`, `TextBox`, `Image`, `ScrollViewer`, and `ListView`.
+- Preserved original XAML attributes as `xaml.*` node properties for future
+  reverse-generation work.
+- Added tests proving hand-written and Loom-generated XAML normalize into
+  comparable IR.
+
 ## 0.5.0 — 2026-08-30
 
 - Added an operational Pattern registry for looking up semantic mappings by

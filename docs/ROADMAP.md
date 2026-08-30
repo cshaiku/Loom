@@ -13,6 +13,8 @@
 - Recursive component graph discovery for computed subviews and custom `View`
   structs across Swift source directories.
 - Pattern registry, operational linting, and opt-in XAML mapping trace comments.
+- WinUI XAML ingestion into the shared Loom IR for the future Windows-to-macOS
+  path.
 
 ## 0.4 — Recursive component graph
 
@@ -37,7 +39,15 @@ Status: initial mapping registry shipped in 0.5.0.
 - Pattern mappings remain direction-neutral so future XAML ingestion can target
   the same IR used by SwiftUI extraction.
 
-## 0.6 — Owned output and target contracts
+## 0.6 — XAML ingestion
+
+Status: initial WinUI ingestion shipped in 0.6.0.
+
+- `inspect:xaml` normalizes WinUI controls into `LoomNode` trees.
+- Original XAML attributes are retained as `xaml.*` properties.
+- Generated XAML can be ingested back into comparable IR for supported controls.
+
+## 0.7 — Owned output and target contracts
 
 - Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.
@@ -47,7 +57,14 @@ Status: initial mapping registry shipped in 0.5.0.
 Acceptance: rerunning Loom updates a generated Voci region idempotently while
 leaving native Windows behavior and unrelated XAML byte-for-byte unchanged.
 
-## 0.7 — Windows proof adapter
+## 0.8 — SwiftUI generation and Windows proof adapter
+
+- Add `generate:swiftui` from Loom IR so Windows-normalized layouts can produce
+  macOS SwiftUI scaffolds.
+- Preserve behavior gaps as diagnostics and comments rather than silent
+  approximations.
+
+## 0.9 — Windows proof adapter
 
 - Compile generated fragments on a Windows App SDK host.
 - Capture deterministic reference-size renders and accessibility trees.

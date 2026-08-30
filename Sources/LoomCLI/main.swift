@@ -58,7 +58,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.5.0")
+      print("loom 0.6.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -102,6 +102,8 @@ private enum LoomCommand {
     switch command.command {
     case "inspect:source", "inspect:parity", "generate:xaml":
       try runSourceCommand(command.command, arguments: arguments)
+    case "inspect:xaml":
+      try runXAMLCommand(arguments)
     case "graph:components":
       try runGraphCommand(arguments)
     case "project:build":
@@ -167,6 +169,16 @@ private enum LoomCommand {
     default:
       throw LoomError.invalidArguments("Unknown source command \(command).")
     }
+    try writeOrPrint(output, path: options.outputPath)
+  }
+
+  private static func runXAMLCommand(_ arguments: [String]) throws {
+    let options = try parseXAMLOptions(arguments)
+    let analysis = try XAMLFrontend().analyze(sourcePath: options.sourcePath)
+    let output =
+      options.format == "json"
+      ? try AnalysisReporter().json(analysis)
+      : AnalysisReporter().text(analysis)
     try writeOrPrint(output, path: options.outputPath)
   }
 
@@ -335,6 +347,37 @@ private enum LoomCommand {
     }
     if options.includePatternComments && options.patternsDirectory == nil {
       throw LoomError.invalidArguments("--pattern-comments requires --patterns-dir <path>.")
+    }
+    return options
+  }
+
+  private static func parseXAMLOptions(_ arguments: [String]) throws -> SourceOptions {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("inspect:xaml requires a XAML path.")
+    }
+    var options = SourceOptions(command: "inspect:xaml", sourcePath: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--format":
+        guard value == "text" || value == "json" else {
+          throw LoomError.invalidArguments("--format must be text or json.")
+        }
+        options.format = value
+      case "--output": options.outputPath = value
+      default: throw LoomError.invalidArguments("Unknown XAML option \(flag).")
+      }
+      index += 2
     }
     return options
   }

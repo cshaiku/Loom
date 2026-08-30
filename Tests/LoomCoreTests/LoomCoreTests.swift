@@ -124,6 +124,7 @@ private let sample = """
   let catalog = LoomCommandCatalog.catalogText()
   #expect(catalog.contains("inspection\n"))
   #expect(catalog.contains("graph:components"))
+  #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
@@ -135,6 +136,55 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func xamlFrontendNormalizesWinUIControlsIntoLoomIR() throws {
+  let xaml = """
+  <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+    <StackPanel Orientation="Horizontal" AutomationProperties.AutomationId="toolbar">
+      <TextBlock Text="Now Playing" />
+      <Button Content="Play" />
+      <TextBox PlaceholderText="Search" Width="240" />
+      <ScrollViewer>
+        <ListView />
+      </ScrollViewer>
+    </StackPanel>
+  </Grid>
+  """
+
+  let analysis = try XAMLFrontend().analyze(source: xaml, sourcePath: "MainWindow.xaml")
+  #expect(analysis.rootView == "XAML")
+  #expect(analysis.layout.count(kind: .grid) == 1)
+  #expect(analysis.layout.count(kind: .horizontalStack) == 1)
+  #expect(analysis.layout.count(kind: .text) == 1)
+  #expect(analysis.layout.count(kind: .button) == 1)
+  #expect(analysis.layout.count(kind: .textField) == 1)
+  #expect(analysis.layout.count(kind: .scrollView) == 1)
+  #expect(analysis.layout.count(kind: .list) == 1)
+  #expect(analysis.diagnostics.isEmpty)
+
+  let text = AnalysisReporter().text(analysis)
+  #expect(text.contains("Source nodes:"))
+}
+
+@Test func generatedXAMLCanBeIngestedBackIntoComparableIR() throws {
+  let swift = """
+  struct ContentView: View {
+    var body: some View {
+      VStack(spacing: 8) {
+        Text("Ready")
+        Button("Run") { start() }
+      }
+    }
+  }
+  """
+  let swiftAnalysis = try SwiftUIFrontend().analyze(source: swift, rootView: "ContentView")
+  let xaml = XAMLEmitter().emit(swiftAnalysis)
+  let xamlAnalysis = try XAMLFrontend().analyze(source: xaml, sourcePath: "generated.xaml")
+
+  #expect(swiftAnalysis.layout.count(kind: .text) == xamlAnalysis.layout.count(kind: .text))
+  #expect(swiftAnalysis.layout.count(kind: .button) == xamlAnalysis.layout.count(kind: .button))
+  #expect(xamlAnalysis.layout.count(kind: .grid) >= 1)
 }
 
 @Test func componentGraphDiscoversComputedAndCustomViewDependencies() throws {

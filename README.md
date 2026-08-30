@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.5.0**
+Current version: **0.6.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -32,7 +32,9 @@ The current usable slice includes:
 - Recursive component graph discovery for same-view computed subviews and
   custom `View` structs across Swift source directories.
 - WinUI 3 XAML fragment generation.
-- Text and JSON analysis reports.
+- Text and JSON analysis reports for SwiftUI and WinUI XAML sources.
+- WinUI XAML ingestion into the same platform-neutral layout tree used by the
+  SwiftUI frontend.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -86,6 +88,13 @@ Analyze a SwiftUI view:
 ```sh
 swift run loom inspect:source MyView.swift --root-view ContentView
 swift run loom inspect:source MyView.swift --root-view ContentView --json
+```
+
+Analyze a WinUI XAML view:
+
+```sh
+swift run loom inspect:xaml MainWindow.xaml
+swift run loom inspect:xaml MainWindow.xaml --format json
 ```
 
 Analyze a computed subview property:
@@ -216,6 +225,7 @@ See the [command organization](docs/COMMANDS.md) and the phased
 1. Expand Pattern-driven emission from trace comments into full mapping policy.
 2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
 3. Add syntax-aware incremental XAML regions instead of whole-file replacement.
-4. Add XAML ingestion so Windows layouts can be normalized into the shared IR.
+4. Add `generate:swiftui` so XAML-normalized IR can produce macOS SwiftUI
+   scaffolds.
 5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
 6. Add equivalent emitters for other declarative desktop UI targets.
