@@ -33,6 +33,7 @@ repository-policy domain. The shared conventions are:
 | --- | --- | --- |
 | `inspect:source` | `r/w` through `--output` | `analyze` |
 | `inspect:xaml` | `r/w` through `--output` | `xaml` |
+| `inspect:errors` | `r/w` through `--output` | `errors` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
 | `generate:swiftui` | `r/w` through `--output` | — |
@@ -85,6 +86,23 @@ translation path.
 loom inspect:xaml MainWindow.xaml
 loom inspect:xaml MainWindow.xaml --format json --output mainwindow.analysis.json
 ```
+
+## Error inspection command
+
+`inspect:errors` reports syntax and Loom-specific diagnostics without requiring
+generation:
+
+```sh
+loom inspect:errors ContentView.swift --root-view ContentView
+loom inspect:errors MainWindow.xaml --kind xaml --json
+loom inspect:errors loom.json --kind manifest
+loom inspect:errors Patterns --kind patterns --fail-on error
+```
+
+Supported kinds are `swift`, `xaml`, `manifest`, and `patterns`. If `--kind` is
+omitted, Loom infers it from the path. `--fail-on none|error|warning` controls
+automation exit behavior; default inspection does not fail just because it
+found errors.
 
 ## Component graph command
 

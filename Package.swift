@@ -26,6 +26,8 @@ let package = Package(
       name: "LoomCore",
       dependencies: [
         .product(name: "SwiftParser", package: "swift-syntax"),
+        .product(name: "SwiftDiagnostics", package: "swift-syntax"),
+        .product(name: "SwiftParserDiagnostics", package: "swift-syntax"),
         .product(name: "SwiftSyntax", package: "swift-syntax"),
       ]
     ),

@@ -144,6 +144,7 @@ private let sample = """
   #expect(catalog.contains("self-heal:plan"))
   #expect(catalog.contains("verify"))
   #expect(catalog.contains("graph:components"))
+  #expect(catalog.contains("inspect:errors"))
   #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
   #expect(catalog.contains("generate:contracts"))
@@ -193,6 +194,56 @@ private let sample = """
   let json = try diagnostics.json(catalog)
   let decoded = try JSONDecoder().decode(LoomCommandCatalogCheckReport.self, from: Data(json.utf8))
   #expect(decoded.status == "ok")
+}
+
+@Test func errorInspectionReportsSwiftSyntaxAndLoomDiagnostics() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  let sourceURL = directory.appendingPathComponent("Broken.swift")
+  try """
+  import SwiftUI
+
+  struct BrokenView: View {
+    var body: some View {
+      VStack {
+        Text("Broken"
+      }
+    }
+  }
+  """.write(to: sourceURL, atomically: true, encoding: .utf8)
+
+  let diagnostics = LoomDiagnostics()
+  let report = diagnostics.inspectErrors(
+    path: sourceURL.path,
+    options: .init(kind: .swift, rootView: "BrokenView")
+  )
+
+  #expect(report.status == "error")
+  #expect(report.inspectedKind == .swift)
+  #expect(report.findings.contains { $0.code.hasPrefix("SWIFT.") && $0.severity == .error })
+  #expect(diagnostics.shouldFail(report, mode: .error))
+  #expect(diagnostics.shouldFail(report, mode: .warning))
+  #expect(!diagnostics.shouldFail(report, mode: .none))
+}
+
+@Test func errorInspectionReportsXAMLAndPatternErrors() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+
+  let xamlURL = directory.appendingPathComponent("Broken.xaml")
+  try "<Grid><TextBlock Text=\"Broken\"></Grid>".write(
+    to: xamlURL, atomically: true, encoding: .utf8)
+  let xaml = LoomDiagnostics().inspectErrors(path: xamlURL.path, options: .init(kind: .xaml))
+  #expect(xaml.status == "error")
+  #expect(xaml.findings.contains { $0.code == "LOOM.XAML" })
+
+  let patterns = LoomDiagnostics().inspectErrors(path: directory.path, options: .init(kind: .patterns))
+  #expect(patterns.status == "error")
+  #expect(patterns.findings.contains { $0.code == "PATTERN003" })
 }
 
 @Test func targetContractsExtractBindingsBehaviorAndResources() throws {

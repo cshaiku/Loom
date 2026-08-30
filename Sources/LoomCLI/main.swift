@@ -58,6 +58,16 @@ private struct RuntimeOptions {
   var verbose = false
 }
 
+private struct ErrorInspectionOptions {
+  var path: String
+  var kind: LoomErrorInspectionKind?
+  var rootView = "ContentView"
+  var component = "body"
+  var format = "text"
+  var failOn = LoomErrorFailMode.none
+  var outputPath: String?
+}
+
 @main
 private enum LoomCommand {
   static func main() {
@@ -93,7 +103,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.11.0")
+      print("loom 0.12.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -135,6 +145,8 @@ private enum LoomCommand {
     }
 
     switch command.command {
+    case "inspect:errors":
+      try runErrorInspectionCommand(arguments, runtime: runtime)
     case "inspect:source", "inspect:parity", "generate:xaml", "generate:contracts":
       try runSourceCommand(command.command, arguments: arguments, runtime: runtime)
     case "inspect:xaml":
@@ -257,6 +269,24 @@ private enum LoomCommand {
       ? try AnalysisReporter().json(analysis)
       : AnalysisReporter().text(analysis)
     try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+  }
+
+  private static func runErrorInspectionCommand(_ arguments: [String], runtime: RuntimeOptions)
+    throws
+  {
+    let options = try parseErrorInspectionOptions(arguments)
+    let diagnostics = LoomDiagnostics()
+    let report = diagnostics.inspectErrors(
+      path: options.path,
+      options: LoomErrorInspectionOptions(
+        kind: options.kind,
+        rootView: options.rootView,
+        component: options.component
+      )
+    )
+    let output = options.format == "json" ? try diagnostics.json(report) : diagnostics.text(report)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+    if diagnostics.shouldFail(report, mode: options.failOn) { exit(1) }
   }
 
   private static func runSwiftUICommand(_ arguments: [String], runtime: RuntimeOptions) throws {
@@ -538,6 +568,52 @@ private enum LoomCommand {
         options.format = value
       case "--output": options.outputPath = value
       default: throw LoomError.invalidArguments("Unknown XAML option \(flag).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseErrorInspectionOptions(_ arguments: [String]) throws
+    -> ErrorInspectionOptions
+  {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("inspect:errors requires a source path.")
+    }
+    var options = ErrorInspectionOptions(path: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--kind":
+        guard let kind = LoomErrorInspectionKind(rawValue: value) else {
+          throw LoomError.invalidArguments("--kind must be swift, xaml, manifest, or patterns.")
+        }
+        options.kind = kind
+      case "--root-view": options.rootView = value
+      case "--component": options.component = value
+      case "--format":
+        guard value == "text" || value == "json" else {
+          throw LoomError.invalidArguments("--format must be text or json.")
+        }
+        options.format = value
+      case "--fail-on":
+        guard let failOn = LoomErrorFailMode(rawValue: value) else {
+          throw LoomError.invalidArguments("--fail-on must be none, error, or warning.")
+        }
+        options.failOn = failOn
+      case "--output": options.outputPath = value
+      default:
+        throw LoomError.invalidArguments("Unknown error inspection option \(flag).")
       }
       index += 2
     }

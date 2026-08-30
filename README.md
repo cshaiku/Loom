@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.11.0**
+Current version: **0.12.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -46,6 +46,10 @@ The current usable slice includes:
 - Global `--quiet` and `--verbose` runtime output controls for automation.
 - Vigil-inspired read-only diagnostics: `status`, `verify`,
   `checks:command-catalog`, `guards:summary`, and `self-heal:plan`.
+- Error-focused inspection for Swift syntax, Loom analysis, XAML, manifest, and
+  Pattern issues through `inspect:errors`.
+- A dedicated [AI Agents guide](docs/AI_AGENTS.md) for safe command sequencing,
+  JSON output, write guards, and translation boundaries.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -87,6 +91,14 @@ swift run loom verify --json
 swift run loom checks:command-catalog
 swift run loom guards:summary
 swift run loom self-heal:plan
+```
+
+Inspect errors before generating:
+
+```sh
+swift run loom inspect:errors MyView.swift --root-view ContentView
+swift run loom inspect:errors MainWindow.xaml --kind xaml --json
+swift run loom inspect:errors Patterns --kind patterns --fail-on error
 ```
 
 Global runtime flags can be placed before any command:

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0 — 2026-08-30
+
+- Added `inspect:errors` to report Swift parser diagnostics, Loom extraction
+  diagnostics, XAML parse failures, manifest validation issues, and Pattern
+  validation/lint issues.
+- Added `--kind swift|xaml|manifest|patterns`, `--format text|json`,
+  `--output`, and `--fail-on none|error|warning` for error inspection.
+- Added SwiftParserDiagnostics integration for syntax errors without shelling
+  out to a compiler.
+- Added `docs/AI_AGENTS.md` covering safe agent workflows, JSON output,
+  write guards, self-healing limits, and translation boundaries.
+- Added tests for Swift syntax error inspection, XAML parse errors, Pattern
+  errors, fail modes, and command catalog coverage.
+
 ## 0.11.0 — 2026-08-30
 
 - Added Vigil-inspired read-only diagnostics commands: `status`, `verify`,

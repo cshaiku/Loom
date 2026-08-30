@@ -89,6 +89,22 @@ public enum LoomCommandCatalog {
       examples: ["loom inspect:xaml MainWindow.xaml --format json"]
     ),
     LoomCommandInfo(
+      command: "inspect:errors",
+      name: "Inspect Errors",
+      description: "Report Swift syntax, Loom analysis, XAML, manifest, or Pattern errors",
+      category: "inspection",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["errors"],
+      synopsis: [
+        "loom inspect:errors <path> [--kind swift|xaml|manifest|patterns] [--root-view Name] [--component name] [--format text|json] [--fail-on none|error|warning] [--output path]"
+      ],
+      examples: [
+        "loom inspect:errors ContentView.swift --root-view ContentView",
+        "loom inspect:errors MainWindow.xaml --kind xaml --format json",
+      ]
+    ),
+    LoomCommandInfo(
       command: "graph:components",
       name: "Graph SwiftUI Components",
       description: "Discover reachable SwiftUI computed views and custom View dependencies",

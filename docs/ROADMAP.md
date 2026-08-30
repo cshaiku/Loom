@@ -24,6 +24,10 @@
   accessibility, and component wiring that layout emission cannot own.
 - Vigil-inspired diagnostics commands for readiness, verification, command
   catalog checks, write guards, and self-healing visibility.
+- Error-focused inspection for Swift syntax, Loom analysis, XAML parse,
+  manifest, and Pattern issues.
+- AI-agent operating guidance for safe sequencing, JSON output, write guards,
+  and translation boundaries.
 
 ## 0.4 — Recursive component graph
 
@@ -107,6 +111,18 @@ Status: shipped in 0.11.0.
   authorize writes.
 - Added `self-heal:plan` to document explicit self-healing actions and their
   guardrails.
+
+## 0.12 — Error inspection and AI agent guide
+
+Status: shipped in 0.12.0.
+
+- Added `inspect:errors` for Swift syntax diagnostics, Loom extraction
+  diagnostics, XAML parse failures, manifest validation, and Pattern
+  validation/lint issues.
+- Added `--kind swift|xaml|manifest|patterns`, `--format text|json`,
+  `--output`, and `--fail-on none|error|warning`.
+- Added `docs/AI_AGENTS.md` with safe command sequencing, JSON-first
+  automation guidance, write-guard expectations, and translation boundaries.
 
 ## 1.0 — Pattern-driven emitters
 
