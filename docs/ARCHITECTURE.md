@@ -21,8 +21,9 @@ incorrect conversion.
    `LoomNode` IR used by SwiftUI extraction.
 6. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
    `StackPanel`, `Grid`, collection control, layered container, or placeholder.
-7. **XAML emission**: Loom emits a valid, reviewable fragment with comments at
-   every semantic boundary that still needs a human decision.
+7. **Target emission**: Loom emits valid, reviewable target scaffolds with
+   comments at every semantic boundary that still needs a human decision.
+   Current targets are WinUI XAML fragments and SwiftUI scaffolds from XAML.
 8. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
@@ -70,6 +71,15 @@ by `inspect:source`. The first supported set covers `Grid`, `StackPanel`,
 toggles, dividers, and background borders. Original attributes are retained
 under `xaml.*` properties so later emitters can preserve platform detail when
 generating SwiftUI scaffolds.
+
+## SwiftUI Scaffolds
+
+`generate:swiftui` converts XAML-normalized IR into a SwiftUI source scaffold.
+It maps supported containers and controls to SwiftUI equivalents, carries simple
+frame and accessibility metadata, and preserves unsupported XAML controls as
+comments plus `EmptyView()` placeholders. The output is intended for review and
+native completion, not as proof that Windows behavior or styling has been
+ported.
 
 ## Trust boundaries
 

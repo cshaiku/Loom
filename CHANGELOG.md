@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — 2026-08-30
+
+- Added `generate:swiftui` to emit reviewable SwiftUI scaffolds from WinUI XAML.
+- Added a SwiftUI emitter that maps XAML-normalized IR containers and controls
+  into SwiftUI source.
+- Preserved unsupported XAML controls as comments and `EmptyView()`
+  placeholders.
+- Added tests for supported XAML-to-SwiftUI generation and unsupported-control
+  preservation.
+
 ## 0.6.0 — 2026-08-30
 
 - Added `inspect:xaml` to parse WinUI XAML into Loom's platform-neutral

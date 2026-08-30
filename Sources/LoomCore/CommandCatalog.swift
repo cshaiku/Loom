@@ -117,6 +117,18 @@ public enum LoomCommandCatalog {
       ]
     ),
     LoomCommandInfo(
+      command: "generate:swiftui",
+      name: "Generate SwiftUI Scaffold",
+      description: "Emit a reviewable SwiftUI scaffold from WinUI XAML",
+      category: "generation",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      synopsis: [
+        "loom generate:swiftui <xaml-file> [--view-name Name] [--output path]"
+      ],
+      examples: ["loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold"]
+    ),
+    LoomCommandInfo(
       command: "project:build",
       name: "Build Project Translation",
       description: "Generate all manifest-declared analyses, XAML fragments, and parity reports",

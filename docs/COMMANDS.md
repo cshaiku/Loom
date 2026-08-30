@@ -32,6 +32,7 @@ repository-policy domain. The shared conventions are:
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
 | `generate:xaml` | `r/w` through `--output` | `generate` |
+| `generate:swiftui` | `r/w` through `--output` | — |
 | `project:build` | `w` | `project` |
 | `patterns:list` | `r` | — |
 | `patterns:show` | `r` | — |
@@ -79,3 +80,14 @@ SwiftUI-to-XAML and XAML-to-SwiftUI translation paths.
 `generate:xaml --patterns-dir Patterns --pattern-comments` loads the Pattern
 registry and annotates emitted nodes with the pattern id and WinUI mapping that
 drove the output.
+
+## SwiftUI generation command
+
+`generate:swiftui` parses WinUI XAML through `inspect:xaml` and emits a
+reviewable SwiftUI scaffold. It preserves supported layout structure and leaves
+behavior, bindings, styles, and unsupported XAML controls as placeholders.
+
+```sh
+loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold
+loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
+```

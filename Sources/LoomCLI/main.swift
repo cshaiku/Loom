@@ -32,6 +32,12 @@ private struct GraphOptions {
   var exclude: [String] = []
 }
 
+private struct SwiftUIOptions {
+  var xamlPath: String
+  var viewName = "GeneratedView"
+  var outputPath: String?
+}
+
 private struct ProjectOptions {
   var manifestPath: String
   var projectRoot: String?
@@ -58,7 +64,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.6.0")
+      print("loom 0.7.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -104,6 +110,8 @@ private enum LoomCommand {
       try runSourceCommand(command.command, arguments: arguments)
     case "inspect:xaml":
       try runXAMLCommand(arguments)
+    case "generate:swiftui":
+      try runSwiftUICommand(arguments)
     case "graph:components":
       try runGraphCommand(arguments)
     case "project:build":
@@ -179,6 +187,13 @@ private enum LoomCommand {
       options.format == "json"
       ? try AnalysisReporter().json(analysis)
       : AnalysisReporter().text(analysis)
+    try writeOrPrint(output, path: options.outputPath)
+  }
+
+  private static func runSwiftUICommand(_ arguments: [String]) throws {
+    let options = try parseSwiftUIOptions(arguments)
+    let analysis = try XAMLFrontend().analyze(sourcePath: options.xamlPath)
+    let output = SwiftUIEmitter(options: .init(viewName: options.viewName)).emit(analysis)
     try writeOrPrint(output, path: options.outputPath)
   }
 
@@ -376,6 +391,26 @@ private enum LoomCommand {
         options.format = value
       case "--output": options.outputPath = value
       default: throw LoomError.invalidArguments("Unknown XAML option \(flag).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseSwiftUIOptions(_ arguments: [String]) throws -> SwiftUIOptions {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("generate:swiftui requires a XAML path.")
+    }
+    var options = SwiftUIOptions(xamlPath: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(arguments[index]).")
+      }
+      switch arguments[index] {
+      case "--view-name": options.viewName = arguments[index + 1]
+      case "--output": options.outputPath = arguments[index + 1]
+      default: throw LoomError.invalidArguments("Unknown SwiftUI generation option \(arguments[index]).")
       }
       index += 2
     }

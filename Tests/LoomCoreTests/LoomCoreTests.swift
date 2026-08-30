@@ -126,6 +126,7 @@ private let sample = """
   #expect(catalog.contains("graph:components"))
   #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
+  #expect(catalog.contains("generate:swiftui"))
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
   #expect(catalog.contains("patterns:lint"))
@@ -136,6 +137,59 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func swiftUIEmitterGeneratesScaffoldFromXAMLIR() throws {
+  let xaml = """
+  <StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Orientation="Vertical" Spacing="8">
+    <TextBlock Text="Ready" />
+    <Button Content="Run" />
+    <TextBox PlaceholderText="Search" Width="240" />
+    <ScrollViewer>
+      <ListView />
+    </ScrollViewer>
+  </StackPanel>
+  """
+  let analysis = try XAMLFrontend().analyze(source: xaml, sourcePath: "Panel.xaml")
+  let swift = SwiftUIEmitter(options: .init(viewName: "PanelScaffold")).emit(analysis)
+  #expect(swift.contains("struct PanelScaffold: View"))
+  #expect(swift.contains("VStack(spacing: 8)"))
+  #expect(swift.contains("Text(\"Ready\")"))
+  #expect(swift.contains("Button(\"Run\")"))
+  #expect(swift.contains("TextField(\"Search\", text: .constant(\"\"))"))
+  #expect(swift.contains("ScrollView"))
+  #expect(swift.contains("List"))
+  #expect(swift.contains(".frame(width: 240)"))
+}
+
+@Test func swiftUIEmitterPreservesUnsupportedXAMLAsPlaceholder() throws {
+  let analysis = try XAMLFrontend().analyze(
+    source: """
+    <CommandBar xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+      <AppBarButton Label="Refresh" />
+    </CommandBar>
+    """,
+    sourcePath: "Toolbar.xaml"
+  )
+  let swift = SwiftUIEmitter().emit(analysis)
+  #expect(swift.contains("// Unsupported XAML component: CommandBar"))
+  #expect(swift.contains("Button(\"Refresh\")"))
+}
+
+@Test func swiftUIEmitterPreservesChildrenOfUnsupportedXAMLContainers() throws {
+  let analysis = try XAMLFrontend().analyze(
+    source: """
+    <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+      <Grid>
+        <TextBlock Text="Inside" />
+      </Grid>
+    </Window>
+    """,
+    sourcePath: "Window.xaml"
+  )
+  let swift = SwiftUIEmitter().emit(analysis)
+  #expect(swift.contains("// Unsupported XAML component: Window"))
+  #expect(swift.contains("Text(\"Inside\")"))
 }
 
 @Test func xamlFrontendNormalizesWinUIControlsIntoLoomIR() throws {

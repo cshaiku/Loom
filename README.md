@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.6.0**
+Current version: **0.7.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -35,6 +35,7 @@ The current usable slice includes:
 - Text and JSON analysis reports for SwiftUI and WinUI XAML sources.
 - WinUI XAML ingestion into the same platform-neutral layout tree used by the
   SwiftUI frontend.
+- SwiftUI scaffold generation from WinUI XAML through the shared layout tree.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -95,6 +96,15 @@ Analyze a WinUI XAML view:
 ```sh
 swift run loom inspect:xaml MainWindow.xaml
 swift run loom inspect:xaml MainWindow.xaml --format json
+```
+
+Generate a SwiftUI scaffold from WinUI XAML:
+
+```sh
+swift run loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold
+swift run loom generate:swiftui MainWindow.xaml \
+  --view-name MainWindowScaffold \
+  --output Generated/MainWindowScaffold.swift
 ```
 
 Analyze a computed subview property:
@@ -206,7 +216,10 @@ to layered Grid content. `ForEach` normally becomes a collection control and
 data template rather than repeated literal elements.
 
 Every loss of semantics must result in a diagnostic or an explanatory XAML
-comment. Silent approximation is treated as a bug.
+comment. SwiftUI scaffolds generated from XAML preserve structure first:
+platform behavior, commands, bindings, styles, and unsupported controls are
+left as reviewable placeholders or comments. Silent approximation is treated
+as a bug.
 
 ## Repository structure
 
@@ -225,7 +238,6 @@ See the [command organization](docs/COMMANDS.md) and the phased
 1. Expand Pattern-driven emission from trace comments into full mapping policy.
 2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
 3. Add syntax-aware incremental XAML regions instead of whole-file replacement.
-4. Add `generate:swiftui` so XAML-normalized IR can produce macOS SwiftUI
-   scaffolds.
+4. Add project-level bidirectional manifests for XAML-to-SwiftUI workflows.
 5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
 6. Add equivalent emitters for other declarative desktop UI targets.
