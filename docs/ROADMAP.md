@@ -16,6 +16,8 @@
 - WinUI XAML ingestion into the shared Loom IR for the future Windows-to-macOS
   path.
 - SwiftUI scaffold generation from XAML-normalized IR.
+- Safe Loom-owned XAML region replacement that refuses to alter handwritten
+  content outside explicit markers.
 
 ## 0.4 — Recursive component graph
 
@@ -56,17 +58,24 @@ Status: initial XAML-to-SwiftUI generation shipped in 0.7.0.
 - Supported layout and control nodes map through Loom IR.
 - Unsupported XAML remains explicit as comments and placeholders.
 
-## 0.8 — Owned output and target contracts
+## 0.8 — Owned XAML regions
+
+Status: owned-region replacement shipped in 0.8.0.
+
+- `generate:xaml --replace-region <xaml-file> --region-id <id>` updates only a
+  marked Loom region.
+- Missing, duplicated, malformed, or out-of-order markers fail before writing.
+- Existing handwritten XAML outside the region remains byte-preserved.
+
+## 0.9 — Target contracts
 
 - Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.
-- Introduce syntax-aware owned XAML regions or generated UserControls.
-- Refuse to overwrite handwritten XAML nodes outside Loom-owned output.
 
 Acceptance: rerunning Loom updates a generated Voci region idempotently while
 leaving native Windows behavior and unrelated XAML byte-for-byte unchanged.
 
-## 0.9 — Windows proof adapter
+## 1.0 — Windows proof adapter
 
 - Compile generated fragments on a Windows App SDK host.
 - Capture deterministic reference-size renders and accessibility trees.

@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.7.0**
+Current version: **0.8.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -36,6 +36,8 @@ The current usable slice includes:
 - WinUI XAML ingestion into the same platform-neutral layout tree used by the
   SwiftUI frontend.
 - SwiftUI scaffold generation from WinUI XAML through the shared layout tree.
+- Safe owned XAML region replacement for generated output inside existing
+  handwritten files.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -140,6 +142,24 @@ swift run loom generate:xaml MyView.swift \
   --output Generated/ContentView.xaml
 ```
 
+Update a Loom-owned region inside an existing XAML file:
+
+```xml
+<!-- LOOM-BEGIN shell.main -->
+<!-- generated content lives here -->
+<!-- LOOM-END shell.main -->
+```
+
+```sh
+swift run loom generate:xaml MyView.swift \
+  --root-view ContentView \
+  --replace-region MainWindow.xaml \
+  --region-id shell.main
+```
+
+Loom refuses to write unless exactly one matching begin/end marker pair exists.
+Handwritten XAML outside the marked region is left untouched.
+
 Trace which OS-agnostic patterns drove emitted XAML nodes:
 
 ```sh
@@ -237,7 +257,7 @@ See the [command organization](docs/COMMANDS.md) and the phased
 
 1. Expand Pattern-driven emission from trace comments into full mapping policy.
 2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
-3. Add syntax-aware incremental XAML regions instead of whole-file replacement.
-4. Add project-level bidirectional manifests for XAML-to-SwiftUI workflows.
+3. Add project-level bidirectional manifests for XAML-to-SwiftUI workflows.
+4. Generate target contract stubs for events and bindings.
 5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
 6. Add equivalent emitters for other declarative desktop UI targets.

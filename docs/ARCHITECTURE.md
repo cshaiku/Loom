@@ -29,6 +29,8 @@ incorrect conversion.
    the result on Windows for image and accessibility-tree comparison.
 9. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
+10. **Owned output**: generated XAML can be written back only inside explicit
+    Loom marker pairs, preserving surrounding handwritten platform code.
 
 ## Command architecture
 
@@ -89,6 +91,8 @@ ported.
   visual or behavioral parity.
 - Existing platform code is never overwritten by `analyze` or `parity`.
 - `generate` writes only when an explicit output path is supplied by the user.
+- `generate:xaml --replace-region` writes only between a single matching
+  `LOOM-BEGIN` / `LOOM-END` marker pair and refuses ambiguous marker state.
 
 ## Incremental generation direction
 

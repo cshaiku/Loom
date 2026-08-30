@@ -192,6 +192,50 @@ private let sample = """
   #expect(swift.contains("Text(\"Inside\")"))
 }
 
+@Test func ownedRegionUpdaterReplacesOnlyMarkedXAMLRegion() throws {
+  let existing = """
+  <Grid>
+    <TextBlock Text="Handwritten" />
+    <!-- LOOM-BEGIN shell.main -->
+    <TextBlock Text="Old generated" />
+    <!-- LOOM-END shell.main -->
+    <Button Content="Handwritten action" />
+  </Grid>
+  """
+  let generated = "<TextBlock Text=\"New generated\" />\n"
+
+  let updated = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+    in: existing,
+    regionID: "shell.main",
+    content: generated
+  )
+  #expect(updated.contains("<TextBlock Text=\"Handwritten\" />"))
+  #expect(updated.contains("<TextBlock Text=\"New generated\" />"))
+  #expect(!updated.contains("Old generated"))
+  #expect(updated.contains("<Button Content=\"Handwritten action\" />"))
+}
+
+@Test func ownedRegionUpdaterRejectsMissingOrDuplicateMarkers() throws {
+  #expect(throws: LoomError.self) {
+    _ = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+      in: "<Grid />",
+      regionID: "missing",
+      content: "<TextBlock />"
+    )
+  }
+  #expect(throws: LoomError.self) {
+    _ = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+      in: """
+      <!-- LOOM-BEGIN duplicate -->
+      <!-- LOOM-BEGIN duplicate -->
+      <!-- LOOM-END duplicate -->
+      """,
+      regionID: "duplicate",
+      content: "<TextBlock />"
+    )
+  }
+}
+
 @Test func xamlFrontendNormalizesWinUIControlsIntoLoomIR() throws {
   let xaml = """
   <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">

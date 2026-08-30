@@ -31,7 +31,7 @@ repository-policy domain. The shared conventions are:
 | `inspect:xaml` | `r/w` through `--output` | `xaml` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
-| `generate:xaml` | `r/w` through `--output` | `generate` |
+| `generate:xaml` | `r/w` through `--output`, `--replace-region` | `generate` |
 | `generate:swiftui` | `r/w` through `--output` | — |
 | `project:build` | `w` | `project` |
 | `patterns:list` | `r` | — |
@@ -80,6 +80,20 @@ SwiftUI-to-XAML and XAML-to-SwiftUI translation paths.
 `generate:xaml --patterns-dir Patterns --pattern-comments` loads the Pattern
 registry and annotates emitted nodes with the pattern id and WinUI mapping that
 drove the output.
+
+## Owned XAML regions
+
+`generate:xaml --replace-region <xaml-file> --region-id <id>` updates only the
+content between matching Loom markers:
+
+```xml
+<!-- LOOM-BEGIN shell.main -->
+<!-- generated content lives here -->
+<!-- LOOM-END shell.main -->
+```
+
+The command refuses to write if the marker pair is missing, duplicated, or out
+of order. `--replace-region` cannot be combined with `--output`.
 
 ## SwiftUI generation command
 

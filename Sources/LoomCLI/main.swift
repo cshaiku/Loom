@@ -20,6 +20,8 @@ private struct SourceOptions {
   var themeResourcePrefix: String?
   var patternsDirectory: String?
   var includePatternComments = false
+  var replaceRegionPath: String?
+  var regionID: String?
 }
 
 private struct GraphOptions {
@@ -64,7 +66,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.7.0")
+      print("loom 0.8.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -177,7 +179,25 @@ private enum LoomCommand {
     default:
       throw LoomError.invalidArguments("Unknown source command \(command).")
     }
-    try writeOrPrint(output, path: options.outputPath)
+    if let replaceRegionPath = options.replaceRegionPath {
+      guard command == "generate:xaml" else {
+        throw LoomError.invalidArguments("--replace-region is only supported by generate:xaml.")
+      }
+      guard options.outputPath == nil else {
+        throw LoomError.invalidArguments("--output cannot be combined with --replace-region.")
+      }
+      guard let regionID = options.regionID else {
+        throw LoomError.invalidArguments("--replace-region requires --region-id <id>.")
+      }
+      let update = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+        path: replaceRegionPath,
+        regionID: regionID,
+        content: output
+      )
+      print(update.changed ? "Updated \(update.path)" : "No changes for \(update.path)")
+    } else {
+      try writeOrPrint(output, path: options.outputPath)
+    }
   }
 
   private static func runXAMLCommand(_ arguments: [String]) throws {
@@ -356,12 +376,17 @@ private enum LoomCommand {
       case "--xaml": options.xamlPath = value
       case "--theme-prefix": options.themeResourcePrefix = value
       case "--patterns-dir": options.patternsDirectory = value
+      case "--replace-region": options.replaceRegionPath = value
+      case "--region-id": options.regionID = value
       default: throw LoomError.invalidArguments("Unknown option \(flag).")
       }
       index += 2
     }
     if options.includePatternComments && options.patternsDirectory == nil {
       throw LoomError.invalidArguments("--pattern-comments requires --patterns-dir <path>.")
+    }
+    if options.regionID != nil && options.replaceRegionPath == nil {
+      throw LoomError.invalidArguments("--region-id requires --replace-region <path>.")
     }
     return options
   }

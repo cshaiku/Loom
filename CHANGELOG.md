@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — 2026-08-30
+
+- Added safe Loom-owned XAML region replacement through
+  `generate:xaml --replace-region ... --region-id ...`.
+- Added strict marker validation for missing, duplicated, malformed, or
+  out-of-order `LOOM-BEGIN` / `LOOM-END` comments.
+- Preserved handwritten XAML outside the marked generated region.
+- Added tests for successful replacement and refusal of unsafe marker states.
+
 ## 0.7.0 — 2026-08-30
 
 - Added `generate:swiftui` to emit reviewable SwiftUI scaffolds from WinUI XAML.

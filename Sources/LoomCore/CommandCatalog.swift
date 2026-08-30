@@ -69,7 +69,7 @@ public enum LoomCommandCatalog {
       description: "Compare SwiftUI structure with existing WinUI XAML",
       category: "inspection",
       access: .conditionalWrite,
-      writeFlags: ["--output"],
+      writeFlags: ["--output", "--replace-region"],
       aliases: ["parity"],
       synopsis: [
         "loom inspect:parity <swift-file> --xaml <xaml-file> [--root-view Name] [--format text|json]"
@@ -113,7 +113,8 @@ public enum LoomCommandCatalog {
       writeFlags: ["--output"],
       aliases: ["generate"],
       synopsis: [
-        "loom generate:xaml <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--patterns-dir path] [--pattern-comments] [--output path]"
+        "loom generate:xaml <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--patterns-dir path] [--pattern-comments] [--output path]",
+        "loom generate:xaml <swift-file> --replace-region <xaml-file> --region-id id"
       ]
     ),
     LoomCommandInfo(
