@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.0 — 2026-08-30
+
+- Added global `--quiet` / `-q` and `--verbose` / `-v` runtime output controls.
+- Added explicit `--init-region` self-healing for missing generated XAML host
+  files used with `generate:xaml --replace-region`.
+- Kept existing-file writes strict: Loom still refuses to alter XAML without
+  explicit ownership markers.
+- Added guard coverage for unsafe region ids, malformed marker order, malformed
+  XAML, graph cycles, no-op region replacement, path-level region
+  initialization, and operational pattern lint failures.
+- Corrected command metadata so `--replace-region` is advertised only for
+  `generate:xaml`.
+
 ## 0.8.0 — 2026-08-30
 
 - Added safe Loom-owned XAML region replacement through

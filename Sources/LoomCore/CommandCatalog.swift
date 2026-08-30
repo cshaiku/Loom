@@ -69,7 +69,7 @@ public enum LoomCommandCatalog {
       description: "Compare SwiftUI structure with existing WinUI XAML",
       category: "inspection",
       access: .conditionalWrite,
-      writeFlags: ["--output", "--replace-region"],
+      writeFlags: ["--output"],
       aliases: ["parity"],
       synopsis: [
         "loom inspect:parity <swift-file> --xaml <xaml-file> [--root-view Name] [--format text|json]"
@@ -110,11 +110,11 @@ public enum LoomCommandCatalog {
       description: "Emit a reviewable WinUI 3 XAML fragment",
       category: "generation",
       access: .conditionalWrite,
-      writeFlags: ["--output"],
+      writeFlags: ["--output", "--replace-region"],
       aliases: ["generate"],
       synopsis: [
         "loom generate:xaml <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--patterns-dir path] [--pattern-comments] [--output path]",
-        "loom generate:xaml <swift-file> --replace-region <xaml-file> --region-id id"
+        "loom generate:xaml <swift-file> --replace-region <xaml-file> --region-id id [--init-region]"
       ]
     ),
     LoomCommandInfo(
@@ -207,7 +207,7 @@ public enum LoomCommandCatalog {
     let commandWidth = selected.map(\.command.count).max() ?? 0
     var lines = [
       "Usage:",
-      "  loom <command> [args]",
+      "  loom [--quiet|--verbose] <command> [args]",
       "  loom help <command>",
       "  loom list [--category NAME] [--json]",
       "",

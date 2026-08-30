@@ -12,6 +12,9 @@ repository-policy domain. The shared conventions are:
   metadata used by dispatch.
 - Access markers make filesystem behavior visible: `r` is read-only, `w`
   writes, and `r/w` writes only when a declared flag such as `--output` is used.
+- Global runtime flags can be placed before any command: `--quiet`/`-q`
+  suppresses successful write chatter, while `--verbose`/`-v` reports write
+  details on stderr. Fatal errors still print under quiet mode.
 
 ## Categories
 
@@ -94,6 +97,20 @@ content between matching Loom markers:
 
 The command refuses to write if the marker pair is missing, duplicated, or out
 of order. `--replace-region` cannot be combined with `--output`.
+
+`--init-region` is an explicit self-healing mode for first-time generated host
+files:
+
+```sh
+loom generate:xaml ContentView.swift \
+  --replace-region Generated/Shell.xaml \
+  --region-id shell.main \
+  --init-region
+```
+
+It creates a missing XAML file containing one Loom-owned region. It refuses to
+add markers to an existing unmarked file, because that would require guessing
+where generated ownership should begin.
 
 ## SwiftUI generation command
 

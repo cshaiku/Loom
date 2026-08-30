@@ -31,6 +31,8 @@ incorrect conversion.
    target resources, existing XAML, and deterministic output artifacts.
 10. **Owned output**: generated XAML can be written back only inside explicit
     Loom marker pairs, preserving surrounding handwritten platform code.
+11. **Runtime controls**: command success chatter is controlled globally by
+    `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
 
 ## Command architecture
 
@@ -93,6 +95,8 @@ ported.
 - `generate` writes only when an explicit output path is supplied by the user.
 - `generate:xaml --replace-region` writes only between a single matching
   `LOOM-BEGIN` / `LOOM-END` marker pair and refuses ambiguous marker state.
+- `--init-region` only creates a missing generated host file; existing files
+  still require explicit markers before Loom will write into them.
 
 ## Incremental generation direction
 

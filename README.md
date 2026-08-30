@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.8.0**
+Current version: **0.9.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -38,6 +38,9 @@ The current usable slice includes:
 - SwiftUI scaffold generation from WinUI XAML through the shared layout tree.
 - Safe owned XAML region replacement for generated output inside existing
   handwritten files.
+- Guarded self-healing for missing generated-region host files through explicit
+  `--init-region`.
+- Global `--quiet` and `--verbose` runtime output controls for automation.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -70,6 +73,17 @@ swift run loom list --category inspection
 swift run loom list --json
 swift run loom help project:build
 ```
+
+Global runtime flags can be placed before any command:
+
+```sh
+swift run loom --quiet generate:xaml MyView.swift --output Generated/View.xaml
+swift run loom --verbose generate:xaml MyView.swift --output Generated/View.xaml
+```
+
+`--quiet` suppresses successful write chatter. Fatal errors and hints still go
+to stderr. `--verbose` adds write details on stderr; `--quiet` wins if both are
+provided.
 
 Inspect and validate semantic patterns:
 
@@ -159,6 +173,19 @@ swift run loom generate:xaml MyView.swift \
 
 Loom refuses to write unless exactly one matching begin/end marker pair exists.
 Handwritten XAML outside the marked region is left untouched.
+
+For first-time generated host files only, opt into guarded initialization:
+
+```sh
+swift run loom generate:xaml MyView.swift \
+  --root-view ContentView \
+  --replace-region Generated/Shell.xaml \
+  --region-id shell.main \
+  --init-region
+```
+
+`--init-region` creates a missing XAML file with one Loom-owned region. It does
+not add markers to an existing unmarked file.
 
 Trace which OS-agnostic patterns drove emitted XAML nodes:
 

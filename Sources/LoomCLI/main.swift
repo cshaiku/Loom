@@ -22,6 +22,7 @@ private struct SourceOptions {
   var includePatternComments = false
   var replaceRegionPath: String?
   var regionID: String?
+  var initRegion = false
 }
 
 private struct GraphOptions {
@@ -52,11 +53,19 @@ private struct ValidationOptions {
   var format = "text"
 }
 
+private struct RuntimeOptions {
+  var quiet = false
+  var verbose = false
+}
+
 @main
 private enum LoomCommand {
   static func main() {
+    var runtime = RuntimeOptions()
     do {
-      try dispatch(Array(CommandLine.arguments.dropFirst()))
+      var arguments = Array(CommandLine.arguments.dropFirst())
+      runtime = parseRuntimeOptions(&arguments)
+      try dispatch(arguments, runtime: runtime)
     } catch {
       fputs("[fatal] \(error)\n", stderr)
       fputs("[hint] Run `loom help` or `loom list`.\n", stderr)
@@ -64,9 +73,27 @@ private enum LoomCommand {
     }
   }
 
-  private static func dispatch(_ arguments: [String]) throws {
+  private static func parseRuntimeOptions(_ arguments: inout [String]) -> RuntimeOptions {
+    var options = RuntimeOptions()
+    arguments.removeAll { argument in
+      switch argument {
+      case "--quiet", "-q":
+        options.quiet = true
+        return true
+      case "--verbose", "-v":
+        options.verbose = true
+        return true
+      default:
+        return false
+      }
+    }
+    if options.quiet { options.verbose = false }
+    return options
+  }
+
+  private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.8.0")
+      print("loom 0.9.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -109,13 +136,13 @@ private enum LoomCommand {
 
     switch command.command {
     case "inspect:source", "inspect:parity", "generate:xaml":
-      try runSourceCommand(command.command, arguments: arguments)
+      try runSourceCommand(command.command, arguments: arguments, runtime: runtime)
     case "inspect:xaml":
-      try runXAMLCommand(arguments)
+      try runXAMLCommand(arguments, runtime: runtime)
     case "generate:swiftui":
-      try runSwiftUICommand(arguments)
+      try runSwiftUICommand(arguments, runtime: runtime)
     case "graph:components":
-      try runGraphCommand(arguments)
+      try runGraphCommand(arguments, runtime: runtime)
     case "project:build":
       let options = try parseProjectOptions(arguments)
       let run = try LoomProjectRunner().run(
@@ -140,7 +167,11 @@ private enum LoomCommand {
     }
   }
 
-  private static func runSourceCommand(_ command: String, arguments: [String]) throws {
+  private static func runSourceCommand(
+    _ command: String,
+    arguments: [String],
+    runtime: RuntimeOptions
+  ) throws {
     let options = try parseSourceOptions(command, arguments: arguments)
     let analysis = try SwiftUIFrontend().analyze(
       sourcePath: options.sourcePath,
@@ -192,32 +223,41 @@ private enum LoomCommand {
       let update = try LoomOwnedRegionUpdater().replaceXAMLRegion(
         path: replaceRegionPath,
         regionID: regionID,
-        content: output
+        content: output,
+        createIfMissing: options.initRegion
       )
-      print(update.changed ? "Updated \(update.path)" : "No changes for \(update.path)")
+      if runtime.verbose {
+        fputs(
+          "[info] region \(update.regionID) in \(update.path): \(update.changed ? "updated" : "unchanged")\n",
+          stderr
+        )
+      }
+      if !runtime.quiet {
+        print(update.changed ? "Updated \(update.path)" : "No changes for \(update.path)")
+      }
     } else {
-      try writeOrPrint(output, path: options.outputPath)
+      try writeOrPrint(output, path: options.outputPath, runtime: runtime)
     }
   }
 
-  private static func runXAMLCommand(_ arguments: [String]) throws {
+  private static func runXAMLCommand(_ arguments: [String], runtime: RuntimeOptions) throws {
     let options = try parseXAMLOptions(arguments)
     let analysis = try XAMLFrontend().analyze(sourcePath: options.sourcePath)
     let output =
       options.format == "json"
       ? try AnalysisReporter().json(analysis)
       : AnalysisReporter().text(analysis)
-    try writeOrPrint(output, path: options.outputPath)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
   }
 
-  private static func runSwiftUICommand(_ arguments: [String]) throws {
+  private static func runSwiftUICommand(_ arguments: [String], runtime: RuntimeOptions) throws {
     let options = try parseSwiftUIOptions(arguments)
     let analysis = try XAMLFrontend().analyze(sourcePath: options.xamlPath)
     let output = SwiftUIEmitter(options: .init(viewName: options.viewName)).emit(analysis)
-    try writeOrPrint(output, path: options.outputPath)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
   }
 
-  private static func runGraphCommand(_ arguments: [String]) throws {
+  private static func runGraphCommand(_ arguments: [String], runtime: RuntimeOptions) throws {
     let options = try parseGraphOptions(arguments)
     let graph = try LoomComponentGraphBuilder().build(
       sourceRoot: options.sourceRoot,
@@ -235,7 +275,7 @@ private enum LoomCommand {
     case "dot": output = LoomComponentGraphBuilder().dot(graph)
     default: throw LoomError.invalidArguments("--format must be text, json, or dot.")
     }
-    try writeOrPrint(output, path: options.outputPath)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
     if graph.status != "ok" { exit(1) }
   }
 
@@ -360,6 +400,11 @@ private enum LoomCommand {
         index += 1
         continue
       }
+      if flag == "--init-region" {
+        options.initRegion = true
+        index += 1
+        continue
+      }
       guard index + 1 < arguments.count else {
         throw LoomError.invalidArguments("Missing value for \(flag).")
       }
@@ -387,6 +432,9 @@ private enum LoomCommand {
     }
     if options.regionID != nil && options.replaceRegionPath == nil {
       throw LoomError.invalidArguments("--region-id requires --replace-region <path>.")
+    }
+    if options.initRegion && options.replaceRegionPath == nil {
+      throw LoomError.invalidArguments("--init-region requires --replace-region <path>.")
     }
     return options
   }
@@ -525,7 +573,7 @@ private enum LoomCommand {
     return options
   }
 
-  private static func writeOrPrint(_ output: String, path: String?) throws {
+  private static func writeOrPrint(_ output: String, path: String?, runtime: RuntimeOptions) throws {
     guard let path else {
       print(output, terminator: "")
       return
@@ -536,6 +584,11 @@ private enum LoomCommand {
       withIntermediateDirectories: true
     )
     try output.write(to: url, atomically: true, encoding: .utf8)
-    print("Wrote \(path)")
+    if runtime.verbose {
+      fputs("[info] wrote \(path) (\(output.utf8.count) bytes)\n", stderr)
+    }
+    if !runtime.quiet {
+      print("Wrote \(path)")
+    }
   }
 }

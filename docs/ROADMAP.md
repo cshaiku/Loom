@@ -18,6 +18,8 @@
 - SwiftUI scaffold generation from XAML-normalized IR.
 - Safe Loom-owned XAML region replacement that refuses to alter handwritten
   content outside explicit markers.
+- Reliability guards for malformed XAML, graph cycles, unsafe owned-region ids,
+  explicit generated-region initialization, and automation-friendly CLI output.
 
 ## 0.4 — Recursive component graph
 
@@ -67,7 +69,17 @@ Status: owned-region replacement shipped in 0.8.0.
 - Missing, duplicated, malformed, or out-of-order markers fail before writing.
 - Existing handwritten XAML outside the region remains byte-preserved.
 
-## 0.9 — Target contracts
+## 0.9 — Reliability guards
+
+Status: shipped in 0.9.0.
+
+- Added global `--quiet` and `--verbose` output controls.
+- Added explicit `--init-region` creation for missing generated XAML host files.
+- Preserved strict refusal for existing files without ownership markers.
+- Added tests for malformed XAML, graph cycles, unsafe region ids, no-op region
+  updates, path-level region initialization, and operational pattern lint gaps.
+
+## 1.0 — Target contracts
 
 - Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.
@@ -75,7 +87,7 @@ Status: owned-region replacement shipped in 0.8.0.
 Acceptance: rerunning Loom updates a generated Voci region idempotently while
 leaving native Windows behavior and unrelated XAML byte-for-byte unchanged.
 
-## 1.0 — Windows proof adapter
+## 1.1 — Windows proof adapter
 
 - Compile generated fragments on a Windows App SDK host.
 - Capture deterministic reference-size renders and accessibility trees.

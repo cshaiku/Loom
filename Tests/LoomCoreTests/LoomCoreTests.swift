@@ -236,6 +236,108 @@ private let sample = """
   }
 }
 
+@Test func ownedRegionUpdaterRejectsMalformedOrderAndUnsafeIDs() throws {
+  #expect(throws: LoomError.self) {
+    _ = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+      in: """
+      <!-- LOOM-END shell.main -->
+      <!-- LOOM-BEGIN shell.main -->
+      """,
+      regionID: "shell.main",
+      content: "<TextBlock />"
+    )
+  }
+  #expect(throws: LoomError.self) {
+    _ = try LoomOwnedRegionUpdater().replaceXAMLRegion(
+      in: "<Grid />",
+      regionID: "../shell",
+      content: "<TextBlock />"
+    )
+  }
+}
+
+@Test func ownedRegionUpdaterReportsUnchangedAndCanInitializeMissingFile() throws {
+  let updater = LoomOwnedRegionUpdater()
+  let existing = """
+  <Grid>
+    <!-- LOOM-BEGIN shell.main -->
+  <TextBlock Text="Same" />
+  <!-- LOOM-END shell.main -->
+  </Grid>
+  """
+  let unchanged = try updater.replaceXAMLRegion(
+    in: existing,
+    regionID: "shell.main",
+    content: "<TextBlock Text=\"Same\" />"
+  )
+  #expect(unchanged == existing)
+
+  let initialized = updater.initializedXAMLRegion(
+    regionID: "shell.main",
+    content: "<TextBlock Text=\"Generated\" />"
+  )
+  #expect(initialized.contains("<!-- LOOM-BEGIN shell.main -->"))
+  #expect(initialized.contains("<TextBlock Text=\"Generated\" />"))
+  #expect(initialized.contains("<!-- LOOM-END shell.main -->"))
+
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  let missingPath = directory.appendingPathComponent("Generated/Shell.xaml").path
+  let update = try updater.replaceXAMLRegion(
+    path: missingPath,
+    regionID: "shell.main",
+    content: "<TextBlock Text=\"Generated\" />",
+    createIfMissing: true
+  )
+  #expect(update.changed)
+  #expect(FileManager.default.fileExists(atPath: missingPath))
+
+  let unmarkedPath = directory.appendingPathComponent("Unmarked.xaml")
+  try "<Grid />".write(to: unmarkedPath, atomically: true, encoding: .utf8)
+  #expect(throws: LoomError.self) {
+    _ = try updater.replaceXAMLRegion(
+      path: unmarkedPath.path,
+      regionID: "shell.main",
+      content: "<TextBlock />",
+      createIfMissing: true
+    )
+  }
+}
+
+@Test func xamlFrontendRejectsMalformedXML() throws {
+  #expect(throws: LoomError.self) {
+    _ = try XAMLFrontend().analyze(
+      source: "<Grid><TextBlock Text=\"Broken\"></Grid>",
+      sourcePath: "Broken.xaml"
+    )
+  }
+}
+
+@Test func componentGraphReportsCyclesWithoutRecursingForever() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  try """
+  import SwiftUI
+
+  struct ContentView: View {
+    var body: some View { first }
+    var first: some View { second }
+    var second: some View { first }
+  }
+  """.write(
+    to: directory.appendingPathComponent("ContentView.swift"), atomically: true, encoding: .utf8)
+
+  let graph = try LoomComponentGraphBuilder().build(
+    sourceRoot: directory.path,
+    rootView: "ContentView"
+  )
+  #expect(graph.status == "error")
+  #expect(graph.diagnostics.contains { $0.code == "GRAPH003" })
+}
+
 @Test func xamlFrontendNormalizesWinUIControlsIntoLoomIR() throws {
   let xaml = """
   <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
@@ -411,6 +513,71 @@ private let sample = """
   #expect(report.status == "error")
   #expect(report.issues.contains { $0.code == "PATTERN008" })
   #expect(report.issues.contains { $0.code == "PATTERN012" })
+}
+
+@Test func patternLintRejectsOperationalMappingGaps() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+
+  let text = """
+  {
+    "schema_version": "1",
+    "id": "text",
+    "version": "1.0.0",
+    "name": "Text",
+    "kind": "text",
+    "status": "stable",
+    "category": "content",
+    "intent": {
+      "summary": "Render read-only text content.",
+      "useWhen": ["Static or bound text is needed."],
+      "avoidWhen": []
+    },
+    "semantics": {
+      "role": "text",
+      "childPolicy": "none",
+      "sizing": "intrinsic",
+      "ordering": "document"
+    },
+    "attributes": [
+      {
+        "name": "content",
+        "valueType": "binding",
+        "required": true,
+        "description": "Text content or binding expression.",
+        "defaultValue": "bad"
+      }
+    ],
+    "constraints": [],
+    "accessibility": {
+      "role": "text",
+      "nameSource": "content",
+      "focusBehavior": "not focusable",
+      "notes": []
+    },
+    "mappings": [
+      {
+        "platform": "swiftui",
+        "constructs": ["Text"],
+        "strategy": "Map content into Text.",
+        "caveats": []
+      }
+    ],
+    "tags": ["content"]
+  }
+  """
+  try text.write(
+    to: directory.appendingPathComponent("text.pattern.json"),
+    atomically: true,
+    encoding: .utf8
+  )
+
+  let report = LoomPatternCatalog().lint(directory: directory.path)
+  #expect(report.status == "error")
+  #expect(report.issues.contains { $0.code == "PATTERN103" })
+  #expect(report.issues.contains { $0.code == "PATTERN106" })
 }
 
 @Test func projectWorkflowValidatesAndBuildsAllComponents() throws {
