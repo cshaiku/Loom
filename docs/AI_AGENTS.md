@@ -21,6 +21,7 @@ Then inspect the specific source surface before generating:
 ```sh
 loom inspect:errors ContentView.swift --root-view ContentView --json
 loom accessibility:audit ContentView.swift --root-view ContentView --json
+loom suggestions:os-errors --platform winui3 --format json
 loom inspect:source ContentView.swift --root-view ContentView --json
 loom patterns:transfer ContentView.swift --from swiftui --to winui3 --format json
 loom inspect:ascii ContentView.swift --root-view ContentView
@@ -87,6 +88,18 @@ loom inspect:errors ContentView.swift --root-view ContentView --fail-on warning
 Without `--fail-on`, error inspection reports findings but exits successfully.
 This makes it useful in exploratory agent workflows.
 
+`inspect:errors` findings may include `suggested_fixes`. Use those before
+editing. The same catalog is available directly:
+
+```sh
+loom suggestions:os-errors --platform swiftui --format json
+loom suggestions:os-errors --platform winui3 --message StaticResource
+loom suggestions:os-errors --platform xaml --message XamlParseException
+```
+
+The suggestion catalog is curated. If no suggestion matches, use the generic
+fallback and verify against platform documentation before making broad changes.
+
 ## Accessibility and layout audit
 
 Use `accessibility:audit` before generation when reviewing UI quality or
@@ -102,7 +115,13 @@ Treat `error` findings as blockers. Warnings usually mean a Pattern, layout
 policy, or native implementation contract needs an explicit decision. The audit
 covers missing accessible names, unlabeled images and inputs, small targets,
 color-only semantic risks, unsupported/malformed nodes, empty or redundant
-containers, nested scroll regions, and geometry-dependent layouts.
+containers, nested scroll regions, geometry-dependent layouts, and unsupported
+native WinUI component boundaries.
+
+Read `suggested_fixes` in JSON output before editing. `user` fixes identify
+decisions that need human product/design input. `agent` fixes identify safe
+implementation actions or follow-up Loom commands. Do not apply a user-decision
+fix as an agent edit unless the user has already supplied the decision.
 
 ## Output discipline
 

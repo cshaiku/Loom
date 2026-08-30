@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.16.0 — 2026-08-30
+
+- Added explicit `XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warnings for native
+  WinUI controls without Loom semantic mappings.
+- Preserved unsupported native WinUI controls as component nodes with
+  `componentBoundary`, `unsupportedXamlElement`, and
+  `requiresNativeImplementation` metadata.
+- Surfaced native WinUI component boundaries in accessibility audit and Pattern
+  transfer reports.
+- Added structured `suggested_fixes` to accessibility audit findings for user
+  decisions and AI-agent implementation actions.
+- Added a curated OS/framework error suggestion catalog for SwiftUI, WinUI,
+  XAML, macOS, and Windows issues.
+- Added `suggestions:os-errors` and automatic `suggested_fixes` enrichment for
+  `inspect:errors` findings.
+- Added `docs/OS_ERROR_SUGGESTIONS.md`.
+- Added tests for native WinUI component-boundary diagnostics, audit/transfer
+  surfacing, OS error suggestions, and enriched error inspection findings.
+
 ## 0.15.0 — 2026-08-30
 
 - Added `accessibility:audit` for SwiftUI and WinUI XAML sources.

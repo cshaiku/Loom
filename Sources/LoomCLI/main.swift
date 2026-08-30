@@ -96,6 +96,13 @@ private struct AccessibilityAuditOptions {
   var outputPath: String?
 }
 
+private struct OSErrorSuggestionOptions {
+  var platform: LoomOSErrorPlatform?
+  var query: String?
+  var format = "text"
+  var outputPath: String?
+}
+
 @main
 private enum LoomCommand {
   static func main() {
@@ -131,7 +138,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.15.0")
+      print("loom 0.16.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -175,6 +182,8 @@ private enum LoomCommand {
     switch command.command {
     case "accessibility:audit":
       try runAccessibilityAuditCommand(arguments, runtime: runtime)
+    case "suggestions:os-errors":
+      try runOSErrorSuggestionsCommand(arguments, runtime: runtime)
     case "inspect:ascii":
       try runASCIICommand(arguments, runtime: runtime)
     case "inspect:errors":
@@ -340,6 +349,16 @@ private enum LoomCommand {
     let output = options.format == "json" ? try auditor.json(report) : auditor.text(report)
     try writeOrPrint(output, path: options.outputPath, runtime: runtime)
     if auditor.shouldFail(report, mode: options.failOn) { exit(1) }
+  }
+
+  private static func runOSErrorSuggestionsCommand(_ arguments: [String], runtime: RuntimeOptions)
+    throws
+  {
+    let options = try parseOSErrorSuggestionOptions(arguments)
+    let suggester = LoomOSErrorSuggester()
+    let report = suggester.report(platform: options.platform, query: options.query)
+    let output = options.format == "json" ? try suggester.json(report) : suggester.text(report)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
   }
 
   private static func runSwiftUICommand(_ arguments: [String], runtime: RuntimeOptions) throws {
@@ -874,6 +893,46 @@ private enum LoomCommand {
       case "--output": options.outputPath = value
       default:
         throw LoomError.invalidArguments("Unknown accessibility audit option \(flag).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseOSErrorSuggestionOptions(_ arguments: [String]) throws
+    -> OSErrorSuggestionOptions
+  {
+    var options = OSErrorSuggestionOptions()
+    var index = 1
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--platform":
+        guard let platform = LoomOSErrorPlatform(rawValue: value.lowercased()) else {
+          throw LoomError.invalidArguments(
+            "--platform must be swiftui, winui3, macos, windows, or xaml.")
+        }
+        options.platform = platform
+      case "--message", "--query":
+        options.query = value
+      case "--format":
+        guard value == "text" || value == "json" else {
+          throw LoomError.invalidArguments("--format must be text or json.")
+        }
+        options.format = value
+      case "--output":
+        options.outputPath = value
+      default:
+        throw LoomError.invalidArguments("Unknown OS error suggestion option \(flag).")
       }
       index += 2
     }

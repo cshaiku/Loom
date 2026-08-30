@@ -243,7 +243,10 @@ public struct LoomPatternTransferAnalyzer: Sendable {
     let disposition: LoomTransferDisposition
     let reason: String
 
-    if node.kind == .unsupported || targetMapping == nil {
+    if node.properties["componentBoundary"] == "native-winui-control" {
+      disposition = .unsupported
+      reason = "Native WinUI control was preserved as an unsupported component boundary and needs an explicit target mapping or handwritten implementation."
+    } else if node.kind == .unsupported || targetMapping == nil {
       disposition = .unsupported
       reason = "No target Pattern mapping exists for \(options.to.rawValue), or the node is explicitly unsupported."
     } else if isLossy(node) {
@@ -304,7 +307,11 @@ public struct LoomPatternTransferAnalyzer: Sendable {
     case .loop, .list:
       contracts.append("collection source/template")
     case .component:
-      contracts.append("component boundary")
+      if node.properties["componentBoundary"] == "native-winui-control" {
+        contracts.append("unsupported native WinUI component boundary")
+      } else {
+        contracts.append("component boundary")
+      }
     case .text:
       if bindingExpression(from: node.arguments) != nil {
         contracts.append("text binding")

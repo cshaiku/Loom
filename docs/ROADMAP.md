@@ -41,6 +41,10 @@
   regions, and weak layout-transfer design.
 - Optional richer Pattern accessibility metadata for keyboard behavior, states,
   required properties, and minimum target size.
+- Unsupported native WinUI controls are preserved as explicit component
+  boundaries and surfaced in audit/transfer reports.
+- Audit findings include structured suggested fixes for user decisions and AI
+  agent implementation actions.
 
 ## 0.4 — Recursive component graph
 
@@ -172,6 +176,18 @@ Status: shipped in 0.15.0.
 - Supports text/JSON output, `--output`, and `--fail-on none|error|warning`.
 - Extended optional Pattern accessibility metadata for keyboard behavior,
   states, required properties, and minimum target size.
+
+## 0.16 — Native boundary warnings and suggested fixes
+
+Status: shipped in 0.16.0.
+
+- Added explicit `XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warnings for native
+  WinUI controls without Loom semantic mappings.
+- Preserved those controls as component nodes with native-boundary metadata.
+- Surfaced native WinUI component boundaries in accessibility audit and Pattern
+  transfer reports.
+- Added structured `suggested_fixes` to accessibility audit findings for user
+  decisions and AI agent implementation actions.
 
 ## 1.0 — Pattern-driven emitters
 

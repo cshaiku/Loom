@@ -32,15 +32,19 @@ incorrect conversion.
     plaintext structural sketch for reviews, logs, and diffs.
 11. **Accessibility/layout audit**: normalized layout is checked for missing
     names, weak semantics, undersized targets, redundant wrappers, malformed
-    nodes, and transfer-hostile structure.
-12. **Parity checking**: source-derived constraints and component references are
+    nodes, unsupported native component boundaries, and transfer-hostile
+    structure. Findings include structured suggested fixes for both users and
+    AI agents.
+12. **OS error suggestions**: inspected SwiftUI, WinUI, XAML, macOS, and
+    Windows error patterns are mapped to user decisions and AI-agent actions.
+13. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-13. **Project workflow**: a validated `loom.json` manifest selects components,
+14. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
-14. **Owned output**: generated XAML can be written back only inside explicit
+15. **Owned output**: generated XAML can be written back only inside explicit
     Loom marker pairs, preserving surrounding handwritten platform code.
-15. **Runtime controls**: command success chatter is controlled globally by
+16. **Runtime controls**: command success chatter is controlled globally by
     `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
 
 ## Command architecture
@@ -94,11 +98,31 @@ focuses on issues that directly affect interface transfer:
 - interactive controls below a 44-by-44 target-size heuristic;
 - color surfaces that may be carrying meaning without text/state backup;
 - empty, malformed, unsupported, redundant, or repeatedly nested layout nodes;
+- native WinUI controls preserved as unsupported component boundaries;
 - nested scroll regions and geometry-dependent layout.
 
 The audit is intentionally conservative. It reports risks and required review
 work; it does not claim to prove accessibility compliance without platform
-runtime inspection.
+runtime inspection. Each finding includes a human recommendation and
+machine-readable `suggested_fixes` entries split between user decisions and
+agent implementation actions.
+
+## OS error suggestions
+
+`suggestions:os-errors` exposes a curated platform error catalog for SwiftUI,
+WinUI, XAML, macOS, and Windows. `inspect:errors` uses the same catalog to
+attach `suggested_fixes` directly to findings.
+
+The catalog focuses on failure modes that matter for layout/interface transfer:
+Swift parser and result-builder failures, large SwiftUI type-checking failures,
+SwiftUI accessibility labels/hidden decoration, XAML parse and resource lookup
+failures, WinUI AutomationProperties naming, AccessibilityView tree exposure,
+custom automation peers, native component boundaries, and binding/data-context
+gaps.
+
+This layer is intentionally curated. It should prefer official platform
+documentation and concrete next actions over trying to enumerate every possible
+compiler/runtime diagnostic.
 
 ## Pattern Transfer
 
@@ -153,6 +177,12 @@ by `inspect:source`. The first supported set covers `Grid`, `StackPanel`,
 toggles, dividers, and background borders. Original attributes are retained
 under `xaml.*` properties so later emitters can preserve platform detail when
 generating SwiftUI scaffolds.
+
+Native WinUI controls without a Loom semantic mapping are preserved as
+component boundaries with `componentBoundary = native-winui-control` and a
+`XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warning. This keeps native controls
+visible to transfer planning and accessibility audit instead of silently
+pretending they are portable layout.
 
 ## SwiftUI Scaffolds
 

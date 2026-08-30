@@ -60,4 +60,9 @@ swift run loom accessibility:audit ContentView.swift --root-view ContentView
 swift run loom accessibility:audit MainWindow.xaml --format json
 ```
 
+Audit JSON includes `suggested_fixes` entries for user decisions and agent
+implementation actions. Native WinUI controls that lack Loom Pattern mappings
+are preserved as unsupported component boundaries so they can be reviewed
+instead of silently flattened.
+
 The normative metadata contract is `pattern.schema.json`.

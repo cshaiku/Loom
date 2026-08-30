@@ -9,6 +9,18 @@ public enum LoomAuditCategory: String, Codable, Sendable {
   case missing
 }
 
+public enum LoomAuditFixAudience: String, Codable, Sendable {
+  case user
+  case agent
+}
+
+public struct LoomAuditSuggestedFix: Codable, Equatable, Sendable {
+  public var audience: LoomAuditFixAudience
+  public var action: String
+  public var detail: String
+  public var command: String?
+}
+
 public struct LoomAccessibilityAuditFinding: Codable, Equatable, Sendable {
   public var severity: LoomDiagnosticSeverity
   public var category: LoomAuditCategory
@@ -17,6 +29,12 @@ public struct LoomAccessibilityAuditFinding: Codable, Equatable, Sendable {
   public var kind: LoomNodeKind
   public var message: String
   public var recommendation: String
+  public var suggestedFixes: [LoomAuditSuggestedFix]
+
+  enum CodingKeys: String, CodingKey {
+    case severity, category, code, path, kind, message, recommendation
+    case suggestedFixes = "suggested_fixes"
+  }
 }
 
 public struct LoomAccessibilityAuditSummary: Codable, Equatable, Sendable {
@@ -137,6 +155,15 @@ public struct LoomAccessibilityAuditor: Sendable {
         lines.append("[\(finding.severity.rawValue)] \(finding.code) \(finding.path) \(finding.category.rawValue)")
         lines.append("  issue: \(finding.message)")
         lines.append("  fix: \(finding.recommendation)")
+        if !finding.suggestedFixes.isEmpty {
+          lines.append("  suggested fixes:")
+          for fix in finding.suggestedFixes {
+            lines.append("    - \(fix.audience.rawValue): \(fix.action) — \(fix.detail)")
+            if let command = fix.command {
+              lines.append("      command: \(command)")
+            }
+          }
+        }
       }
     }
     return lines.joined(separator: "\n") + "\n"
@@ -232,6 +259,19 @@ public struct LoomAccessibilityAuditor: Sendable {
           kind: node.kind,
           message: "Unsupported source expression appears in the layout tree.",
           recommendation: "Add a Pattern/emitter mapping or replace the expression with supported layout syntax."
+        ))
+    }
+    if node.properties["componentBoundary"] == "native-winui-control" {
+      findings.append(
+        finding(
+          severity: .warning,
+          category: .design,
+          code: "AUDIT070",
+          path: path,
+          kind: node.kind,
+          message: "Native WinUI control is preserved as an unsupported component boundary.",
+          recommendation:
+            "Keep it as handwritten native UI, add a project-specific Pattern mapping, or declare its transfer contract explicitly."
         ))
     }
 
@@ -516,7 +556,139 @@ public struct LoomAccessibilityAuditor: Sendable {
       path: path,
       kind: kind,
       message: message,
-      recommendation: recommendation
+      recommendation: recommendation,
+      suggestedFixes: suggestedFixes(
+        code: code,
+        path: path,
+        kind: kind,
+        recommendation: recommendation
+      )
+    )
+  }
+
+  private func suggestedFixes(
+    code: String,
+    path: String,
+    kind: LoomNodeKind,
+    recommendation: String
+  ) -> [LoomAuditSuggestedFix] {
+    let inspectCommand = "loom inspect:ascii <source> --root-view <RootView>"
+    switch code {
+    case "AUDIT020":
+      return [
+        fix(.user, "Name the button", recommendation),
+        fix(
+          .agent,
+          "Add accessible-name metadata",
+          "Prefer visible label text. If the control is icon-only, add SwiftUI .accessibilityLabel or WinUI AutomationProperties.Name."
+        ),
+      ]
+    case "AUDIT021":
+      return [
+        fix(.user, "Confirm icon-button intent", "Decide the action name users should hear."),
+        fix(.agent, "Add explicit icon-button label", recommendation),
+      ]
+    case "AUDIT030":
+      return [
+        fix(.user, "Decide image meaning", "Classify the image as meaningful or decorative."),
+        fix(
+          .agent,
+          "Label or hide the image",
+          "For SwiftUI, add .accessibilityLabel or .accessibilityHidden(true). For WinUI, add AutomationProperties.Name or remove it from the accessibility tree."
+        ),
+      ]
+    case "AUDIT031", "AUDIT032":
+      return [
+        fix(.user, "Provide a persistent field label", recommendation),
+        fix(
+          .agent,
+          "Add input label metadata",
+          "Prefer a visible label tied to the field. If unavailable, add SwiftUI .accessibilityLabel or WinUI AutomationProperties.Name."
+        ),
+      ]
+    case "AUDIT033":
+      return [
+        fix(.user, "Name the controlled value", recommendation),
+        fix(.agent, "Add stateful-control label", "Add a visible label or explicit accessibility name before transfer.")
+      ]
+    case "AUDIT040":
+      return [
+        fix(.user, "Confirm color is not the only signal", recommendation),
+        fix(.agent, "Add non-color semantics", "Add text, icon label, or state metadata wherever color communicates meaning.")
+      ]
+    case "AUDIT050":
+      return [
+        fix(.user, "Define sizing policy", "Choose explicit breakpoints or size classes for the design."),
+        fix(.agent, "Replace geometry-dependent layout", recommendation)
+      ]
+    case "AUDIT051":
+      return [
+        fix(.user, "Review overlay order", "Confirm visual order, hit testing, and reading order."),
+        fix(.agent, "Add overlay transfer policy", recommendation)
+      ]
+    case "AUDIT052":
+      return [
+        fix(.user, "Choose scroll ownership", "Decide which region owns wheel/touch/keyboard scrolling."),
+        fix(.agent, "Remove or constrain nested scroll", recommendation)
+      ]
+    case "AUDIT053":
+      return [
+        fix(.user, "Define list content", "Provide item template, empty state, or collection contract."),
+        fix(.agent, "Add list template/contract", recommendation)
+      ]
+    case "AUDIT060", "AUDIT061":
+      return [
+        fix(.user, "Approve larger hit target", "Confirm the interactive target can be at least 44 by 44 units."),
+        fix(.agent, "Increase effective control target", recommendation)
+      ]
+    case "AUDIT070":
+      return [
+        fix(
+          .user,
+          "Choose native-boundary strategy",
+          "Keep this WinUI control native, map it to a Loom Pattern, or replace it with transferable layout."
+        ),
+        fix(
+          .agent,
+          "Declare native component boundary",
+          "Preserve the control as handwritten target UI and document the expected source/target contract.",
+          command: inspectCommand
+        ),
+        fix(
+          .agent,
+          "Add a Pattern mapping if transfer is required",
+          "Create or extend a Pattern with a winui3 construct for \(kind.rawValue) at \(path)."
+        ),
+      ]
+    case "AUDIT010", "AUDIT012", "AUDIT013":
+      return [
+        fix(.user, "Review layout simplification", recommendation),
+        fix(.agent, "Simplify redundant structure", "Use the ASCII Pattern to confirm the tree remains equivalent after removing wrappers.", command: inspectCommand)
+      ]
+    case "AUDIT014":
+      return [
+        fix(.user, "Decide unsupported layout intent", recommendation),
+        fix(.agent, "Replace or map unsupported expression", "Add a Pattern/emitter mapping or rewrite to supported Loom syntax.")
+      ]
+    default:
+      return [
+        fix(.user, "Review finding", recommendation),
+        fix(.agent, "Apply recommendation", recommendation)
+      ]
+    }
+  }
+
+  private func fix(
+    _ audience: LoomAuditFixAudience,
+    _ action: String,
+    _ detail: String,
+    command: String? = nil
+  ) -> LoomAuditSuggestedFix {
+    LoomAuditSuggestedFix(
+      audience: audience,
+      action: action,
+      detail: detail,
+      command: command
     )
   }
 

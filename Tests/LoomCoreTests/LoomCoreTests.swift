@@ -145,6 +145,8 @@ private let sample = """
   #expect(catalog.contains("guards:summary"))
   #expect(catalog.contains("self-heal:plan"))
   #expect(catalog.contains("verify"))
+  #expect(catalog.contains("suggestions\n"))
+  #expect(catalog.contains("suggestions:os-errors"))
   #expect(catalog.contains("graph:components"))
   #expect(catalog.contains("inspect:ascii"))
   #expect(catalog.contains("inspect:errors"))
@@ -327,6 +329,12 @@ private let sample = """
   #expect(report.findings.contains { $0.code == "AUDIT060" })
   #expect(report.findings.contains { $0.code == "AUDIT061" })
   #expect(report.findings.contains { $0.category == .redundant })
+  #expect(
+    report.findings.contains {
+      $0.code == "AUDIT020"
+        && $0.suggestedFixes.contains { $0.audience == .user && $0.action == "Name the button" }
+        && $0.suggestedFixes.contains { $0.audience == .agent }
+    })
   #expect(auditor.shouldFail(report, mode: .error))
   #expect(auditor.shouldFail(report, mode: .warning))
   #expect(!auditor.shouldFail(report, mode: .none))
@@ -334,6 +342,7 @@ private let sample = """
   let text = auditor.text(report)
   #expect(text.contains("Loom accessibility audit"))
   #expect(text.contains("AUDIT020"))
+  #expect(text.contains("suggested fixes:"))
 
   let json = try auditor.json(report)
   let decoded = try JSONDecoder().decode(LoomAccessibilityAuditReport.self, from: Data(json.utf8))
@@ -367,9 +376,40 @@ private let sample = """
   #expect(report.status == "error")
   #expect(report.inspectedKind == .swift)
   #expect(report.findings.contains { $0.code.hasPrefix("SWIFT.") && $0.severity == .error })
+  #expect(report.findings.contains { !$0.suggestedFixes.isEmpty })
   #expect(diagnostics.shouldFail(report, mode: .error))
   #expect(diagnostics.shouldFail(report, mode: .warning))
   #expect(!diagnostics.shouldFail(report, mode: .none))
+}
+
+@Test func osErrorSuggestionsCanBeQueriedAndAttachToInspectionFindings() throws {
+  let suggester = LoomOSErrorSuggester()
+  let winui = suggester.report(platform: .winui3, query: "StaticResource")
+  #expect(winui.status == "ok")
+  #expect(winui.suggestions.contains { $0.category == "resources" })
+  #expect(winui.suggestions.flatMap(\.suggestedFixes).contains { $0.audience == .agent })
+
+  let nativeBoundaryFinding = LoomErrorInspectionFinding(
+    severity: .warning,
+    code: "XAML.UNSUPPORTED_COMPONENT_BOUNDARY",
+    source: "MainWindow.xaml",
+    message: "Unsupported native WinUI control preserved as a component boundary: NavigationView.",
+    offset: nil,
+    line: nil,
+    column: nil,
+    suggestedFixes: []
+  )
+  let fixes = suggester.suggestions(for: nativeBoundaryFinding, inspectedKind: .xaml)
+  #expect(fixes.contains { $0.action == "Choose native-boundary strategy" })
+  #expect(fixes.contains { $0.command?.contains("patterns:transfer") == true })
+
+  let text = suggester.text(winui)
+  #expect(text.contains("Loom OS error suggestions"))
+  #expect(text.contains("StaticResource"))
+
+  let json = try suggester.json(winui)
+  let decoded = try JSONDecoder().decode(LoomOSErrorSuggestionReport.self, from: Data(json.utf8))
+  #expect(decoded.suggestions.count == winui.suggestions.count)
 }
 
 @Test func errorInspectionReportsXAMLAndPatternErrors() throws {
@@ -659,6 +699,61 @@ private let sample = """
 
   let text = AnalysisReporter().text(analysis)
   #expect(text.contains("Source nodes:"))
+}
+
+@Test func xamlFrontendMarksUnsupportedNativeControlsAsComponentBoundaries() throws {
+  let analysis = try XAMLFrontend().analyze(
+    source: """
+    <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+      <NavigationView PaneDisplayMode="Left">
+        <TextBlock Text="Inside native shell" />
+      </NavigationView>
+    </Grid>
+    """,
+    sourcePath: "NativeShell.xaml"
+  )
+
+  #expect(
+    analysis.diagnostics.contains {
+      $0.code == "XAML.UNSUPPORTED_COMPONENT_BOUNDARY"
+        && $0.message.contains("NavigationView")
+    })
+
+  let boundary = analysis.layout.children.first?.children.first
+  #expect(boundary?.kind == .component)
+  #expect(boundary?.expression == "NavigationView")
+  #expect(boundary?.properties["componentBoundary"] == "native-winui-control")
+  #expect(boundary?.properties["unsupportedXamlElement"] == "NavigationView")
+  #expect(boundary?.properties["requiresNativeImplementation"] == "true")
+  #expect(boundary?.children.first?.kind == .text)
+
+  let audit = LoomAccessibilityAuditor().audit(analysis)
+  #expect(
+    audit.findings.contains {
+      $0.code == "AUDIT070"
+        && $0.suggestedFixes.contains {
+          $0.audience == .agent && $0.action == "Declare native component boundary"
+        }
+    })
+
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let transfer = try LoomPatternTransferAnalyzer().analyze(
+    analysis: analysis,
+    options: .init(
+      from: .winui3,
+      to: .swiftui,
+      patternsDirectory: repository.appendingPathComponent("Patterns").path
+    )
+  )
+  #expect(
+    transfer.items.contains {
+      $0.expression == "NavigationView"
+        && $0.disposition == .unsupported
+        && $0.contracts.contains("unsupported native WinUI component boundary")
+    })
 }
 
 @Test func generatedXAMLCanBeIngestedBackIntoComparableIR() throws {

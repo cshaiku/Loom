@@ -26,6 +26,7 @@ repository-policy domain. The shared conventions are:
 | `projects` | Run manifest-driven multi-component translation workflows. |
 | `diagnostics` | Report local readiness, command metadata, write guards, and self-healing actions. |
 | `patterns` | Inspect and validate OS-agnostic UI semantics. |
+| `suggestions` | Show user/agent fixes for OS and framework errors. |
 | `setup` | Describe and validate Loom project configuration. |
 
 ## Canonical commands and compatibility aliases
@@ -54,6 +55,7 @@ repository-policy domain. The shared conventions are:
 | `patterns:lint` | `r/w` through `--output` | — |
 | `patterns:export` | `r/w` through `--output` | — |
 | `patterns:transfer` | `r/w` through `--output` | `transfer` |
+| `suggestions:os-errors` | `r/w` through `--output` | `os-errors` |
 | `config:validate` | `r` | — |
 | `config:schema` | `r` | — |
 
@@ -95,10 +97,17 @@ loom accessibility:audit ContentView.swift --fail-on warning
 It reports missing button names, unlabeled images, inputs relying only on
 placeholders, undersized interactive targets, color-only semantic risks,
 unsupported or malformed nodes, empty containers, redundant wrappers, repeated
-nested layout wrappers, nested scroll regions, and geometry-dependent layouts.
+nested layout wrappers, nested scroll regions, geometry-dependent layouts, and
+unsupported native WinUI component boundaries.
 
 Use `--fail-on error` or `--fail-on warning` in automation. By default the
 command reports findings but exits successfully.
+
+Each finding includes `recommendation` plus `suggested_fixes`. Suggested fixes
+are split by audience:
+
+- `user`: product/design decision or review action;
+- `agent`: concrete implementation or follow-up command guidance.
 
 ## XAML inspection command
 
@@ -140,6 +149,26 @@ Supported kinds are `swift`, `xaml`, `manifest`, and `patterns`. If `--kind` is
 omitted, Loom infers it from the path. `--fail-on none|error|warning` controls
 automation exit behavior; default inspection does not fail just because it
 found errors.
+
+Findings include `suggested_fixes` when Loom recognizes a relevant OS/framework
+error pattern.
+
+## OS error suggestions command
+
+`suggestions:os-errors` lists curated fix guidance for common SwiftUI, WinUI,
+XAML, macOS, and Windows errors:
+
+```sh
+loom suggestions:os-errors
+loom suggestions:os-errors --platform winui3 --message StaticResource
+loom suggestions:os-errors --platform swiftui --format json
+```
+
+The catalog is intended for user and AI-agent workflows. It is based on common
+platform failure modes such as Swift parser/result-builder errors, XAML parse
+exceptions, unresolved XAML resources, WinUI AutomationProperties naming,
+AccessibilityView tree exposure, custom automation peers, native component
+boundaries, and binding/data-context gaps.
 
 ## Component graph command
 

@@ -245,6 +245,22 @@ public enum LoomCommandCatalog {
       synopsis: ["loom self-heal:plan [--json]"]
     ),
     LoomCommandInfo(
+      command: "suggestions:os-errors",
+      name: "Suggest OS Error Fixes",
+      description: "Show curated user and AI-agent fixes for SwiftUI, WinUI, XAML, macOS, and Windows errors",
+      category: "suggestions",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["os-errors"],
+      synopsis: [
+        "loom suggestions:os-errors [--platform swiftui|winui3|macos|windows|xaml] [--message text] [--format text|json] [--output path]"
+      ],
+      examples: [
+        "loom suggestions:os-errors --platform winui3 --message StaticResource",
+        "loom suggestions:os-errors --platform swiftui --format json",
+      ]
+    ),
+    LoomCommandInfo(
       command: "patterns:list",
       name: "List Semantic Patterns",
       description: "List OS-agnostic layout and control patterns",

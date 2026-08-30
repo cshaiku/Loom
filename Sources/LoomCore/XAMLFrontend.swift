@@ -193,16 +193,21 @@ private final class XAMLParserDelegate: NSObject, XMLParserDelegate {
     properties: [String: String],
     modifiers: [LoomModifier]
   ) -> LoomNode {
+    var boundaryProperties = properties
+    boundaryProperties["componentBoundary"] = "native-winui-control"
+    boundaryProperties["unsupportedXamlElement"] = pending.name
+    boundaryProperties["requiresNativeImplementation"] = "true"
     diagnostics.append(
       LoomDiagnostic(
         severity: .warning,
-        code: "XAML001",
-        message: "Unsupported XAML element preserved as a component boundary: \(pending.name)."
+        code: "XAML.UNSUPPORTED_COMPONENT_BOUNDARY",
+        message:
+          "Unsupported native WinUI control preserved as a component boundary: \(pending.name)."
       ))
     return LoomNode(
       kind: .component,
       expression: pending.name,
-      properties: properties,
+      properties: boundaryProperties,
       modifiers: modifiers,
       children: pending.children
     )

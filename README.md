@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.15.0**
+Current version: **0.16.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -74,6 +74,12 @@ The current usable slice includes:
   nested scroll regions, color-only semantics, and geometry-heavy layouts.
 - Optional Pattern accessibility metadata for keyboard behavior, states,
   required accessibility properties, and minimum target sizes.
+- Explicit unsupported component-boundary warnings for native WinUI controls
+  that Loom preserves but cannot semantically transfer yet.
+- Structured suggested fixes in accessibility audit output for both users and
+  AI agents.
+- Curated OS/framework error suggestions for SwiftUI, WinUI, XAML, macOS, and
+  Windows errors, also attached automatically to `inspect:errors` findings.
 
 ## Build and test
 
@@ -115,6 +121,16 @@ swift run loom inspect:errors MainWindow.xaml --kind xaml --json
 swift run loom inspect:errors Patterns --kind patterns --fail-on error
 ```
 
+Get OS/framework-specific suggestions:
+
+```sh
+swift run loom suggestions:os-errors --platform winui3 --message StaticResource
+swift run loom suggestions:os-errors --platform swiftui --format json
+```
+
+`inspect:errors` also attaches `suggested_fixes` to findings where Loom can
+recognize a relevant SwiftUI, WinUI, XAML, macOS, or Windows error pattern.
+
 Audit accessibility and layout design quality:
 
 ```sh
@@ -126,7 +142,9 @@ swift run loom accessibility:audit MyView.swift --fail-on warning
 The audit catches missing accessible names, unlabeled images and inputs,
 small interactive targets, color-only semantic risks, unsupported/malformed
 nodes, empty or redundant containers, nested scroll regions, geometry-dependent
-layout, and other transfer-hostile design issues.
+layout, unsupported native WinUI component boundaries, and other
+transfer-hostile design issues. Each finding includes a prose recommendation
+and structured suggested fixes for users and AI agents.
 
 Global runtime flags can be placed before any command:
 

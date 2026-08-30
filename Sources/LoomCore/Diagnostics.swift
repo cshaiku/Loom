@@ -41,6 +41,12 @@ public struct LoomErrorInspectionFinding: Codable, Equatable, Sendable {
   public var offset: Int?
   public var line: Int?
   public var column: Int?
+  public var suggestedFixes: [LoomAuditSuggestedFix]
+
+  enum CodingKeys: String, CodingKey {
+    case severity, code, source, message, offset, line, column
+    case suggestedFixes = "suggested_fixes"
+  }
 }
 
 public struct LoomErrorInspectionReport: Codable, Sendable {
@@ -135,7 +141,7 @@ public struct LoomSelfHealPlan: Codable, Sendable {
 }
 
 public struct LoomDiagnostics: Sendable {
-  public static let version = "0.15.0"
+  public static let version = "0.16.0"
 
   public init() {}
 
@@ -267,11 +273,17 @@ public struct LoomDiagnostics: Sendable {
     case .patterns:
       findings = inspectPatternErrors(directory: url.path)
     }
+    let suggester = LoomOSErrorSuggester()
+    let enrichedFindings = findings.map { finding in
+      var enriched = finding
+      enriched.suggestedFixes = suggester.suggestions(for: finding, inspectedKind: kind)
+      return enriched
+    }
     return LoomErrorInspectionReport(
-      status: findings.contains { $0.severity == .error } ? "error" : "ok",
+      status: enrichedFindings.contains { $0.severity == .error } ? "error" : "ok",
       inspectedKind: kind,
       source: url.path,
-      findings: findings.sorted {
+      findings: enrichedFindings.sorted {
         if ($0.offset ?? Int.max) != ($1.offset ?? Int.max) {
           return ($0.offset ?? Int.max) < ($1.offset ?? Int.max)
         }
@@ -371,6 +383,15 @@ public struct LoomDiagnostics: Sendable {
         }
         lines.append("[\(finding.severity.rawValue)] \(finding.code) \(location)")
         lines.append("  \(finding.message)")
+        if !finding.suggestedFixes.isEmpty {
+          lines.append("  suggested fixes:")
+          for fix in finding.suggestedFixes {
+            lines.append("    - \(fix.audience.rawValue): \(fix.action) — \(fix.detail)")
+            if let command = fix.command {
+              lines.append("      command: \(command)")
+            }
+          }
+        }
       }
     }
     return lines.joined(separator: "\n") + "\n"
@@ -498,7 +519,8 @@ public struct LoomDiagnostics: Sendable {
       message: message,
       offset: offset,
       line: line,
-      column: column
+      column: column,
+      suggestedFixes: []
     )
   }
 
