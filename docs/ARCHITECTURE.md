@@ -21,6 +21,16 @@ incorrect conversion.
 6. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
+7. **Project workflow**: a validated `loom.json` manifest selects components,
+   target resources, existing XAML, and deterministic output artifacts.
+
+## Command architecture
+
+Loom mirrors Vigil's command ergonomics at a smaller scale. A central catalog
+defines canonical colon-namespaced commands, categories, access modes, write
+flags, aliases, synopsis text, and examples. Help, list, JSON catalog, manuals,
+and dispatch all resolve through that same metadata so the advertised surface
+cannot drift independently from the executable.
 
 ## Trust boundaries
 

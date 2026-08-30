@@ -129,6 +129,8 @@ public enum LoomError: Error, CustomStringConvertible {
   case componentNotFound(view: String, component: String)
   case malformedViewBody(String)
   case invalidArguments(String)
+  case invalidProjectManifest(String)
+  case unsupportedTarget(String)
 
   public var description: String {
     switch self {
@@ -142,6 +144,10 @@ public enum LoomError: Error, CustomStringConvertible {
       return "Could not extract the SwiftUI view body: \(detail)"
     case .invalidArguments(let detail):
       return detail
+    case .invalidProjectManifest(let detail):
+      return "Invalid Loom project manifest: \(detail)"
+    case .unsupportedTarget(let target):
+      return "Unsupported target \(target). Loom currently emits winui3."
     }
   }
 }

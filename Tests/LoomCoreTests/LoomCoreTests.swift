@@ -113,3 +113,125 @@ private let sample = """
   #expect(report.diagnostics.contains { $0.code == "LOOM201" })
   #expect(report.diagnostics.contains { $0.code == "LOOM202" })
 }
+
+@Test func commandCatalogUsesVigilStyleGroupsAndAliases() throws {
+  let alias = LoomCommandCatalog.resolve("analyze")
+  #expect(alias?.command == "inspect:source")
+  #expect(alias?.category == "inspection")
+  #expect(alias?.access == .conditionalWrite)
+  #expect(alias?.writeFlags == ["--output"])
+
+  let catalog = LoomCommandCatalog.catalogText()
+  #expect(catalog.contains("inspection\n"))
+  #expect(catalog.contains("generation\n"))
+  #expect(catalog.contains("projects\n"))
+  #expect(catalog.contains("setup\n"))
+  #expect(catalog.contains("r/w"))
+
+  let json = try LoomCommandCatalog.catalogJSON(category: "setup")
+  let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
+  #expect(decoded.allSatisfy { $0.category == "setup" })
+  #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func projectWorkflowValidatesAndBuildsAllComponents() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  let output = directory.appendingPathComponent("Output", isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+
+  let sourceURL = directory.appendingPathComponent("ContentView.swift")
+  let xamlURL = directory.appendingPathComponent("MainWindow.xaml")
+  let manifestURL = directory.appendingPathComponent("loom.json")
+  try sample.write(to: sourceURL, atomically: true, encoding: .utf8)
+  try "<Grid Width=\"280\" />".write(to: xamlURL, atomically: true, encoding: .utf8)
+  let manifest = LoomProjectManifest(
+    project: "Fixture",
+    source: "ContentView.swift",
+    rootView: "ContentView",
+    existingXaml: "MainWindow.xaml",
+    components: ["body", "sidebar", "body"],
+    themeResourcePrefix: "Fixture"
+  )
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+  try encoder.encode(manifest).write(to: manifestURL)
+
+  let validation = LoomProjectValidator().validate(manifestPath: manifestURL.path)
+  #expect(validation.status == "ok")
+  #expect(validation.issues.isEmpty)
+
+  let run = try LoomProjectRunner().run(
+    manifestPath: manifestURL.path,
+    outputDirectory: output.path
+  )
+  #expect(run.summary.components.count == 2)
+  #expect(run.summary.components.map(\.component) == ["body", "sidebar"])
+  #expect(run.summary.parityPath != nil)
+  #expect(FileManager.default.fileExists(atPath: run.summaryPath))
+  #expect(
+    FileManager.default.fileExists(
+      atPath: output.appendingPathComponent("body.generated.xaml").path))
+  #expect(
+    FileManager.default.fileExists(
+      atPath: output.appendingPathComponent("sidebar.analysis.json").path))
+
+  let generated = try String(contentsOf: output.appendingPathComponent("body.generated.xaml"))
+  #expect(generated.contains("{ThemeResource FixtureCanvasBrush}"))
+}
+
+@Test func manifestValidationReportsUnresolvedComponentsWithoutWriting() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  try sample.write(
+    to: directory.appendingPathComponent("ContentView.swift"),
+    atomically: true,
+    encoding: .utf8
+  )
+  let manifest = LoomProjectManifest(
+    project: "Fixture",
+    source: "ContentView.swift",
+    rootView: "ContentView",
+    components: ["missingComponent"]
+  )
+  let manifestURL = directory.appendingPathComponent("loom.json")
+  try JSONEncoder().encode(manifest).write(to: manifestURL)
+
+  let report = LoomProjectValidator().validate(manifestPath: manifestURL.path)
+  #expect(report.status == "error")
+  #expect(report.issues.contains { $0.code == "component.unresolved" })
+  #expect(
+    !FileManager.default.fileExists(atPath: directory.appendingPathComponent("Generated").path))
+}
+
+@Test func manifestValidationRejectsMissingVersionAndUnknownKeys() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  try sample.write(
+    to: directory.appendingPathComponent("ContentView.swift"),
+    atomically: true,
+    encoding: .utf8
+  )
+  let manifestURL = directory.appendingPathComponent("loom.json")
+  try """
+  {
+    "project": "Fixture",
+    "source": "ContentView.swift",
+    "rootView": "ContentView",
+    "target": "winui3",
+    "components": ["body"],
+    "mystery": true
+  }
+  """.write(to: manifestURL, atomically: true, encoding: .utf8)
+
+  let report = LoomProjectValidator().validate(manifestPath: manifestURL.path)
+  #expect(report.status == "error")
+  #expect(report.issues.contains { $0.code == "manifest.schema_version" })
+  #expect(
+    report.issues.contains { $0.code == "manifest.key.unsupported" && $0.path == "mystery" })
+}

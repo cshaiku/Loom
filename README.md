@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.1.0**
+Current version: **0.2.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -21,7 +21,7 @@ platform-specific threads visible.
 
 ## Current status
 
-The first usable slice includes:
+The current usable slice includes:
 
 - Swift parsing through SwiftParser and SwiftSyntax.
 - Discovery of Swift structs conforming to `View`.
@@ -34,6 +34,9 @@ The first usable slice includes:
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
+- A Vigil-style command registry with grouped namespaced commands, access
+  markers, aliases, JSON catalog output, and per-command manuals.
+- Manifest validation and one-command multi-component project builds.
 
 ## Build and test
 
@@ -46,17 +49,28 @@ The executable is available as `.build/debug/loom` after a debug build.
 
 ## Commands
 
+Loom follows Vigil's command organization: canonical commands use
+`type:operation` names, commands are grouped by purpose, and the catalog marks
+read-only (`r`), writing (`w`), and conditional-writing (`r/w`) operations.
+
+```sh
+swift run loom list
+swift run loom list --category inspection
+swift run loom list --json
+swift run loom help project:build
+```
+
 Analyze a SwiftUI view:
 
 ```sh
-swift run loom analyze MyView.swift --root-view ContentView
-swift run loom analyze MyView.swift --root-view ContentView --format json
+swift run loom inspect:source MyView.swift --root-view ContentView
+swift run loom inspect:source MyView.swift --root-view ContentView --json
 ```
 
 Analyze a computed subview property:
 
 ```sh
-swift run loom analyze MyView.swift \
+swift run loom inspect:source MyView.swift \
   --root-view ContentView \
   --component operatorTopBar
 ```
@@ -64,7 +78,7 @@ swift run loom analyze MyView.swift \
 Generate a reviewable WinUI 3 XAML fragment:
 
 ```sh
-swift run loom generate MyView.swift \
+swift run loom generate:xaml MyView.swift \
   --root-view ContentView \
   --output Generated/ContentView.xaml
 ```
@@ -72,7 +86,7 @@ swift run loom generate MyView.swift \
 Projects with a consistent XAML resource prefix can retain their theme tokens:
 
 ```sh
-swift run loom generate MyView.swift \
+swift run loom generate:xaml MyView.swift \
   --root-view ContentView \
   --theme-prefix Voci \
   --output Generated/ContentView.xaml
@@ -81,7 +95,7 @@ swift run loom generate MyView.swift \
 Compare SwiftUI-derived structure with an existing XAML file:
 
 ```sh
-swift run loom parity MyView.swift \
+swift run loom inspect:parity MyView.swift \
   --root-view ContentView \
   --xaml MainWindow.xaml
 ```
@@ -91,6 +105,38 @@ Run the Voci example from this repository:
 ```sh
 ./Examples/Voci/analyze-voci.sh /private/SDF/Voci
 ```
+
+Validate and build any configured project directly:
+
+```sh
+swift run loom config:validate path/to/loom.json --project-root path/to/project
+swift run loom project:build path/to/loom.json \
+  --project-root path/to/project \
+  --output-dir Generated/Loom
+```
+
+`project:build` analyzes every component named in the manifest before writing
+anything. A successful run emits per-component analysis JSON and XAML, an
+optional parity report, and `project.summary.json`.
+
+A minimal versioned manifest looks like:
+
+```json
+{
+  "schema_version": "1",
+  "project": "MyApp",
+  "source": "platform/macos/MyApp.swift",
+  "rootView": "ContentView",
+  "target": "winui3",
+  "themeResourcePrefix": "MyApp",
+  "existingXaml": "platform/windows/MainWindow.xaml",
+  "components": ["body", "sidebar", "contentPanel"]
+}
+```
+
+Relative paths resolve from `--project-root`, or from the manifest directory
+when no project root is supplied. Run `loom config:schema` for the complete
+machine-readable contract.
 
 ## Translation policy
 
@@ -110,6 +156,9 @@ comment. Silent approximation is treated as a bug.
 - `Tests/LoomCoreTests`: unit and integration-style fixtures.
 - `Examples/Voci`: configuration and commands for the sibling Voci project.
 - `docs`: architecture and translation support matrix.
+
+See the [command organization](docs/COMMANDS.md) and the phased
+[roadmap](docs/ROADMAP.md) for the current action plan.
 
 ## Roadmap
 

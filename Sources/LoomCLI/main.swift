@@ -9,7 +9,7 @@ import LoomCore
   import Darwin
 #endif
 
-private struct CLIOptions {
+private struct SourceOptions {
   var command: String
   var sourcePath: String
   var rootView = "ContentView"
@@ -20,85 +20,182 @@ private struct CLIOptions {
   var themeResourcePrefix: String?
 }
 
+private struct ProjectOptions {
+  var manifestPath: String
+  var projectRoot: String?
+  var outputDirectory: String?
+}
+
+private struct ValidationOptions {
+  var manifestPath: String
+  var projectRoot: String?
+  var format = "text"
+}
+
 @main
 private enum LoomCommand {
   static func main() {
     do {
-      let arguments = Array(CommandLine.arguments.dropFirst())
-      if arguments == ["--version"] {
-        print("loom 0.1.0")
-        return
-      }
-      let options = try parse(arguments)
-      let frontend = SwiftUIFrontend()
-      let analysis = try frontend.analyze(
-        sourcePath: options.sourcePath,
-        rootView: options.rootView,
-        component: options.component
-      )
-
-      let output: String
-      switch options.command {
-      case "analyze":
-        output =
-          options.format == "json"
-          ? try AnalysisReporter().json(analysis)
-          : AnalysisReporter().text(analysis)
-      case "generate":
-        output = XAMLEmitter(
-          options: XAMLEmissionOptions(themeResourcePrefix: options.themeResourcePrefix)
-        ).emit(analysis)
-      case "parity":
-        guard let xamlPath = options.xamlPath else {
-          throw LoomError.invalidArguments("The parity command requires --xaml <path>.")
-        }
-        let report = try XAMLParityChecker().check(analysis: analysis, xamlPath: xamlPath)
-        if options.format == "json" {
-          let encoder = JSONEncoder()
-          encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-          output = String(decoding: try encoder.encode(report), as: UTF8.self) + "\n"
-        } else {
-          output = XAMLParityChecker().text(report)
-        }
-      default:
-        throw LoomError.invalidArguments("Unknown command \(options.command).")
-      }
-
-      if let outputPath = options.outputPath {
-        let url = URL(fileURLWithPath: outputPath)
-        try FileManager.default.createDirectory(
-          at: url.deletingLastPathComponent(),
-          withIntermediateDirectories: true
-        )
-        try output.write(to: url, atomically: true, encoding: .utf8)
-        print("Wrote \(outputPath)")
-      } else {
-        print(output, terminator: "")
-      }
+      try dispatch(Array(CommandLine.arguments.dropFirst()))
     } catch {
-      fputs("loom: \(error)\n", stderr)
-      fputs(usage, stderr)
+      fputs("[fatal] \(error)\n", stderr)
+      fputs("[hint] Run `loom help` or `loom list`.\n", stderr)
       exit(2)
     }
   }
 
-  private static func parse(_ arguments: [String]) throws -> CLIOptions {
-    if arguments.isEmpty || arguments.contains("--help") || arguments.contains("-h") {
-      print(usage)
-      exit(0)
+  private static func dispatch(_ arguments: [String]) throws {
+    if arguments == ["--version"] || arguments == ["version"] {
+      print("loom 0.2.0")
+      return
     }
-    guard arguments.count >= 2 else {
-      throw LoomError.invalidArguments("A command and Swift source path are required.")
+    if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
+    {
+      print("Loom: SwiftUI to WinUI Layout Compiler\n")
+      print(LoomCommandCatalog.catalogText(), terminator: "")
+      return
     }
-    let supported = ["analyze", "generate", "parity"]
-    guard supported.contains(arguments[0]) else {
-      throw LoomError.invalidArguments("Expected analyze, generate, or parity.")
+    if arguments[0] == "list" || arguments[0] == "commands" {
+      try printCatalog(Array(arguments.dropFirst()))
+      return
+    }
+    if arguments[0] == "help" || arguments[0] == "man" || arguments[0] == "explain" {
+      guard arguments.count == 2, let manual = LoomCommandCatalog.manual(arguments[1]) else {
+        throw LoomError.invalidArguments("Unknown command manual request.")
+      }
+      print(manual, terminator: "")
+      return
+    }
+    if arguments[0] == "config:schema" {
+      guard arguments.count == 1 else {
+        throw LoomError.invalidArguments("Usage: loom config:schema")
+      }
+      print(LoomProjectSchema.json)
+      return
     }
 
-    var options = CLIOptions(command: arguments[0], sourcePath: arguments[1])
+    guard let command = LoomCommandCatalog.resolve(arguments[0]) else {
+      throw LoomError.invalidArguments("Unknown command \(arguments[0]).")
+    }
+    if arguments.count > 1 && (arguments[1] == "--help" || arguments[1] == "-h") {
+      print(LoomCommandCatalog.manual(command.command) ?? "", terminator: "")
+      return
+    }
+
+    switch command.command {
+    case "inspect:source", "inspect:parity", "generate:xaml":
+      try runSourceCommand(command.command, arguments: arguments)
+    case "project:build":
+      let options = try parseProjectOptions(arguments)
+      let run = try LoomProjectRunner().run(
+        manifestPath: options.manifestPath,
+        projectRoot: options.projectRoot,
+        outputDirectory: options.outputDirectory
+      )
+      print(LoomProjectRunner().text(run), terminator: "")
+    case "config:validate":
+      let options = try parseValidationOptions(arguments)
+      let validator = LoomProjectValidator()
+      let report = validator.validate(
+        manifestPath: options.manifestPath,
+        projectRoot: options.projectRoot
+      )
+      let output = options.format == "json" ? try validator.json(report) : validator.text(report)
+      print(output, terminator: "")
+      if report.status != "ok" { exit(1) }
+    default:
+      throw LoomError.invalidArguments(
+        "Command \(command.command) is registered but has no dispatcher.")
+    }
+  }
+
+  private static func runSourceCommand(_ command: String, arguments: [String]) throws {
+    let options = try parseSourceOptions(command, arguments: arguments)
+    let analysis = try SwiftUIFrontend().analyze(
+      sourcePath: options.sourcePath,
+      rootView: options.rootView,
+      component: options.component
+    )
+
+    let output: String
+    switch command {
+    case "inspect:source":
+      output =
+        options.format == "json"
+        ? try AnalysisReporter().json(analysis)
+        : AnalysisReporter().text(analysis)
+    case "generate:xaml":
+      output = XAMLEmitter(
+        options: XAMLEmissionOptions(themeResourcePrefix: options.themeResourcePrefix)
+      ).emit(analysis)
+    case "inspect:parity":
+      guard let xamlPath = options.xamlPath else {
+        throw LoomError.invalidArguments("inspect:parity requires --xaml <path>.")
+      }
+      let report = try XAMLParityChecker().check(analysis: analysis, xamlPath: xamlPath)
+      if options.format == "json" {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        output = String(decoding: try encoder.encode(report), as: UTF8.self) + "\n"
+      } else {
+        output = XAMLParityChecker().text(report)
+      }
+    default:
+      throw LoomError.invalidArguments("Unknown source command \(command).")
+    }
+    try writeOrPrint(output, path: options.outputPath)
+  }
+
+  private static func printCatalog(_ arguments: [String]) throws {
+    var category: String?
+    var json = false
+    var index = 0
+    while index < arguments.count {
+      let argument = arguments[index]
+      switch argument {
+      case "--json":
+        json = true
+        index += 1
+      case "--category":
+        guard index + 1 < arguments.count else {
+          throw LoomError.invalidArguments("Missing value for --category.")
+        }
+        category = arguments[index + 1]
+        index += 2
+      default:
+        if argument.hasPrefix("--category=") {
+          category = String(argument.dropFirst("--category=".count))
+          index += 1
+        } else {
+          throw LoomError.invalidArguments("Unknown list option \(argument).")
+        }
+      }
+    }
+    let output =
+      json
+      ? try LoomCommandCatalog.catalogJSON(category: category)
+      : LoomCommandCatalog.catalogText(category: category)
+    guard !output.isEmpty else {
+      throw LoomError.invalidArguments("Unknown or empty command category \(category ?? "").")
+    }
+    print(output, terminator: "")
+  }
+
+  private static func parseSourceOptions(_ command: String, arguments: [String]) throws
+    -> SourceOptions
+  {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("\(command) requires a Swift source path.")
+    }
+    var options = SourceOptions(command: command, sourcePath: arguments[1])
     var index = 2
     while index < arguments.count {
       let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
       guard index + 1 < arguments.count else {
         throw LoomError.invalidArguments("Missing value for \(flag).")
       }
@@ -120,12 +217,66 @@ private enum LoomCommand {
     }
     return options
   }
-}
 
-private let usage = """
-  Usage:
-  loom --version
-  loom analyze <swift-file> [--root-view Name] [--component name] [--format text|json] [--output path]
-  loom generate <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--output path]
-  loom parity <swift-file> --xaml <xaml-file> [--root-view Name] [--component name] [--format text|json]
-  """
+  private static func parseProjectOptions(_ arguments: [String]) throws -> ProjectOptions {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("project:build requires a Loom manifest path.")
+    }
+    var options = ProjectOptions(manifestPath: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(arguments[index]).")
+      }
+      switch arguments[index] {
+      case "--project-root": options.projectRoot = arguments[index + 1]
+      case "--output-dir": options.outputDirectory = arguments[index + 1]
+      default: throw LoomError.invalidArguments("Unknown project option \(arguments[index]).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseValidationOptions(_ arguments: [String]) throws -> ValidationOptions {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("config:validate requires a Loom manifest path.")
+    }
+    var options = ValidationOptions(manifestPath: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      if arguments[index] == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(arguments[index]).")
+      }
+      switch arguments[index] {
+      case "--project-root": options.projectRoot = arguments[index + 1]
+      case "--format": options.format = arguments[index + 1]
+      default: throw LoomError.invalidArguments("Unknown validation option \(arguments[index]).")
+      }
+      index += 2
+    }
+    guard options.format == "text" || options.format == "json" else {
+      throw LoomError.invalidArguments("--format must be text or json.")
+    }
+    return options
+  }
+
+  private static func writeOrPrint(_ output: String, path: String?) throws {
+    guard let path else {
+      print(output, terminator: "")
+      return
+    }
+    let url = URL(fileURLWithPath: path)
+    try FileManager.default.createDirectory(
+      at: url.deletingLastPathComponent(),
+      withIntermediateDirectories: true
+    )
+    try output.write(to: url, atomically: true, encoding: .utf8)
+    print("Wrote \(path)")
+  }
+}

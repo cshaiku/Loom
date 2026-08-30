@@ -1,8 +1,10 @@
 {
+  "schema_version": "1",
   "project": "Voci",
   "source": "platform/macos/VociMacApp.swift",
   "rootView": "ContentView",
   "target": "winui3",
+  "themeResourcePrefix": "Voci",
   "existingXaml": "platform/windows-winui/VociWindows/MainWindow.xaml",
   "referenceLayout": "docs/reference/macos-voci-current-layout.md",
   "translationGuide": "docs/reference/macos-to-windows-shell-code-guide.md",
