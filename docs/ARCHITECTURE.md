@@ -12,7 +12,7 @@ Linux as a native CLI (`cmd/loom`).
 
 - `inspect:xaml`: parse WinUI XAML into Loom’s shared tree.
 - `inspect:ascii`: render that tree as a plain text structure.
-- `inspect:errors`: classify and report Swift-like, XAML, manifest, and pattern
+- `inspect:errors`: classify and report source, XAML, manifest, and pattern
   issues.
 - `patterns:list|show|validate|lint|export|transfer`: canonical pattern
   validation, transfer scoring, and interoperability exports.

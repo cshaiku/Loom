@@ -55,6 +55,29 @@ func TestAnalyzeXAMLUnsupportedNativeBoundary(t *testing.T) {
 	}
 }
 
+func TestAnalyzeXAMLGridDefinitionsBecomeMetadata(t *testing.T) {
+	path := fixtureXAML(t, `<Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="240" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Name" />`)
+	analysis, err := AnalyzeXAML(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	grid := analysis.Layout.Children[0]
+	if got := grid.Properties["xaml.Grid.RowDefinitions"]; got != "Auto,*" {
+		t.Fatalf("unexpected row definition metadata: %q", got)
+	}
+	if got := grid.Properties["xaml.Grid.ColumnDefinitions"]; got != "240,*" {
+		t.Fatalf("unexpected column definition metadata: %q", got)
+	}
+	for _, diagnostic := range analysis.Diagnostics {
+		if diagnostic.Code == "XAML.UNSUPPORTED_COMPONENT_BOUNDARY" {
+			t.Fatalf("grid definitions should not become unsupported boundaries: %#v", diagnostic)
+		}
+	}
+	if len(grid.Children) != 1 || grid.Children[0].Kind != KindText {
+		t.Fatalf("expected only the visible TextBlock child, got %#v", grid.Children)
+	}
+}
+
 func TestAccessibilityAuditSuggestedFixes(t *testing.T) {
 	path := fixtureXAML(t, `<NavigationView /><Button Width="20" Height="20" />`)
 	analysis, err := AnalyzeXAML(path)
@@ -93,12 +116,55 @@ func TestTransferFlagsUnsupportedNativeBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	report := Transfer(analysis, patterns, "winui3", "swiftui")
+	report := Transfer(analysis, patterns, "winui3", "macos")
 	if report.Summary.Unsupported == 0 {
 		t.Fatalf("expected unsupported transfer item, got %#v", report.Summary)
 	}
 	if !strings.Contains(report.ASCIIPattern, `\-- grid`) {
 		t.Fatalf("expected ASCII tree in transfer report, got %q", report.ASCIIPattern)
+	}
+}
+
+func TestTransferIncludesGridTrackPolicy(t *testing.T) {
+	path := fixtureXAML(t, `<Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions><Button Content="Save" />`)
+	analysis, err := AnalyzeXAML(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	patterns, err := LoadPatterns("../../Patterns")
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := Transfer(analysis, patterns, "winui3", "macos")
+	found := false
+	for _, item := range report.Items {
+		if item.Kind == KindGrid && strings.Contains(strings.Join(item.Policies, " "), "row/column tracks") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected grid track transfer policy, got %#v", report.Items)
+	}
+}
+
+func TestTransferMacOSTargetUsesSwiftUIMappings(t *testing.T) {
+	path := fixtureXAML(t, `<Button Content="Save" />`)
+	analysis, err := AnalyzeXAML(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	patterns, err := LoadPatterns("../../Patterns")
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := Transfer(analysis, patterns, "winui3", "macos")
+	if report.To != "macos" {
+		t.Fatalf("expected public route target to remain macos, got %q", report.To)
+	}
+	for _, item := range report.Items {
+		if item.Kind == KindButton && !contains(item.TargetConstructs, "Button") {
+			t.Fatalf("expected macos route to use SwiftUI button mapping, got %#v", item)
+		}
 	}
 }
 

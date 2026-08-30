@@ -118,12 +118,22 @@ func TransferText(report TransferReport) string {
 }
 
 func mapping(pattern Pattern, platform string) PatternMapping {
+	platform = canonicalPatternPlatform(platform)
 	for _, mapping := range pattern.Mappings {
 		if mapping.Platform == platform {
 			return mapping
 		}
 	}
 	return PatternMapping{}
+}
+
+func canonicalPatternPlatform(platform string) string {
+	switch strings.ToLower(strings.TrimSpace(platform)) {
+	case "macos", "mac", "apple":
+		return "swiftui"
+	default:
+		return strings.ToLower(strings.TrimSpace(platform))
+	}
 }
 
 func contractsFor(node Node) []string {
@@ -146,7 +156,13 @@ func contractsFor(node Node) []string {
 
 func policiesFor(node Node) []string {
 	switch node.Kind {
-	case KindVerticalStack, KindHorizontalStack, KindGrid, KindScrollView, KindList:
+	case KindGrid:
+		policies := []string{"Confirm spacing, available-size, and adaptive breakpoint policy."}
+		if node.Properties["xaml.Grid.RowDefinitions"] != "" || node.Properties["xaml.Grid.ColumnDefinitions"] != "" {
+			policies = append(policies, "Translate WinUI Grid row/column tracks into target stack, grid, split, or adaptive layout policy.")
+		}
+		return policies
+	case KindVerticalStack, KindHorizontalStack, KindScrollView, KindList:
 		return []string{"Confirm spacing, available-size, and adaptive breakpoint policy."}
 	case KindText, KindTextField, KindButton:
 		return []string{"Confirm typography, minimum target size, and platform theme token policy."}

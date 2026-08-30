@@ -9,10 +9,9 @@
   `patterns:*`, and OS error suggestions.
 - CLI output contracts for automation (`--json`, `--quiet`, `--verbose`).
 
-## 0.18 — Go Swift analysis surface
+## 0.18 — Go analyzer baseline
 
-- `inspect:errors --kind swift` and `inspect:source` path planning moved toward
-  Go ownership.
+- `inspect:errors` and `inspect:source` path planning moved toward Go ownership.
 - `graph:components` command retained in catalog and prepared for re-implementation.
 - Cross-command consistency checks expanded (`checks:command-catalog`).
 

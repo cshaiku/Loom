@@ -50,6 +50,6 @@ loom checks:command-catalog --json
 loom guards:summary
 loom self-heal:plan
 loom inspect:errors MainWindow.xaml --kind xaml --json --fail-on error
-loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
+loom patterns:transfer MainWindow.xaml --from winui3 --to macos --format json
 loom accessibility:audit MainWindow.xaml --fail-on warning
 ```

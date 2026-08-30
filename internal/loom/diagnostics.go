@@ -223,14 +223,7 @@ func DiagnosticsSelfHealPlan() LoomSelfHealPlan {
 	return LoomSelfHealPlan{
 		SchemaVersion: "1",
 		Status:        "ok",
-		Entries: []LoomSelfHealEntry{
-			{
-				Command:   "generate:xaml",
-				Flag:      "--init-region",
-				Scope:     "Create a missing generated XAML host file with one Loom-owned region.",
-				Guardrail: "Existing files still require explicit LOOM-BEGIN / LOOM-END markers.",
-			},
-		},
+		Entries:       []LoomSelfHealEntry{},
 	}
 }
 
@@ -283,7 +276,7 @@ func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestVali
 		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.target.unsupported", Path: "target", Detail: fmt.Sprintf("Unsupported target %s.", manifest.Target), Fix: "Set target to winui3."})
 	}
 	if strings.TrimSpace(manifest.Source) == "" {
-		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.source.empty", Path: "source", Detail: "Source is empty.", Fix: "Provide a Swift source file path."})
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.source.empty", Path: "source", Detail: "Source is empty.", Fix: "Provide a source file path."})
 	}
 	if strings.TrimSpace(manifest.RootView) == "" {
 		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.rootView.empty", Path: "rootView", Detail: "Root view is empty.", Fix: "Set a root view like ContentView."})
@@ -291,7 +284,7 @@ func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestVali
 
 	components := uniqueManifestComponents(manifest.Components)
 	if len(components) == 0 {
-		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.components.empty", Path: "components", Detail: "No components are declared.", Fix: "Add body or another computed SwiftUI view property."})
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.components.empty", Path: "components", Detail: "No components are declared.", Fix: "Add one or more layout component names."})
 	}
 
 	root := filepath.Dir(path)
@@ -300,10 +293,10 @@ func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestVali
 	}
 	sourcePath := resolveManifestPath(manifest.Source, root)
 	if !fileExists(sourcePath) {
-		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "source.missing", Path: "source", Detail: fmt.Sprintf("Swift source does not exist at %s.", sourcePath), Fix: "Correct source or --project-root."})
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "source.missing", Path: "source", Detail: fmt.Sprintf("Source does not exist at %s.", sourcePath), Fix: "Correct source or --project-root."})
 	} else {
 		if _, err := os.ReadFile(sourcePath); err != nil {
-			issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "source.unreadable", Path: "source", Detail: fmt.Sprintf("Could not read Swift source at %s.", sourcePath), Fix: "Check file permissions and encoding."})
+			issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "source.unreadable", Path: "source", Detail: fmt.Sprintf("Could not read source at %s.", sourcePath), Fix: "Check file permissions and encoding."})
 		}
 	}
 
@@ -354,7 +347,7 @@ func DiagnosticsProjectBuild(manifestPath, projectRoot, outputDir string) ([]byt
 	if report.Status != "ok" {
 		return append(text, '\n'), fmt.Errorf("project:build preconditions failed")
 	}
-	return append(text, '\n'), fmt.Errorf("project:build is not implemented in Go CLI yet")
+	return append(text, '\n'), fmt.Errorf("project:build is reserved for catalog parity only and is not yet available in the Go runtime")
 }
 
 func InspectErrors(path string, kind, rootView, component, failOn string) LoomErrorInspectionReport {
@@ -625,7 +618,7 @@ func inspectSwiftErrors(path, rootView, component string) []LoomErrorInspectionF
 	_ = component
 	_, err := os.ReadFile(path)
 	if err != nil {
-		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "SOURCE001", Source: path, Message: "Could not read Swift source."}}
+		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "SOURCE001", Source: path, Message: "Could not read source."}}
 	}
 	return []LoomErrorInspectionFinding{}
 }

@@ -8,13 +8,14 @@ validation, transfer planning, and workflow diagnostics.
 ## What Loom does today
 
 - Parse WinUI XAML and normalize it into Loom’s shared layout model (`inspect:xaml`).
+- Preserve WinUI Grid row/column definitions as layout metadata for transfer planning.
 - Render parsed layouts as a compact plaintext ASCII tree (`inspect:ascii`).
 - Validate and lint the `Patterns` catalog (`patterns:validate`, `patterns:lint`).
-- Transfer-plan layout compatibility between WinUI and SwiftUI (`patterns:transfer`).
+- Transfer-plan layout compatibility from WinUI to macOS UI patterns (`patterns:transfer`).
 - Audit accessibility/layout quality for unsupported boundaries, small targets,
   malformed or redundant structures, and scan-friendly risks (`accessibility:audit`).
 - Run manifest validation (`config:validate` / `config:schema`).
-- Report errors for Swift-like analysis, XAML parsing, manifests, and patterns
+- Report errors for source analysis, XAML parsing, manifests, and patterns
   (`inspect:errors`).
 - Provide curated cross-platform error guidance and suggested fixes (`suggestions:os-errors`).
 - Provide CLI self-diagnostics and guard reporting (`status`, `verify`,
@@ -50,7 +51,7 @@ loom inspect:xaml MainWindow.xaml --format json
 loom inspect:ascii MainWindow.xaml --output Layout.txt
 loom accessibility:audit MainWindow.xaml --format json --fail-on warning
 loom patterns:lint
-loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui
+loom patterns:transfer MainWindow.xaml --from winui3 --to macos
 ```
 
 ## Repository layout

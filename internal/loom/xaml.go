@@ -15,6 +15,7 @@ func AnalyzeXAML(path string) (Analysis, error) {
 	}
 	decoder := xml.NewDecoder(strings.NewReader(string(data)))
 	var stack []Node
+	var propertyStack []string
 	var roots []Node
 	elementCount := 0
 	var diagnostics []Diagnostic
@@ -30,12 +31,24 @@ func AnalyzeXAML(path string) (Analysis, error) {
 		case xml.StartElement:
 			name := localXMLName(t.Name.Local)
 			if strings.Contains(name, ".") {
+				propertyStack = append(propertyStack, name)
+				continue
+			}
+			if len(propertyStack) > 0 {
+				applyXAMLPropertyElement(&stack, propertyStack[len(propertyStack)-1], name, attrs(t.Attr))
 				continue
 			}
 			elementCount++
 			stack = append(stack, makeXAMLNode(name, attrs(t.Attr), &diagnostics))
 		case xml.EndElement:
-			if strings.Contains(localXMLName(t.Name.Local), ".") || len(stack) == 0 {
+			name := localXMLName(t.Name.Local)
+			if strings.Contains(name, ".") {
+				if len(propertyStack) > 0 {
+					propertyStack = propertyStack[:len(propertyStack)-1]
+				}
+				continue
+			}
+			if len(propertyStack) > 0 || len(stack) == 0 {
 				continue
 			}
 			node := stack[len(stack)-1]
@@ -63,6 +76,31 @@ func AnalyzeXAML(path string) (Analysis, error) {
 		Layout:          Node{Kind: KindRoot, Expression: "xaml", Properties: map[string]string{"sourceDialect": "winui3"}, Children: roots},
 		Diagnostics:     diagnostics,
 	}, nil
+}
+
+func applyXAMLPropertyElement(stack *[]Node, propertyName, elementName string, attributes map[string]string) {
+	if len(*stack) == 0 {
+		return
+	}
+	parent := &(*stack)[len(*stack)-1]
+	switch propertyName {
+	case "Grid.RowDefinitions":
+		if elementName == "RowDefinition" {
+			appendIndexedProperty(parent.Properties, "xaml.Grid.RowDefinitions", firstNonEmpty(attributes["Height"], "*"))
+		}
+	case "Grid.ColumnDefinitions":
+		if elementName == "ColumnDefinition" {
+			appendIndexedProperty(parent.Properties, "xaml.Grid.ColumnDefinitions", firstNonEmpty(attributes["Width"], "*"))
+		}
+	}
+}
+
+func appendIndexedProperty(props map[string]string, key, value string) {
+	if props[key] == "" {
+		props[key] = value
+		return
+	}
+	props[key] += "," + value
 }
 
 func makeXAMLNode(name string, attributes map[string]string, diagnostics *[]Diagnostic) Node {

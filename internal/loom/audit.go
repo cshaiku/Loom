@@ -135,7 +135,7 @@ func auditFinding(severity DiagnosticSeverity, category AuditCategory, code stri
 func auditSuggestedFixes(code, recommendation string) []SuggestedFix {
 	switch code {
 	case "AUDIT070":
-		return []SuggestedFix{{FixUser, "Choose native-boundary strategy", "Keep native, replace with portable layout, or approve a Pattern mapping.", ""}, {FixAgent, "Declare native component boundary", recommendation, "loom patterns:transfer <source.xaml> --from winui3 --to swiftui --format json"}}
+		return []SuggestedFix{{FixUser, "Choose native-boundary strategy", "Keep native, replace with portable layout, or approve a Pattern mapping.", ""}, {FixAgent, "Declare native component boundary", recommendation, "loom patterns:transfer <source.xaml> --from winui3 --to macos --format json"}}
 	case "AUDIT020":
 		return []SuggestedFix{{FixUser, "Name the button", recommendation, ""}, {FixAgent, "Add accessible-name metadata", "Prefer visible label text or AutomationProperties.Name.", ""}}
 	default:

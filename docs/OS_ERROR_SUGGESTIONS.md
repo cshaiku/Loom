@@ -7,7 +7,6 @@ Use:
 
 ```sh
 loom suggestions:os-errors
-loom suggestions:os-errors --platform swiftui --format json
 loom suggestions:os-errors --platform winui3 --message StaticResource
 loom inspect:errors MainWindow.xaml --kind xaml --json
 ```
@@ -20,8 +19,6 @@ fix is split by audience:
 
 ## Covered areas
 
-- Swift parser and SwiftUI result-builder failures.
-- SwiftUI accessibility labels and decorative-hidden content.
 - WinUI/XAML parse and resource lookup failures.
 - Unsupported native WinUI component boundaries.
 - WinUI AutomationProperties naming and accessibility tree exposure.
@@ -32,8 +29,6 @@ fix is split by audience:
 
 The catalog is based on current platform guidance:
 
-- Apple SwiftUI accessibility label/hidden guidance.
-- Apple Swift and SwiftSyntax parser diagnostics behavior.
 - Microsoft WinUI/XAML parse exception guidance.
 - Microsoft XAML resource dictionary and StaticResource behavior.
 - Microsoft AutomationProperties.Name and AccessibilityView guidance.

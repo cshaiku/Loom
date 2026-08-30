@@ -11,7 +11,7 @@ understood before any target mapping. Patterns define:
 - child structure, sizing, ordering, and constraints
 - typed attributes with defaults and ranges
 - optional accessibility metadata and variant policy profiles
-- optional platform mappings (`swiftui`, `winui3`, etc.)
+- optional platform mappings (`winui3`, `swiftui`/`macos`, etc.)
 
 The `.pattern.json` files are the source of truth. Export formats are derived.
 
@@ -25,8 +25,7 @@ The `.pattern.json` files are the source of truth. Export formats are derived.
 
 ## Transfer and audit entry points
 
-- `loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui`
-- `loom patterns:transfer ContentView.swift --from swiftui --to winui3`
+- `loom patterns:transfer MainWindow.xaml --from winui3 --to macos`
 - `loom accessibility:audit MainWindow.xaml --json`
 - `loom inspect:errors MainWindow.xaml --kind xaml --json`
 

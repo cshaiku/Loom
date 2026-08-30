@@ -87,8 +87,6 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runGuardsSummary(args[1:], stdout, runtime)
 	case "self-heal:plan":
 		return runSelfHealPlan(args[1:], stdout, runtime)
-	case "project:build":
-		return runProjectBuild(args[1:], stdout, runtime)
 	case "patterns:list", "patterns:show", "patterns:validate", "patterns:lint", "patterns:export":
 		return runPattern(command.Command, args[1:], stdout, stderr, runtime)
 	case "inspect:xaml":
@@ -97,7 +95,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runASCII(args[1:], stdout, stderr, runtime)
 	case "inspect:errors":
 		return runInspectErrors(args[1:], stdout, stderr, runtime)
-	case "inspect:source", "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts":
+	case "inspect:source", "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
 		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
@@ -320,7 +318,7 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 	}
 	patternDir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
 	from := firstNonEmpty(flagValue(args, "--from"), "winui3")
-	to := firstNonEmpty(flagValue(args, "--to"), "swiftui")
+	to := firstNonEmpty(flagValue(args, "--to"), "macos")
 	analysis, err := AnalyzeXAML(path)
 	if err != nil {
 		return err
@@ -497,27 +495,6 @@ func runConfigValidate(args []string, stdout, stderr io.Writer, runtime runtimeO
 		return err
 	}
 	if report.Status != "ok" {
-		return ErrCommandFailed
-	}
-	return nil
-}
-
-func runProjectBuild(args []string, stdout io.Writer, runtime runtimeOptions) error {
-	if len(args) == 0 {
-		return fmt.Errorf("project:build requires a manifest path")
-	}
-	manifestPath := args[0]
-	projectRoot := flagValue(args, "--project-root")
-	outputDir := flagValue(args, "--output-dir")
-	text, err := DiagnosticsProjectBuild(manifestPath, projectRoot, outputDir)
-	_, writeErr := fmt.Fprint(stdout, string(text))
-	if writeErr != nil {
-		return writeErr
-	}
-	if err != nil {
-		if err.Error() == "project:build is not implemented in Go CLI yet" {
-			return err
-		}
 		return ErrCommandFailed
 	}
 	return nil

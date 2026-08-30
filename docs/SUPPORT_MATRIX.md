@@ -1,28 +1,25 @@
-# SwiftUI ↔ WinUI 3 support matrix (for transfer planning)
+# WinUI XAML analyzer support matrix
 
-| SwiftUI construct | WinUI 3 strategy | Current status |
+Loom 0.18 is a Go-only analyzer and planning tool. It does not generate target UI
+source yet.
+
+| WinUI XAML construct | Loom IR | Current behavior |
 | --- | --- | --- |
-| `VStack`, `HStack` | Row/column `Grid`; star cell for `Spacer` | Generated |
-| `ZStack` | Layered `Grid` | Generated |
-| `HSplitView`, `VSplitView` | Constraint-aware `Grid` plus splitter integration point | Structural |
-| `GeometryReader` | `Grid` plus explicit runtime sizing diagnostic | Structural |
-| `ScrollView` | `ScrollViewer` | Generated |
-| `List`, `Table` | `ListView` with ItemsSource/DataTemplate integration point | Structural |
-| `ForEach` | ItemsSource/DataTemplate integration point | Structural |
-| `Text`, `TextField` | `TextBlock`, `TextBox` | Generated |
-| `Button` | `Button` plus event/binding integration point | Structural |
-| `Image` | `Image` | Generated |
-| `Slider`, `ProgressView` | `Slider`, `ProgressBar` | Generated |
-| `Toggle`, `Picker` | `ToggleSwitch` pending configurable control policy | Structural |
-| `Spacer`, `Divider` | Star-sized cell, themed `Rectangle` | Generated |
-| `if`/`else` | Visibility binding or visual-state integration point | Structural |
-| `.frame` | Width/height constraints when statically numeric | Partial |
-| `.padding` | XAML margin translation for static edge/value forms | Partial |
-| Accessibility identifier | Automation ID | Generated |
-| Gestures and animations | Explicit platform implementation | Diagnostic only |
-| `NSViewRepresentable` | Native Windows control or interop surface | Diagnostic only |
-| Custom `Layout` | Project mapping or handwritten target control | Diagnostic only |
-| Arbitrary runtime geometry | View model or `SizeChanged` adapter | Diagnostic only |
+| `Grid` | `grid` | Parsed as a container. `Grid.RowDefinitions` and `Grid.ColumnDefinitions` are captured as metadata for transfer policy. |
+| `StackPanel Orientation="Vertical"` | `verticalStack` | Parsed as a linear vertical layout. |
+| `StackPanel Orientation="Horizontal"` | `horizontalStack` | Parsed as a linear horizontal layout. |
+| `TextBlock` | `text` | Captures text content. |
+| `Button`, `AppBarButton`, `HyperlinkButton` | `button` | Captures visible label when available and reports native action contract needs. |
+| `TextBox`, `PasswordBox` | `textField` | Captures header or placeholder text and reports state-binding contract needs. |
+| `Image` | `image` | Captures source and audits missing accessibility intent. |
+| `ScrollViewer` | `scrollView` | Captures scroll container and audits nested scroll risk. |
+| `ListView`, `GridView`, `ItemsRepeater` | `list` | Captures collection surface and reports collection/template contract needs. |
+| `Slider`, `ProgressBar` | `slider` | Captures range/progress surface and reports state contract needs. |
+| `ToggleSwitch`, `CheckBox` | `toggle` | Captures binary state surface and reports state contract needs. |
+| `Rectangle Height="1"` / `Width="1"` | `divider` | Treated as a separator. |
+| `Border Background=...` | `color` | Treated as a surface/color token candidate. |
+| Other native WinUI controls | `component` | Preserved as unsupported native component boundaries with warnings and suggested fixes. |
 
-Rows describe planned transfer outcomes in Loom’s `patterns:transfer` model; many
-entries are still design-policy decisions and require human review before release.
+For Windows-to-macOS planning, current output should be treated as a transfer risk
+report: it identifies layout structure, policy decisions, native behavior
+contracts, accessibility gaps, and unsupported boundaries before generation exists.
