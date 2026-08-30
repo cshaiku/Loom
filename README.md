@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.2.0**
+Current version: **0.3.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -37,6 +37,8 @@ The current usable slice includes:
 - A Vigil-style command registry with grouped namespaced commands, access
   markers, aliases, JSON catalog output, and per-command manuals.
 - Manifest validation and one-command multi-component project builds.
+- A versioned, validated Patterns catalog defining OS-agnostic layout and
+  control semantics independently of SwiftUI and WinUI spellings.
 
 ## Build and test
 
@@ -59,6 +61,20 @@ swift run loom list --category inspection
 swift run loom list --json
 swift run loom help project:build
 ```
+
+Inspect and validate semantic patterns:
+
+```sh
+swift run loom patterns:list
+swift run loom patterns:show split-view
+swift run loom patterns:validate
+```
+
+The root [`Patterns`](Patterns) directory contains one precise metadata file
+for each meaningful layout or control kind Loom currently recognizes. Each
+file defines intent, child and sizing semantics, typed attributes, valid
+ranges, constraints, accessibility behavior, and platform mappings. The
+pattern remains canonical; platform mappings are implementations of it.
 
 Analyze a SwiftUI view:
 
@@ -153,6 +169,7 @@ comment. Silent approximation is treated as a bug.
 
 - `Sources/LoomCore`: parser, layout model, XAML emitter, and parity checker.
 - `Sources/LoomCLI`: command-line interface.
+- `Patterns`: OS-agnostic semantic UI definitions and their normative schema.
 - `Tests/LoomCoreTests`: unit and integration-style fixtures.
 - `Examples/Voci`: configuration and commands for the sibling Voci project.
 - `docs`: architecture and translation support matrix.

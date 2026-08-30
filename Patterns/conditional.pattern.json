@@ -1,0 +1,9 @@
+{
+  "schema_version":"1","id":"conditional","version":"1.0.0","name":"Conditional Content","kind":"conditional","status":"stable","category":"structure",
+  "intent":{"summary":"Selects exactly one eligible content branch from a predicate without assigning platform visibility mechanics.","useWhen":["Content existence or presentation depends on state"],"avoidWhen":["The element must remain in layout and only its visual style changes"]},
+  "semantics":{"role":"state-dependent structural selection","childPolicy":"one true branch and an optional false branch","sizing":"size is that of the active branch","ordering":"active branch occupies the conditional's semantic position"},
+  "attributes":[{"name":"condition","valueType":"binding","required":true,"description":"Boolean state selecting the active branch."},{"name":"trueBranch","valueType":"reference","required":true,"description":"Pattern subtree active when condition is true."},{"name":"falseBranch","valueType":"reference","required":false,"description":"Pattern subtree active when condition is false."},{"name":"inactivePolicy","valueType":"enum","required":false,"description":"Whether inactive content is absent or retained without layout.","defaultValue":"absent","allowedValues":["absent","hidden"]}],
+  "constraints":[],
+  "accessibility":{"role":"none","nameSource":"none","focusBehavior":"only active content participates in focus order","notes":["Focus must move predictably if the focused branch becomes inactive."]},
+  "mappings":[{"platform":"swiftui","constructs":["if","if/else","Optional View"],"strategy":"Capture predicate and branch subtrees.","caveats":[]},{"platform":"winui3","constructs":["Visibility","VisualStateManager","x:Load"],"strategy":"Choose presence or visibility mechanics from inactivePolicy.","caveats":["Collapsed and unloaded content have different state lifetimes."]}],"tags":["structure","state","branch"]
+}

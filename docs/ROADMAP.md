@@ -9,8 +9,9 @@
 - Vigil-style grouped command registry, manuals, JSON catalog, and access
   metadata.
 - Voci project profile with six translated shell regions.
+- Versioned semantic Patterns catalog covering every meaningful layout node.
 
-## 0.3 — Recursive component graph
+## 0.4 — Recursive component graph
 
 - Discover computed SwiftUI subviews without requiring every property in the
   manifest.
@@ -23,9 +24,9 @@
 Acceptance: Voci's root shell graph resolves its local computed subviews and
 dialog `View` types across the macOS source set without duplicate work.
 
-## 0.4 — Mapping registry and owned output
+## 0.5 — Pattern-driven mapping registry and owned output
 
-- Add configurable semantic color, control, event, and binding mappings.
+- Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.
 - Introduce syntax-aware owned XAML regions or generated UserControls.
 - Refuse to overwrite handwritten XAML nodes outside Loom-owned output.
@@ -33,7 +34,7 @@ dialog `View` types across the macOS source set without duplicate work.
 Acceptance: rerunning Loom updates a generated Voci region idempotently while
 leaving native Windows behavior and unrelated XAML byte-for-byte unchanged.
 
-## 0.5 — Windows proof adapter
+## 0.6 — Windows proof adapter
 
 - Compile generated fragments on a Windows App SDK host.
 - Capture deterministic reference-size renders and accessibility trees.

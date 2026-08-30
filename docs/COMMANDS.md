@@ -20,6 +20,7 @@ repository-policy domain. The shared conventions are:
 | `inspection` | Read SwiftUI structure and compare existing XAML. |
 | `generation` | Lower one component to a reviewable XAML fragment. |
 | `projects` | Run manifest-driven multi-component translation workflows. |
+| `patterns` | Inspect and validate OS-agnostic UI semantics. |
 | `setup` | Describe and validate Loom project configuration. |
 
 ## Canonical commands and compatibility aliases
@@ -30,6 +31,9 @@ repository-policy domain. The shared conventions are:
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `generate:xaml` | `r/w` through `--output` | `generate` |
 | `project:build` | `w` | `project` |
+| `patterns:list` | `r` | — |
+| `patterns:show` | `r` | — |
+| `patterns:validate` | `r` | — |
 | `config:validate` | `r` | — |
 | `config:schema` | `r` | — |
 

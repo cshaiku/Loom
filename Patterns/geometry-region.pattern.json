@@ -1,0 +1,9 @@
+{
+  "schema_version":"1","id":"geometry-region","version":"1.0.0","name":"Geometry Region","kind":"geometryReader","status":"stable","category":"layout",
+  "intent":{"summary":"Makes the resolved bounds and coordinate space of a region available to descendant layout logic.","useWhen":["Layout genuinely depends on measured available space"],"avoidWhen":["Parent constraints, alignment, or proportional tracks can express the result declaratively"]},
+  "semantics":{"role":"measurement-aware container","childPolicy":"one logical content subtree","sizing":"accepts parent proposal and reports resolved logical dimensions","ordering":"inherits content order"},
+  "attributes":[{"name":"coordinateSpace","valueType":"enum","required":false,"description":"Coordinate system in which geometry is reported.","defaultValue":"local","allowedValues":["local","global","named"]},{"name":"spaceName","valueType":"string","required":false,"description":"Identifier required when coordinateSpace is named."}],
+  "constraints":[{"expression":"coordinateSpace != named || spaceName is present","message":"Named coordinate spaces require a name."}],
+  "accessibility":{"role":"none","nameSource":"none","focusBehavior":"not focusable","notes":["Measurement must not alter semantic order or accessibility identity."]},
+  "mappings":[{"platform":"swiftui","constructs":["GeometryReader","containerRelativeFrame"],"strategy":"Capture requested size and coordinate dependencies.","caveats":["GeometryReader participates in SwiftUI proposal semantics."]},{"platform":"winui3","constructs":["FrameworkElement.ActualWidth","FrameworkElement.ActualHeight","SizeChanged"],"strategy":"Resolve geometry after layout and feed dependent values through a bounded adapter.","caveats":["Event-driven measurement can create feedback loops."]}],"tags":["container","measurement","geometry"]
+}

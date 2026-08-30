@@ -1,0 +1,26 @@
+# Loom Patterns
+
+Patterns are Loom's canonical, operating-system-independent definitions of UI
+layout and control intent. A pattern describes what an element means before a
+SwiftUI parser or WinUI emitter decides how to express it.
+
+Every `*.pattern.json` file is independently versioned and declares:
+
+- stable identity, semantic kind, lifecycle status, and category;
+- intended and inappropriate uses;
+- child, sizing, and ordering semantics;
+- typed attributes with defaults, ranges, units, and enumerated values;
+- cross-attribute constraints;
+- accessibility behavior;
+- non-canonical source and target mappings for each platform.
+
+Platform mappings are evidence about how an OS framework can represent the
+pattern. They do not define the pattern itself.
+
+Validate the complete catalog with:
+
+```sh
+swift run loom patterns:validate
+```
+
+The normative metadata contract is `pattern.schema.json`.

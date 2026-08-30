@@ -125,6 +125,7 @@ private let sample = """
   #expect(catalog.contains("inspection\n"))
   #expect(catalog.contains("generation\n"))
   #expect(catalog.contains("projects\n"))
+  #expect(catalog.contains("patterns\n"))
   #expect(catalog.contains("setup\n"))
   #expect(catalog.contains("r/w"))
 
@@ -132,6 +133,52 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func patternCatalogIsValidAndCoversSemanticNodeKinds() throws {
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let directory = repository.appendingPathComponent("Patterns").path
+  let catalog = LoomPatternCatalog()
+  let report = catalog.validate(directory: directory)
+  #expect(report.status == "ok")
+  #expect(report.issues.isEmpty)
+
+  let patterns = try catalog.load(directory: directory)
+  #expect(patterns.count == 20)
+  let intentionallyNonSemantic: Set<LoomNodeKind> = [.root, .unsupported]
+  #expect(
+    Set(patterns.map(\.kind)) == Set(LoomNodeKind.allCases).subtracting(intentionallyNonSemantic))
+  #expect(patterns.allSatisfy { !$0.intent.summary.isEmpty })
+  #expect(patterns.allSatisfy { !$0.mappings.isEmpty })
+}
+
+@Test func patternValidationRejectsInvalidRangesAndDuplicateKinds() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let source = repository.appendingPathComponent("Patterns/text.pattern.json")
+  var text = try String(contentsOf: source, encoding: .utf8)
+  try text.write(
+    to: directory.appendingPathComponent("text.pattern.json"), atomically: true, encoding: .utf8)
+  text = text.replacingOccurrences(of: "\"id\":\"text\"", with: "\"id\":\"text-copy\"")
+    .replacingOccurrences(
+      of: "\"minimum\":1,\"maximum\":1000", with: "\"minimum\":10,\"maximum\":1")
+  try text.write(
+    to: directory.appendingPathComponent("text-copy.pattern.json"), atomically: true,
+    encoding: .utf8)
+
+  let report = LoomPatternCatalog().validate(directory: directory.path)
+  #expect(report.status == "error")
+  #expect(report.issues.contains { $0.code == "PATTERN008" })
+  #expect(report.issues.contains { $0.code == "PATTERN012" })
 }
 
 @Test func projectWorkflowValidatesAndBuildsAllComponents() throws {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-08-30
+
+- Added a normative `Patterns` catalog with one OS-agnostic semantic definition
+  for every meaningful layout and control kind Loom recognizes.
+- Added precise intent, structure, sizing, typed attribute, range, constraint,
+  accessibility, and platform-mapping metadata.
+- Added `patterns:list`, `patterns:show`, and `patterns:validate` commands.
+- Added typed pattern APIs, cross-file identity and kind validation, and full
+  semantic-kind coverage tests.
+
 ## 0.2.0 — 2026-08-30
 
 - Added a Vigil-inspired command registry with colon-namespaced canonical

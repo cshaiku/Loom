@@ -32,6 +32,17 @@ flags, aliases, synopsis text, and examples. Help, list, JSON catalog, manuals,
 and dispatch all resolve through that same metadata so the advertised surface
 cannot drift independently from the executable.
 
+## Semantic Patterns
+
+`Patterns/*.pattern.json` is the canonical vocabulary between source parsing
+and target emission. A pattern defines OS-agnostic intent, structure, sizing,
+attributes, constraints, accessibility behavior, and stable identity. SwiftUI
+and WinUI entries are explicitly mappings, not definitions of meaning.
+
+The catalog is governed by `Patterns/pattern.schema.json` and a typed runtime
+validator. Every meaningful `LoomNodeKind` must have exactly one pattern;
+synthetic roots and unsupported-source placeholders are intentionally excluded.
+
 ## Trust boundaries
 
 - SwiftSyntax validates and structures Swift declarations. The extracted

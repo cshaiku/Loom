@@ -46,7 +46,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.2.0")
+      print("loom 0.3.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -71,6 +71,11 @@ private enum LoomCommand {
         throw LoomError.invalidArguments("Usage: loom config:schema")
       }
       print(LoomProjectSchema.json)
+      return
+    }
+
+    if arguments[0].hasPrefix("patterns:") {
+      try runPatternCommand(arguments)
       return
     }
 
@@ -179,6 +184,64 @@ private enum LoomCommand {
       throw LoomError.invalidArguments("Unknown or empty command category \(category ?? "").")
     }
     print(output, terminator: "")
+  }
+
+  private static func runPatternCommand(_ arguments: [String]) throws {
+    guard let command = LoomCommandCatalog.resolve(arguments[0]) else {
+      throw LoomError.invalidArguments("Unknown pattern command \(arguments[0]).")
+    }
+    if arguments.count > 1 && (arguments[1] == "--help" || arguments[1] == "-h") {
+      print(LoomCommandCatalog.manual(command.command) ?? "", terminator: "")
+      return
+    }
+    var directory = "Patterns"
+    var json = false
+    var positional: [String] = []
+    var index = 1
+    while index < arguments.count {
+      switch arguments[index] {
+      case "--json":
+        json = true
+        index += 1
+      case "--directory":
+        guard index + 1 < arguments.count else {
+          throw LoomError.invalidArguments("Missing value for --directory.")
+        }
+        directory = arguments[index + 1]
+        index += 2
+      default:
+        positional.append(arguments[index])
+        index += 1
+      }
+    }
+
+    let catalog = LoomPatternCatalog()
+    switch command.command {
+    case "patterns:list":
+      guard positional.isEmpty else {
+        throw LoomError.invalidArguments("patterns:list accepts no positional arguments.")
+      }
+      let patterns = try catalog.load(directory: directory)
+      print(json ? try catalog.json(patterns) : catalog.listText(patterns), terminator: "")
+    case "patterns:show":
+      guard positional.count == 1 else {
+        throw LoomError.invalidArguments("patterns:show requires one pattern id.")
+      }
+      guard let pattern = try catalog.find(positional[0], directory: directory) else {
+        throw LoomError.invalidPattern("No pattern named \(positional[0]) in \(directory).")
+      }
+      print(try catalog.json(pattern), terminator: "")
+    case "patterns:validate":
+      guard positional.count <= 1 else {
+        throw LoomError.invalidArguments("patterns:validate accepts at most one directory.")
+      }
+      if let suppliedDirectory = positional.first { directory = suppliedDirectory }
+      let report = catalog.validate(directory: directory)
+      print(json ? try catalog.json(report) : catalog.text(report), terminator: "")
+      if report.status != "ok" { exit(1) }
+    default:
+      throw LoomError.invalidArguments("Unknown pattern command \(command.command).")
+    }
   }
 
   private static func parseSourceOptions(_ command: String, arguments: [String]) throws

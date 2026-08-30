@@ -99,6 +99,30 @@ public enum LoomCommandCatalog {
       ]
     ),
     LoomCommandInfo(
+      command: "patterns:list",
+      name: "List Semantic Patterns",
+      description: "List OS-agnostic layout and control patterns",
+      category: "patterns",
+      access: .read,
+      synopsis: ["loom patterns:list [--directory path] [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "patterns:show",
+      name: "Show Semantic Pattern",
+      description: "Print one complete pattern definition",
+      category: "patterns",
+      access: .read,
+      synopsis: ["loom patterns:show <id> [--directory path]"]
+    ),
+    LoomCommandInfo(
+      command: "patterns:validate",
+      name: "Validate Semantic Patterns",
+      description: "Validate pattern metadata, constraints, identity, and uniqueness",
+      category: "patterns",
+      access: .read,
+      synopsis: ["loom patterns:validate [directory] [--json]"]
+    ),
+    LoomCommandInfo(
       command: "config:validate",
       name: "Validate Project Manifest",
       description: "Validate a Loom manifest and its referenced SwiftUI components",

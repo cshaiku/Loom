@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cshaiku/Loom/Patterns/pattern.schema.json",
+  "title": "Loom OS-agnostic UI pattern",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "version", "name", "kind", "status", "category", "intent", "semantics", "attributes", "constraints", "accessibility", "mappings", "tags"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["draft", "stable", "deprecated"] },
+    "category": { "type": "string", "minLength": 1 },
+    "intent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "useWhen", "avoidWhen"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "useWhen": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "avoidWhen": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "semantics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "childPolicy", "sizing", "ordering"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "childPolicy": { "type": "string", "minLength": 1 },
+        "sizing": { "type": "string", "minLength": 1 },
+        "ordering": { "type": "string", "minLength": 1 }
+      }
+    },
+    "attributes": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "valueType", "required", "description"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "valueType": { "enum": ["string", "number", "boolean", "enum", "length", "insets", "alignment", "binding", "resource", "reference"] },
+          "required": { "type": "boolean" },
+          "description": { "type": "string", "minLength": 1 },
+          "defaultValue": { "type": "string" },
+          "allowedValues": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+          "minimum": { "type": "number" },
+          "maximum": { "type": "number" },
+          "units": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["expression", "message"],
+        "properties": { "expression": { "type": "string", "minLength": 1 }, "message": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "accessibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "nameSource", "focusBehavior", "notes"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "nameSource": { "type": "string", "minLength": 1 },
+        "focusBehavior": { "type": "string", "minLength": 1 },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "mappings": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["platform", "constructs", "strategy", "caveats"],
+        "properties": {
+          "platform": { "type": "string", "minLength": 1 },
+          "constructs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "strategy": { "type": "string", "minLength": 1 },
+          "caveats": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  }
+}

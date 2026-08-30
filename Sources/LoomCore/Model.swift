@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LoomNodeKind: String, Codable, Sendable, CaseIterable {
+public enum LoomNodeKind: String, Codable, Sendable, CaseIterable, Hashable {
   case root
   case geometryReader
   case verticalStack
@@ -130,6 +130,7 @@ public enum LoomError: Error, CustomStringConvertible {
   case malformedViewBody(String)
   case invalidArguments(String)
   case invalidProjectManifest(String)
+  case invalidPattern(String)
   case unsupportedTarget(String)
 
   public var description: String {
@@ -146,6 +147,8 @@ public enum LoomError: Error, CustomStringConvertible {
       return detail
     case .invalidProjectManifest(let detail):
       return "Invalid Loom project manifest: \(detail)"
+    case .invalidPattern(let detail):
+      return "Invalid Loom pattern: \(detail)"
     case .unsupportedTarget(let target):
       return "Unsupported target \(target). Loom currently emits winui3."
     }
