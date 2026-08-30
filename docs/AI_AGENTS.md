@@ -21,6 +21,8 @@ Then inspect the specific source surface before generating:
 ```sh
 loom inspect:errors ContentView.swift --root-view ContentView --json
 loom inspect:source ContentView.swift --root-view ContentView --json
+loom patterns:transfer ContentView.swift --from swiftui --to winui3 --format json
+loom inspect:ascii ContentView.swift --root-view ContentView
 loom generate:contracts ContentView.swift --root-view ContentView --json
 loom generate:xaml ContentView.swift --root-view ContentView --output Generated/ContentView.xaml
 ```
@@ -121,6 +123,29 @@ loom patterns:export --format style-dictionary
 Exports are derived from the canonical `Patterns/*.pattern.json` files. Do not
 edit exported files and treat them as disposable build artifacts unless a
 project explicitly commits generated metadata.
+
+## Pattern transfer and ASCII Patterns
+
+Use `patterns:transfer` before generation when the goal is to move interface
+design between platforms:
+
+```sh
+loom patterns:transfer ContentView.swift --from swiftui --to winui3 --format json
+loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
+```
+
+The report classifies each layout element as `direct`, `needs-policy`,
+`needs-native-contract`, `lossy`, or `unsupported`. Treat `unsupported` and
+`lossy` items as review blockers. Treat `needs-native-contract` items as
+required native implementation work beside generated layout.
+
+Use `inspect:ascii` when a compact plaintext layout sketch is more useful than
+full JSON:
+
+```sh
+loom inspect:ascii ContentView.swift --root-view ContentView
+loom inspect:ascii MainWindow.xaml
+```
 
 ## Translation boundaries
 

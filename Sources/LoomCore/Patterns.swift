@@ -63,6 +63,18 @@ public struct LoomPatternMapping: Codable, Sendable {
   public var caveats: [String]
 }
 
+public struct LoomPatternVariant: Codable, Sendable {
+  public var name: String
+  public var conditions: [String]
+  public var layoutPolicy: String
+  public var intent: String
+
+  enum CodingKeys: String, CodingKey {
+    case name, conditions, intent
+    case layoutPolicy = "layout_policy"
+  }
+}
+
 public struct LoomPattern: Codable, Sendable {
   public var schemaVersion: String
   public var id: String
@@ -77,12 +89,13 @@ public struct LoomPattern: Codable, Sendable {
   public var constraints: [LoomPatternConstraint]
   public var accessibility: LoomPatternAccessibility
   public var mappings: [LoomPatternMapping]
+  public var variants: [LoomPatternVariant]?
   public var tags: [String]
 
   enum CodingKeys: String, CodingKey {
     case schemaVersion = "schema_version"
     case id, version, name, kind, status, category, intent, semantics, attributes, constraints
-    case accessibility, mappings, tags
+    case accessibility, mappings, variants, tags
   }
 }
 
@@ -244,6 +257,16 @@ public struct LoomPatternCatalog: Sendable {
         {
           issues.append(
             issue("PATTERN014", attributePath, "defaultValue must be an allowed value."))
+        }
+      }
+      for variant in pattern.variants ?? [] {
+        let variantPath = "\(path)#variants.\(variant.name)"
+        if variant.name.isEmpty || variant.layoutPolicy.isEmpty || variant.intent.isEmpty {
+          issues.append(
+            issue("PATTERN016", variantPath, "Variant name, layout_policy, and intent are required."))
+        }
+        if variant.conditions.contains(where: { $0.isEmpty }) {
+          issues.append(issue("PATTERN017", variantPath, "Variant conditions cannot be empty."))
         }
       }
       if pattern.mappings.isEmpty

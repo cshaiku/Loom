@@ -81,6 +81,19 @@
         }
       }
     },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "conditions", "layout_policy", "intent"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "layout_policy": { "type": "string", "minLength": 1 },
+          "intent": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "tags": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
   }
 }

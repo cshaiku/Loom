@@ -31,6 +31,11 @@
 - Pattern export for Loom-native JSON, DTCG-style tokens, Open UI-style
   component metadata, ARIA summaries, and Style Dictionary-compatible token
   packages.
+- Pattern transfer planning for SwiftUI-to-WinUI and WinUI-to-SwiftUI layout
+  movement.
+- ASCII Pattern rendering for plaintext layout sketches in logs, reviews, and
+  agent workflows.
+- Optional Pattern variants for adaptive layout policy metadata.
 
 ## 0.4 — Recursive component graph
 
@@ -136,6 +141,19 @@ Status: shipped in 0.13.0.
 - Keeps `.pattern.json` as the canonical source while exposing derived shapes
   for design-token pipelines, component inventories, accessibility review, and
   design-system tooling.
+
+## 0.14 — Pattern transfer and ASCII Patterns
+
+Status: shipped in 0.14.0.
+
+- Added `patterns:transfer` to classify each normalized layout element for
+  OS-to-OS interface transfer.
+- Added transfer dispositions: `direct`, `needs-policy`,
+  `needs-native-contract`, `lossy`, and `unsupported`.
+- Added `inspect:ascii` to render SwiftUI or WinUI layouts as plaintext ASCII
+  Pattern trees.
+- Added optional Pattern variants in the schema/model for compact, dense,
+  accessibility, and adaptive layout policy metadata.
 
 ## 1.0 — Pattern-driven emitters
 

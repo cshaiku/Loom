@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.14.0 — 2026-08-30
+
+- Added `patterns:transfer` to classify interface layout transfer readiness
+  between SwiftUI and WinUI.
+- Added transfer dispositions for direct transfer, policy-dependent transfer,
+  native-contract-dependent transfer, lossy transfer, and unsupported nodes.
+- Added `inspect:ascii` for plaintext ASCII Pattern layout trees.
+- Added optional Pattern variants to the Pattern model and schema for adaptive,
+  dense, compact, or accessibility layout policies.
+- Updated README, command docs, architecture notes, Pattern docs, AI agent
+  guidance, roadmap, and VERSION.
+- Added tests for transfer classification, ASCII rendering, and JSON report
+  round trips.
+
 ## 0.13.0 — 2026-08-30
 
 - Added `patterns:export` to derive integration-oriented JSON from the

@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.13.0**
+Current version: **0.14.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -63,6 +63,12 @@ The current usable slice includes:
 - Pattern export for Loom-native JSON plus DTCG-style tokens, Open UI-style
   component metadata, ARIA accessibility summaries, and Style
   Dictionary-compatible token packages.
+- Pattern transfer planning that classifies each layout element as direct,
+  policy-dependent, native-contract-dependent, lossy, or unsupported when
+  moving between SwiftUI and WinUI.
+- ASCII Pattern rendering for a compact plaintext view of the layout shape.
+- Optional Pattern variants for compact, dense, accessibility, or adaptive
+  layout policies.
 
 ## Build and test
 
@@ -140,6 +146,29 @@ Analyze a SwiftUI view:
 swift run loom inspect:source MyView.swift --root-view ContentView
 swift run loom inspect:source MyView.swift --root-view ContentView --json
 ```
+
+Render an ASCII Pattern tree:
+
+```sh
+swift run loom inspect:ascii MyView.swift --root-view ContentView
+swift run loom inspect:ascii MainWindow.xaml
+```
+
+The ASCII Pattern is a plaintext structural sketch using simple tree
+characters such as `|`, `-`, `=`, and `\`. It is useful in reviews, agent logs,
+and diffs where screenshots or rich rendering are inappropriate.
+
+Plan interface transfer across platforms:
+
+```sh
+swift run loom patterns:transfer MyView.swift --from swiftui --to winui3
+swift run loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
+```
+
+The transfer report matches each node to its canonical Pattern, checks the
+target mapping, includes an ASCII Pattern, and separates clean layout transfer
+from policy decisions, native behavior contracts, lossy semantics, and missing
+target support.
 
 Analyze a WinUI XAML view:
 

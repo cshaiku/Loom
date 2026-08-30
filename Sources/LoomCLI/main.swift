@@ -61,6 +61,17 @@ private struct PatternOptions {
   var positional: [String] = []
 }
 
+private struct PatternTransferCommandOptions {
+  var sourcePath: String
+  var from: LoomTransferPlatform?
+  var to: LoomTransferPlatform?
+  var rootView = "ContentView"
+  var component = "body"
+  var patternsDirectory = "Patterns"
+  var format = "text"
+  var outputPath: String?
+}
+
 private struct RuntimeOptions {
   var quiet = false
   var verbose = false
@@ -111,7 +122,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.13.0")
+      print("loom 0.14.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -153,6 +164,8 @@ private enum LoomCommand {
     }
 
     switch command.command {
+    case "inspect:ascii":
+      try runASCIICommand(arguments, runtime: runtime)
     case "inspect:errors":
       try runErrorInspectionCommand(arguments, runtime: runtime)
     case "inspect:source", "inspect:parity", "generate:xaml", "generate:contracts":
@@ -369,6 +382,24 @@ private enum LoomCommand {
       print(LoomCommandCatalog.manual(command.command) ?? "", terminator: "")
       return
     }
+    if command.command == "patterns:transfer" {
+      let transferOptions = try parsePatternTransferOptions(arguments)
+      let analysis = try analyzeForTransfer(transferOptions)
+      let report = try LoomPatternTransferAnalyzer().analyze(
+        analysis: analysis,
+        options: LoomPatternTransferOptions(
+          from: transferOptions.from ?? inferredPlatform(for: transferOptions.sourcePath),
+          to: transferOptions.to ?? oppositePlatform(of: inferredPlatform(for: transferOptions.sourcePath)),
+          patternsDirectory: transferOptions.patternsDirectory
+        )
+      )
+      let output =
+        transferOptions.format == "json"
+        ? try LoomPatternTransferAnalyzer().json(report)
+        : LoomPatternTransferAnalyzer().text(report)
+      try writeOrPrint(output, path: transferOptions.outputPath, runtime: runtime)
+      return
+    }
     var options = try parsePatternOptions(arguments)
 
     let catalog = LoomPatternCatalog()
@@ -418,6 +449,25 @@ private enum LoomCommand {
     default:
       throw LoomError.invalidArguments("Unknown pattern command \(command.command).")
     }
+  }
+
+  private static func runASCIICommand(_ arguments: [String], runtime: RuntimeOptions) throws {
+    let options = try parseSourceOptions("inspect:ascii", arguments: arguments)
+    let analysis: LoomAnalysis
+    if options.sourcePath.lowercased().hasSuffix(".xaml") {
+      analysis = try XAMLFrontend().analyze(sourcePath: options.sourcePath)
+    } else {
+      analysis = try SwiftUIFrontend().analyze(
+        sourcePath: options.sourcePath,
+        rootView: options.rootView,
+        component: options.component
+      )
+    }
+    try writeOrPrint(
+      LoomASCIIPatternRenderer().render(analysis),
+      path: options.outputPath,
+      runtime: runtime
+    )
   }
 
   private static func parsePatternOptions(_ arguments: [String]) throws -> PatternOptions {
@@ -473,6 +523,87 @@ private enum LoomCommand {
       }
     }
     return options
+  }
+
+  private static func parsePatternTransferOptions(_ arguments: [String]) throws
+    -> PatternTransferCommandOptions
+  {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("patterns:transfer requires a Swift or XAML source path.")
+    }
+    var options = PatternTransferCommandOptions(sourcePath: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--from":
+        guard let platform = LoomTransferPlatform(rawValue: value.lowercased()) else {
+          throw LoomError.invalidArguments("--from must be swiftui or winui3.")
+        }
+        options.from = platform
+      case "--to":
+        guard let platform = LoomTransferPlatform(rawValue: value.lowercased()) else {
+          throw LoomError.invalidArguments("--to must be swiftui or winui3.")
+        }
+        options.to = platform
+      case "--root-view":
+        options.rootView = value
+      case "--component":
+        options.component = value
+      case "--patterns-dir":
+        options.patternsDirectory = value
+      case "--format":
+        guard value == "text" || value == "json" else {
+          throw LoomError.invalidArguments("--format must be text or json.")
+        }
+        options.format = value
+      case "--output":
+        options.outputPath = value
+      default:
+        throw LoomError.invalidArguments("Unknown transfer option \(flag).")
+      }
+      index += 2
+    }
+    let from = options.from ?? inferredPlatform(for: options.sourcePath)
+    let to = options.to ?? oppositePlatform(of: from)
+    guard from != to else {
+      throw LoomError.invalidArguments("--from and --to must describe different platforms.")
+    }
+    options.from = from
+    options.to = to
+    return options
+  }
+
+  private static func analyzeForTransfer(_ options: PatternTransferCommandOptions) throws
+    -> LoomAnalysis
+  {
+    switch options.from ?? inferredPlatform(for: options.sourcePath) {
+    case .swiftui:
+      return try SwiftUIFrontend().analyze(
+        sourcePath: options.sourcePath,
+        rootView: options.rootView,
+        component: options.component
+      )
+    case .winui3:
+      return try XAMLFrontend().analyze(sourcePath: options.sourcePath)
+    }
+  }
+
+  private static func inferredPlatform(for path: String) -> LoomTransferPlatform {
+    path.lowercased().hasSuffix(".xaml") ? .winui3 : .swiftui
+  }
+
+  private static func oppositePlatform(of platform: LoomTransferPlatform) -> LoomTransferPlatform {
+    platform == .swiftui ? .winui3 : .swiftui
   }
 
   private static func runDiagnosticCommand(_ command: String, arguments: [String]) throws {

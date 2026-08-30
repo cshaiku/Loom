@@ -135,7 +135,7 @@ public struct LoomSelfHealPlan: Codable, Sendable {
 }
 
 public struct LoomDiagnostics: Sendable {
-  public static let version = "0.13.0"
+  public static let version = "0.14.0"
 
   public init() {}
 

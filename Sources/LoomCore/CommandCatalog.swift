@@ -89,6 +89,22 @@ public enum LoomCommandCatalog {
       examples: ["loom inspect:xaml MainWindow.xaml --format json"]
     ),
     LoomCommandInfo(
+      command: "inspect:ascii",
+      name: "Inspect ASCII Pattern",
+      description: "Render a SwiftUI or WinUI layout as a plain ASCII Pattern tree",
+      category: "inspection",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["ascii"],
+      synopsis: [
+        "loom inspect:ascii <swift-file-or-xaml-file> [--root-view Name] [--component name] [--output path]"
+      ],
+      examples: [
+        "loom inspect:ascii ContentView.swift --root-view ContentView",
+        "loom inspect:ascii MainWindow.xaml",
+      ]
+    ),
+    LoomCommandInfo(
       command: "inspect:errors",
       name: "Inspect Errors",
       description: "Report Swift syntax, Loom analysis, XAML, manifest, or Pattern errors",
@@ -261,6 +277,22 @@ public enum LoomCommandCatalog {
       examples: [
         "loom patterns:export --format dtcg --output Generated/loom.tokens.json",
         "loom patterns:export --format open-ui",
+      ]
+    ),
+    LoomCommandInfo(
+      command: "patterns:transfer",
+      name: "Plan Pattern Transfer",
+      description: "Classify how safely layout Patterns transfer between SwiftUI and WinUI",
+      category: "patterns",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["transfer"],
+      synopsis: [
+        "loom patterns:transfer <swift-file-or-xaml-file> [--from swiftui|winui3] [--to swiftui|winui3] [--root-view Name] [--component name] [--patterns-dir path] [--format text|json] [--output path]"
+      ],
+      examples: [
+        "loom patterns:transfer ContentView.swift --from swiftui --to winui3",
+        "loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json",
       ]
     ),
     LoomCommandInfo(

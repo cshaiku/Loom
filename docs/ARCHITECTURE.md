@@ -26,14 +26,18 @@ incorrect conversion.
    Current targets are WinUI XAML fragments and SwiftUI scaffolds from XAML.
 8. **Target contracts**: behavior and state that cannot be safely translated as
    layout is emitted as a companion contract report for native WinUI wiring.
-9. **Parity checking**: source-derived constraints and component references are
+9. **Pattern transfer planning**: each normalized layout node is matched to a
+   canonical Pattern and classified for OS-to-OS transfer readiness.
+10. **ASCII Pattern rendering**: the normalized tree can be emitted as a compact
+    plaintext structural sketch for reviews, logs, and diffs.
+11. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-10. **Project workflow**: a validated `loom.json` manifest selects components,
+12. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
-11. **Owned output**: generated XAML can be written back only inside explicit
+13. **Owned output**: generated XAML can be written back only inside explicit
     Loom marker pairs, preserving surrounding handwritten platform code.
-12. **Runtime controls**: command success chatter is controlled globally by
+14. **Runtime controls**: command success chatter is controlled globally by
     `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
 
 ## Command architecture
@@ -64,6 +68,46 @@ files. DTCG-style tokens, Open UI-style component metadata, ARIA summaries, and
 Style Dictionary-compatible packages are export shapes for external tools;
 they are not alternate sources of truth. Changes should be made in
 `*.pattern.json` first and then re-exported.
+
+Patterns may also declare optional variants. A variant describes a named
+layout policy under conditions such as compact width, dense information mode,
+large text, or accessibility-first rendering. Variants are intentionally
+policy metadata, not platform-specific code.
+
+## Pattern Transfer
+
+`patterns:transfer` is the transferability layer between inspection and
+generation. It answers whether the interface design can move from one platform
+to another before code is emitted. Each visual node is classified:
+
+- `direct`: target mapping exists and no extra policy or native contract was
+  detected.
+- `needs-policy`: target mapping exists, but spacing, sizing, typography,
+  adaptive breakpoints, or tokens require a project decision.
+- `needs-native-contract`: layout transfers, but state, actions, lifecycle,
+  collections, accessibility metadata, or component boundaries need native
+  implementation.
+- `lossy`: target representation exists but platform-specific behavior may
+  degrade without review.
+- `unsupported`: no target mapping exists or the node is explicitly
+  unsupported.
+
+This makes Patterns operational: they are not only definitions of UI meaning,
+but also evidence for safe interface transfer.
+
+## ASCII Patterns
+
+`inspect:ascii` renders the normalized layout tree as a plain text structure:
+
+```text
+= ContentView.body
+\-- vertical-stack / VStack
+    |-- text / Text
+    \-- button / Button
+```
+
+The renderer uses simple ASCII connectors so the output works in terminals,
+plain logs, code reviews, and agent messages without relying on screenshots.
 
 ## Component Graphs
 

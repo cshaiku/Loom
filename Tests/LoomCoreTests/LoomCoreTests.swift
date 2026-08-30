@@ -144,6 +144,7 @@ private let sample = """
   #expect(catalog.contains("self-heal:plan"))
   #expect(catalog.contains("verify"))
   #expect(catalog.contains("graph:components"))
+  #expect(catalog.contains("inspect:ascii"))
   #expect(catalog.contains("inspect:errors"))
   #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
@@ -153,6 +154,7 @@ private let sample = """
   #expect(catalog.contains("patterns\n"))
   #expect(catalog.contains("patterns:lint"))
   #expect(catalog.contains("patterns:export"))
+  #expect(catalog.contains("patterns:transfer"))
   #expect(catalog.contains("setup\n"))
   #expect(catalog.contains("r/w"))
 
@@ -226,6 +228,46 @@ private let sample = """
   let json = try diagnostics.json(catalog)
   let decoded = try JSONDecoder().decode(LoomCommandCatalogCheckReport.self, from: Data(json.utf8))
   #expect(decoded.status == "ok")
+}
+
+@Test func asciiPatternRendererUsesPlainTextTree() throws {
+  let analysis = try SwiftUIFrontend().analyze(source: sample, rootView: "ContentView")
+  let ascii = LoomASCIIPatternRenderer().render(analysis)
+  #expect(ascii.contains("= ContentView.body"))
+  #expect(ascii.contains("|--") || ascii.contains("\\--"))
+  #expect(ascii.contains("horizontal-stack / HStack"))
+  #expect(ascii.contains("button / Button"))
+}
+
+@Test func patternTransferClassifiesLayoutBehaviorAndLoss() throws {
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let directory = repository.appendingPathComponent("Patterns").path
+  let analysis = try SwiftUIFrontend().analyze(source: sample, rootView: "ContentView")
+  let report = try LoomPatternTransferAnalyzer().analyze(
+    analysis: analysis,
+    options: .init(from: .swiftui, to: .winui3, patternsDirectory: directory)
+  )
+
+  #expect(report.from == .swiftui)
+  #expect(report.to == .winui3)
+  #expect(report.asciiPattern.contains("= ContentView.body"))
+  #expect(report.items.contains { $0.kind == .geometryReader && $0.disposition == .lossy })
+  #expect(report.items.contains { $0.kind == .button && $0.disposition == .needsNativeContract })
+  #expect(report.items.contains { $0.kind == .horizontalStack && $0.disposition == .needsPolicy })
+  #expect(report.summary.lossy >= 1)
+  #expect(report.summary.needsNativeContract >= 1)
+  #expect(report.summary.needsPolicy >= 1)
+
+  let text = LoomPatternTransferAnalyzer().text(report)
+  #expect(text.contains("Loom pattern transfer"))
+  #expect(text.contains("ASCII Pattern"))
+
+  let json = try LoomPatternTransferAnalyzer().json(report)
+  let decoded = try JSONDecoder().decode(LoomPatternTransferReport.self, from: Data(json.utf8))
+  #expect(decoded.items.count == report.items.count)
 }
 
 @Test func errorInspectionReportsSwiftSyntaxAndLoomDiagnostics() throws {

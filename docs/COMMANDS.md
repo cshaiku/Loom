@@ -33,6 +33,7 @@ repository-policy domain. The shared conventions are:
 | --- | --- | --- |
 | `inspect:source` | `r/w` through `--output` | `analyze` |
 | `inspect:xaml` | `r/w` through `--output` | `xaml` |
+| `inspect:ascii` | `r/w` through `--output` | `ascii` |
 | `inspect:errors` | `r/w` through `--output` | `errors` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
@@ -50,6 +51,7 @@ repository-policy domain. The shared conventions are:
 | `patterns:validate` | `r/w` through `--output` | — |
 | `patterns:lint` | `r/w` through `--output` | — |
 | `patterns:export` | `r/w` through `--output` | — |
+| `patterns:transfer` | `r/w` through `--output` | `transfer` |
 | `config:validate` | `r` | — |
 | `config:schema` | `r` | — |
 
@@ -87,6 +89,19 @@ translation path.
 loom inspect:xaml MainWindow.xaml
 loom inspect:xaml MainWindow.xaml --format json --output mainwindow.analysis.json
 ```
+
+## ASCII Pattern command
+
+`inspect:ascii` renders SwiftUI or WinUI XAML as a plaintext layout tree. It is
+intended for reviews, terminal output, agent logs, and diffs.
+
+```sh
+loom inspect:ascii ContentView.swift --root-view ContentView
+loom inspect:ascii ContentView.swift --root-view ContentView --output layout.ascii.txt
+loom inspect:ascii MainWindow.xaml
+```
+
+The structural tree uses plain ASCII markers such as `=`, `|--`, and `\--`.
 
 ## Error inspection command
 
@@ -141,6 +156,19 @@ loom patterns:export --format style-dictionary
 Supported formats are `loom`, `dtcg`, `open-ui`, `aria`, and
 `style-dictionary`. Pattern commands print to stdout by default and write only
 when `--output` is supplied.
+
+`patterns:transfer` plans the movement of an interface layout between
+platforms:
+
+```sh
+loom patterns:transfer ContentView.swift --from swiftui --to winui3
+loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
+```
+
+It parses the source into Loom IR, matches each node to a canonical Pattern,
+checks whether the target platform has a mapping, embeds an ASCII Pattern, and
+classifies each item as `direct`, `needs-policy`, `needs-native-contract`,
+`lossy`, or `unsupported`.
 
 `generate:xaml --patterns-dir Patterns --pattern-comments` loads the Pattern
 registry and annotates emitted nodes with the pattern id and WinUI mapping that
