@@ -1,11 +1,11 @@
 # Loom
 
-Current version: **0.16.0**
+Current version: **0.17.0**
 
-Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
-It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
-model, emits reviewable XAML, and reports constructs that need an explicit
-Windows implementation.
+Loom is a compiler-assisted bridge for transferring interface layout design
+between SwiftUI and WinUI 3 XAML. It lowers source UI into a platform-neutral
+layout model, matches elements to OS-agnostic Patterns, reports transfer risks,
+and emits reviewable target scaffolds where support exists.
 
 Loom deliberately does **not** claim to transpile an entire SwiftUI application.
 State ownership, media surfaces, gestures, custom layouts, platform services,
@@ -21,7 +21,25 @@ platform-specific threads visible.
 
 ## Current status
 
-The current usable slice includes:
+Loom is switching to Go for cross-platform distribution on macOS, Windows, and
+Linux. The Go CLI is the forward runtime starting in 0.17.0. The Swift
+implementation remains in the repository as the tagged 0.16.0 reference while
+the SwiftUI parser and target emitters are ported.
+
+The current Go slice includes:
+
+- Cross-platform command runtime in Go.
+- Pattern catalog listing, showing, validation, linting, and export.
+- WinUI XAML ingestion into the platform-neutral layout tree.
+- ASCII Pattern rendering for XAML input.
+- Pattern transfer planning from WinUI XAML to SwiftUI.
+- Accessibility and layout design auditing for XAML input, including
+  unsupported native WinUI component boundaries.
+- Curated OS/framework error suggestions.
+- Global `--quiet` and `--verbose` runtime output controls.
+- JSON output for automation and AI-agent workflows.
+
+The Swift reference implementation still includes:
 
 - Swift parsing through SwiftParser and SwiftSyntax.
 - Discovery of Swift structs conforming to `View`.
@@ -84,11 +102,24 @@ The current usable slice includes:
 ## Build and test
 
 ```sh
+go build ./cmd/loom
+go test ./...
+```
+
+The executable can be built anywhere Go runs:
+
+```sh
+go build -o loom ./cmd/loom
+```
+
+The Swift reference implementation can still be built and tested:
+
+```sh
 swift build
 swift test
 ```
 
-The executable is available as `.build/debug/loom` after a debug build.
+The Swift executable is available as `.build/debug/loom` after a debug build.
 
 ## Commands
 
@@ -97,21 +128,22 @@ Loom follows Vigil's command organization: canonical commands use
 read-only (`r`), writing (`w`), and conditional-writing (`r/w`) operations.
 
 ```sh
-swift run loom list
-swift run loom list --category inspection
-swift run loom list --json
-swift run loom help project:build
+go run ./cmd/loom list
+go run ./cmd/loom list --category inspection
+go run ./cmd/loom list --json
+go run ./cmd/loom help patterns:transfer
 ```
 
 Run read-only diagnostics:
 
 ```sh
-swift run loom status
-swift run loom verify --json
-swift run loom checks:command-catalog
-swift run loom guards:summary
-swift run loom self-heal:plan
+go run ./cmd/loom status
+go run ./cmd/loom verify --json
 ```
+
+The Swift reference retains additional diagnostics such as
+`checks:command-catalog`, `guards:summary`, and `self-heal:plan` until those are
+ported.
 
 Inspect errors before generating:
 
@@ -124,8 +156,8 @@ swift run loom inspect:errors Patterns --kind patterns --fail-on error
 Get OS/framework-specific suggestions:
 
 ```sh
-swift run loom suggestions:os-errors --platform winui3 --message StaticResource
-swift run loom suggestions:os-errors --platform swiftui --format json
+go run ./cmd/loom suggestions:os-errors --platform winui3 --message StaticResource
+go run ./cmd/loom suggestions:os-errors --platform swiftui --format json
 ```
 
 `inspect:errors` also attaches `suggested_fixes` to findings where Loom can
@@ -134,9 +166,8 @@ recognize a relevant SwiftUI, WinUI, XAML, macOS, or Windows error pattern.
 Audit accessibility and layout design quality:
 
 ```sh
-swift run loom accessibility:audit MyView.swift --root-view ContentView
-swift run loom accessibility:audit MainWindow.xaml --format json
-swift run loom accessibility:audit MyView.swift --fail-on warning
+go run ./cmd/loom accessibility:audit MainWindow.xaml --format json
+go run ./cmd/loom accessibility:audit MainWindow.xaml --fail-on warning
 ```
 
 The audit catches missing accessible names, unlabeled images and inputs,
@@ -149,8 +180,8 @@ and structured suggested fixes for users and AI agents.
 Global runtime flags can be placed before any command:
 
 ```sh
-swift run loom --quiet generate:xaml MyView.swift --output Generated/View.xaml
-swift run loom --verbose generate:xaml MyView.swift --output Generated/View.xaml
+go run ./cmd/loom --quiet inspect:ascii MainWindow.xaml --output Generated/View.txt
+go run ./cmd/loom --verbose inspect:xaml MainWindow.xaml --output Generated/View.json --json
 ```
 
 `--quiet` suppresses successful write chatter. Fatal errors and hints still go
@@ -160,11 +191,11 @@ provided.
 Inspect and validate semantic patterns:
 
 ```sh
-swift run loom patterns:list
-swift run loom patterns:show split-view
-swift run loom patterns:validate
-swift run loom patterns:lint
-swift run loom patterns:export --format dtcg --output Generated/loom.tokens.json
+go run ./cmd/loom patterns:list
+go run ./cmd/loom patterns:show split-view
+go run ./cmd/loom patterns:validate
+go run ./cmd/loom patterns:lint
+go run ./cmd/loom patterns:export --format dtcg --output Generated/loom.tokens.json
 ```
 
 The root [`Patterns`](Patterns) directory contains one precise metadata file
@@ -186,8 +217,7 @@ swift run loom inspect:source MyView.swift --root-view ContentView --json
 Render an ASCII Pattern tree:
 
 ```sh
-swift run loom inspect:ascii MyView.swift --root-view ContentView
-swift run loom inspect:ascii MainWindow.xaml
+go run ./cmd/loom inspect:ascii MainWindow.xaml
 ```
 
 The ASCII Pattern is a plaintext structural sketch using simple tree
@@ -197,8 +227,8 @@ and diffs where screenshots or rich rendering are inappropriate.
 Plan interface transfer across platforms:
 
 ```sh
-swift run loom patterns:transfer MyView.swift --from swiftui --to winui3
-swift run loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
+go run ./cmd/loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui
+go run ./cmd/loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui --format json
 ```
 
 The transfer report matches each node to its canonical Pattern, checks the
@@ -209,8 +239,8 @@ target support.
 Analyze a WinUI XAML view:
 
 ```sh
-swift run loom inspect:xaml MainWindow.xaml
-swift run loom inspect:xaml MainWindow.xaml --format json
+go run ./cmd/loom inspect:xaml MainWindow.xaml
+go run ./cmd/loom inspect:xaml MainWindow.xaml --format json
 ```
 
 Generate a SwiftUI scaffold from WinUI XAML:
@@ -385,8 +415,12 @@ as a bug.
 
 ## Repository structure
 
-- `Sources/LoomCore`: parser, layout model, XAML emitter, and parity checker.
-- `Sources/LoomCLI`: command-line interface.
+- `cmd/loom`: Go command-line entrypoint.
+- `internal/loom`: Go runtime, Pattern catalog, XAML ingestion, audit,
+  transfer, suggestions, and CLI dispatch.
+- `Sources/LoomCore`: Swift reference parser, layout model, emitters, and
+  parity checker.
+- `Sources/LoomCLI`: Swift reference command-line interface.
 - `Patterns`: OS-agnostic semantic UI definitions and their normative schema.
 - `Tests/LoomCoreTests`: unit and integration-style fixtures.
 - `Examples/Voci`: configuration and commands for the sibling Voci project.
@@ -397,9 +431,9 @@ See the [command organization](docs/COMMANDS.md) and the phased
 
 ## Roadmap
 
-1. Expand Pattern-driven emission from trace comments into full mapping policy.
-2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
-3. Add project-level bidirectional manifests for XAML-to-SwiftUI workflows.
-4. Generate target contract stubs for events and bindings.
-5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
-6. Add equivalent emitters for other declarative desktop UI targets.
+1. Port SwiftUI parsing and source diagnostics to Go.
+2. Port XAML and SwiftUI emitters to Go.
+3. Port project manifests, owned-region generation, and self-healing guards.
+4. Expand Pattern-driven emission from trace comments into full mapping policy.
+5. Generate target contract stubs for events and bindings.
+6. Build Windows-hosted XAML compilation and screenshot comparison adapters.

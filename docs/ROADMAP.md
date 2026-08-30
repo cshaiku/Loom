@@ -45,6 +45,8 @@
   boundaries and surfaced in audit/transfer reports.
 - Audit findings include structured suggested fixes for user decisions and AI
   agent implementation actions.
+- Go runtime foundation for cross-platform macOS, Windows, and Linux CLI
+  distribution.
 
 ## 0.4 — Recursive component graph
 
@@ -188,6 +190,38 @@ Status: shipped in 0.16.0.
   transfer reports.
 - Added structured `suggested_fixes` to accessibility audit findings for user
   decisions and AI agent implementation actions.
+
+## 0.17 — Go runtime foundation
+
+Status: shipped in 0.17.0.
+
+- Added the forward Go CLI under `cmd/loom` and `internal/loom`.
+- Ported Pattern listing/showing/validation/linting/export.
+- Ported WinUI XAML ingestion, ASCII Pattern rendering, accessibility audit,
+  Pattern transfer, OS error suggestions, `status`, `verify`, command listing,
+  help, JSON output, `--quiet`, and `--verbose`.
+- Kept the Swift implementation as the 0.16.0 reference while the remaining
+  parser, emitter, project, parity, and owned-region guard surface is ported.
+
+## 0.18 — Go SwiftUI frontend
+
+- Port SwiftUI source inspection and syntax/error diagnostics to Go.
+- Select a durable parser strategy instead of depending on SwiftSyntax at
+  runtime.
+- Preserve component graph discovery and computed-subview extraction behavior.
+
+Acceptance: `loom inspect:source`, `loom inspect:errors --kind swift`, and
+`loom graph:components` work from the Go CLI on macOS, Windows, and Linux.
+
+## 0.19 — Go emitters and guarded writes
+
+- Port XAML generation, SwiftUI scaffold generation, target contracts,
+  project manifests, owned-region replacement, and self-healing guard reports.
+- Keep generated output stable against the Swift 0.16 reference fixtures where
+  semantics match.
+
+Acceptance: the Go CLI can run the existing Voci manifest workflow and update
+owned XAML regions without changing handwritten platform code.
 
 ## 1.0 — Pattern-driven emitters
 

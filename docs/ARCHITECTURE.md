@@ -6,6 +6,18 @@ Loom converts the layout semantics that SwiftUI and WinUI 3 can reasonably
 share. It never hides platform behavior behind an apparently successful but
 incorrect conversion.
 
+## Runtime direction
+
+Loom is moving to Go as its forward implementation so the CLI can run as a
+native binary on macOS, Windows, and Linux. The Swift implementation remains as
+the 0.16.0 reference for SwiftUI parsing, generation, project workflows, and
+owned-region guards until those pieces are ported.
+
+The Go runtime currently owns Pattern catalog operations, WinUI XAML ingestion,
+ASCII Pattern rendering, accessibility/layout audit, Pattern transfer, OS error
+suggestions, command listing/help, `status`, `verify`, JSON output, `--quiet`,
+and `--verbose`.
+
 ## Pipeline
 
 1. **Swift frontend**: SwiftParser produces a source-accurate SwiftSyntax tree.

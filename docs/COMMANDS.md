@@ -1,5 +1,9 @@
 # Command organization
 
+Starting in 0.17.0, Loom is migrating to Go as the forward cross-platform CLI.
+Commands already available in the Go runtime are marked `Go`. Commands still
+available only in the Swift 0.16 reference are marked `Swift ref`.
+
 Loom follows the command ergonomics established by Vigil without copying its
 repository-policy domain. The shared conventions are:
 
@@ -31,33 +35,33 @@ repository-policy domain. The shared conventions are:
 
 ## Canonical commands and compatibility aliases
 
-| Canonical command | Access | Alias |
-| --- | --- | --- |
-| `accessibility:audit` | `r/w` through `--output` | `a11y` |
-| `inspect:source` | `r/w` through `--output` | `analyze` |
-| `inspect:xaml` | `r/w` through `--output` | `xaml` |
-| `inspect:ascii` | `r/w` through `--output` | `ascii` |
-| `inspect:errors` | `r/w` through `--output` | `errors` |
-| `inspect:parity` | `r/w` through `--output` | `parity` |
-| `graph:components` | `r/w` through `--output` | `graph` |
-| `generate:swiftui` | `r/w` through `--output` | — |
-| `generate:xaml` | `r/w` through `--output`, `--replace-region` | `generate` |
-| `generate:contracts` | `r/w` through `--output` | `contracts` |
-| `project:build` | `w` | `project` |
-| `status` | `r` | — |
-| `verify` | `r` | — |
-| `checks:command-catalog` | `r` | — |
-| `guards:summary` | `r` | — |
-| `self-heal:plan` | `r` | — |
-| `patterns:list` | `r/w` through `--output` | — |
-| `patterns:show` | `r/w` through `--output` | — |
-| `patterns:validate` | `r/w` through `--output` | — |
-| `patterns:lint` | `r/w` through `--output` | — |
-| `patterns:export` | `r/w` through `--output` | — |
-| `patterns:transfer` | `r/w` through `--output` | `transfer` |
-| `suggestions:os-errors` | `r/w` through `--output` | `os-errors` |
-| `config:validate` | `r` | — |
-| `config:schema` | `r` | — |
+| Canonical command | Runtime | Access | Alias |
+| --- | --- | --- | --- |
+| `accessibility:audit` | Go | `r/w` through `--output` | `a11y` |
+| `inspect:source` | Swift ref | `r/w` through `--output` | `analyze` |
+| `inspect:xaml` | Go | `r/w` through `--output` | `xaml` |
+| `inspect:ascii` | Go | `r/w` through `--output` | `ascii` |
+| `inspect:errors` | Swift ref | `r/w` through `--output` | `errors` |
+| `inspect:parity` | Swift ref | `r/w` through `--output` | `parity` |
+| `graph:components` | Swift ref | `r/w` through `--output` | `graph` |
+| `generate:swiftui` | Swift ref | `r/w` through `--output` | — |
+| `generate:xaml` | Swift ref | `r/w` through `--output`, `--replace-region` | `generate` |
+| `generate:contracts` | Swift ref | `r/w` through `--output` | `contracts` |
+| `project:build` | Swift ref | `w` | `project` |
+| `status` | Go | `r` | — |
+| `verify` | Go | `r` | — |
+| `checks:command-catalog` | Swift ref | `r` | — |
+| `guards:summary` | Swift ref | `r` | — |
+| `self-heal:plan` | Swift ref | `r` | — |
+| `patterns:list` | Go | `r/w` through `--output` | — |
+| `patterns:show` | Go | `r/w` through `--output` | — |
+| `patterns:validate` | Go | `r/w` through `--output` | — |
+| `patterns:lint` | Go | `r/w` through `--output` | — |
+| `patterns:export` | Go | `r/w` through `--output` | — |
+| `patterns:transfer` | Go | `r/w` through `--output` | `transfer` |
+| `suggestions:os-errors` | Go | `r/w` through `--output` | `os-errors` |
+| `config:validate` | Swift ref | `r` | — |
+| `config:schema` | Swift ref | `r` | — |
 
 Aliases preserve the 0.1 command surface, but documentation and automation
 should use canonical names.
@@ -71,17 +75,18 @@ readiness and policy visibility:
 loom status
 loom status --patterns-dir Patterns --json
 loom verify
+```
+
+`status` reports version, command count, and Pattern catalog health. `verify`
+runs Pattern validation/lint and command availability checks.
+
+The Swift reference also retains:
+
+```sh
 loom checks:command-catalog --json
 loom guards:summary
 loom self-heal:plan
 ```
-
-`status` reports version, working directory, command count, and Pattern catalog
-health. `verify` runs the read-only command catalog check plus Pattern
-validation/lint. `checks:command-catalog` audits command metadata and aliases.
-`guards:summary` lists commands that can write and the flags that authorize
-writes. `self-heal:plan` lists explicit repair-style actions and their
-guardrails.
 
 ## Accessibility audit command
 

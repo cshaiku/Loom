@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.17.0 — 2026-08-30
+
+- Started the Go migration so Loom can ship as a single cross-platform CLI for
+  macOS, Windows, and Linux.
+- Added `cmd/loom` and `internal/loom` as the forward Go runtime.
+- Ported Pattern catalog operations, WinUI XAML ingestion, ASCII Pattern
+  rendering, accessibility/layout audit, Pattern transfer, OS error
+  suggestions, command listing/help, `status`, and `verify`.
+- Preserved the Swift implementation as the 0.16.0 reference while SwiftUI
+  parsing, generation, project workflows, owned-region guards, and parity
+  commands are ported.
+- Added Go regression tests for Pattern validation, native WinUI component
+  boundaries, structured suggested fixes, transfer classification, OS error
+  matching, CLI JSON output, version output, and `--quiet` write behavior.
+
 ## 0.16.0 — 2026-08-30
 
 - Added explicit `XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warnings for native

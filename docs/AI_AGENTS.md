@@ -6,6 +6,16 @@ errors before generating or updating target files.
 
 ## Default agent workflow
 
+Use the Go CLI for the 0.17.0-forward command surface:
+
+```sh
+go run ./cmd/loom status --json
+go run ./cmd/loom verify --json
+go run ./cmd/loom list --json
+go run ./cmd/loom patterns:validate
+go run ./cmd/loom patterns:lint
+```
+
 Use this order when entering an unfamiliar Loom workspace:
 
 ```sh
@@ -28,6 +38,10 @@ loom inspect:ascii ContentView.swift --root-view ContentView
 loom generate:contracts ContentView.swift --root-view ContentView --json
 loom generate:xaml ContentView.swift --root-view ContentView --output Generated/ContentView.xaml
 ```
+
+SwiftUI parsing, generation, project builds, owned-region updates,
+`inspect:errors`, `graph:components`, `guards:summary`, and `self-heal:plan`
+are still served by the Swift reference until the Go port reaches parity.
 
 For mature native targets, prefer owned-region updates over whole-file
 replacement:
