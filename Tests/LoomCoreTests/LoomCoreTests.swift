@@ -127,6 +127,7 @@ private let sample = """
   #expect(catalog.contains("generation\n"))
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
+  #expect(catalog.contains("patterns:lint"))
   #expect(catalog.contains("setup\n"))
   #expect(catalog.contains("r/w"))
 
@@ -202,6 +203,9 @@ private let sample = """
   let report = catalog.validate(directory: directory)
   #expect(report.status == "ok")
   #expect(report.issues.isEmpty)
+  let lint = catalog.lint(directory: directory)
+  #expect(lint.status == "ok")
+  #expect(lint.issues.isEmpty)
 
   let patterns = try catalog.load(directory: directory)
   #expect(patterns.count == 20)
@@ -210,6 +214,29 @@ private let sample = """
     Set(patterns.map(\.kind)) == Set(LoomNodeKind.allCases).subtracting(intentionallyNonSemantic))
   #expect(patterns.allSatisfy { !$0.intent.summary.isEmpty })
   #expect(patterns.allSatisfy { !$0.mappings.isEmpty })
+}
+
+@Test func xamlEmitterCanTracePatternMappings() throws {
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let registry = try LoomPatternRegistry(
+    directory: repository.appendingPathComponent("Patterns").path)
+  let analysis = try SwiftUIFrontend().analyze(
+    source: "struct ContentView: View { var body: some View { VStack { Text(\"Ready\") } } }",
+    rootView: "ContentView"
+  )
+
+  let stable = XAMLEmitter().emit(analysis)
+  #expect(!stable.contains("Loom pattern:"))
+
+  let traced = XAMLEmitter(
+    options: .init(includePatternComments: true),
+    patternRegistry: registry
+  ).emit(analysis)
+  #expect(traced.contains("Loom pattern: vertical-stack -> winui3 Grid, StackPanel"))
+  #expect(traced.contains("Loom pattern: text -> winui3 TextBlock"))
 }
 
 @Test func patternValidationRejectsInvalidRangesAndDuplicateKinds() throws {

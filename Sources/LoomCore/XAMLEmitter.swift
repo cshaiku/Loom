@@ -2,9 +2,11 @@ import Foundation
 
 public struct XAMLEmissionOptions: Sendable {
   public var themeResourcePrefix: String?
+  public var includePatternComments: Bool
 
-  public init(themeResourcePrefix: String? = nil) {
+  public init(themeResourcePrefix: String? = nil, includePatternComments: Bool = false) {
     self.themeResourcePrefix = themeResourcePrefix
+    self.includePatternComments = includePatternComments
   }
 
   var backgroundBrush: String {
@@ -20,9 +22,11 @@ public struct XAMLEmissionOptions: Sendable {
 
 public struct XAMLEmitter: Sendable {
   public var options: XAMLEmissionOptions
+  public var patternRegistry: LoomPatternRegistry?
 
-  public init(options: XAMLEmissionOptions = .init()) {
+  public init(options: XAMLEmissionOptions = .init(), patternRegistry: LoomPatternRegistry? = nil) {
     self.options = options
+    self.patternRegistry = patternRegistry
   }
 
   public func emit(_ analysis: LoomAnalysis) -> String {
@@ -52,6 +56,7 @@ public struct XAMLEmitter: Sendable {
     into lines: inout [String]
   ) {
     let prefix = String(repeating: "    ", count: indent)
+    appendPatternComment(for: node, prefix: prefix, into: &lines)
     switch node.kind {
     case .root, .overlayStack, .geometryReader:
       let attributes = commonAttributes(node, placement: placement)
@@ -200,6 +205,16 @@ public struct XAMLEmitter: Sendable {
       emit(child, indent: indent + 1, placement: nil, into: &lines)
     }
     lines.append("\(prefix)</StackPanel>")
+  }
+
+  private func appendPatternComment(for node: LoomNode, prefix: String, into lines: inout [String]) {
+    guard options.includePatternComments, let pattern = patternRegistry?.pattern(for: node.kind)
+    else { return }
+    let mapping = patternRegistry?.mapping(for: node.kind, platform: "winui3")
+    let constructs = mapping?.constructs.joined(separator: ", ") ?? "unmapped"
+    lines.append(
+      "\(prefix)<!-- Loom pattern: \(xmlComment(pattern.id)) -> winui3 \(xmlComment(constructs)) -->"
+    )
   }
 
   private func dimensionAttributes(for node: LoomNode, horizontal: Bool) -> String {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 — 2026-08-30
+
+- Added an operational Pattern registry for looking up semantic mappings by
+  `LoomNodeKind`.
+- Added `patterns:lint` to enforce bidirectional mapping quality beyond basic
+  schema validity.
+- Added `generate:xaml --patterns-dir ... --pattern-comments` to trace emitted
+  XAML nodes back to OS-agnostic Pattern ids and WinUI constructs.
+- Kept default XAML output stable unless pattern comments are explicitly
+  requested.
+- Documented the direction-neutral mapping model needed for future
+  Windows-to-macOS translation.
+
 ## 0.4.0 — 2026-08-30
 
 - Added `graph:components` to discover reachable SwiftUI layout components from

@@ -18,6 +18,8 @@ private struct SourceOptions {
   var outputPath: String?
   var xamlPath: String?
   var themeResourcePrefix: String?
+  var patternsDirectory: String?
+  var includePatternComments = false
 }
 
 private struct GraphOptions {
@@ -56,7 +58,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.4.0")
+      print("loom 0.5.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -142,8 +144,13 @@ private enum LoomCommand {
         ? try AnalysisReporter().json(analysis)
         : AnalysisReporter().text(analysis)
     case "generate:xaml":
+      let registry = try options.patternsDirectory.map { try LoomPatternRegistry(directory: $0) }
       output = XAMLEmitter(
-        options: XAMLEmissionOptions(themeResourcePrefix: options.themeResourcePrefix)
+        options: XAMLEmissionOptions(
+          themeResourcePrefix: options.themeResourcePrefix,
+          includePatternComments: options.includePatternComments
+        ),
+        patternRegistry: registry
       ).emit(analysis)
     case "inspect:parity":
       guard let xamlPath = options.xamlPath else {
@@ -273,6 +280,14 @@ private enum LoomCommand {
       let report = catalog.validate(directory: directory)
       print(json ? try catalog.json(report) : catalog.text(report), terminator: "")
       if report.status != "ok" { exit(1) }
+    case "patterns:lint":
+      guard positional.count <= 1 else {
+        throw LoomError.invalidArguments("patterns:lint accepts at most one directory.")
+      }
+      if let suppliedDirectory = positional.first { directory = suppliedDirectory }
+      let report = catalog.lint(directory: directory)
+      print(json ? try catalog.json(report) : catalog.text(report), terminator: "")
+      if report.status != "ok" { exit(1) }
     default:
       throw LoomError.invalidArguments("Unknown pattern command \(command.command).")
     }
@@ -293,6 +308,11 @@ private enum LoomCommand {
         index += 1
         continue
       }
+      if flag == "--pattern-comments" {
+        options.includePatternComments = true
+        index += 1
+        continue
+      }
       guard index + 1 < arguments.count else {
         throw LoomError.invalidArguments("Missing value for \(flag).")
       }
@@ -308,9 +328,13 @@ private enum LoomCommand {
       case "--output": options.outputPath = value
       case "--xaml": options.xamlPath = value
       case "--theme-prefix": options.themeResourcePrefix = value
+      case "--patterns-dir": options.patternsDirectory = value
       default: throw LoomError.invalidArguments("Unknown option \(flag).")
       }
       index += 2
+    }
+    if options.includePatternComments && options.patternsDirectory == nil {
+      throw LoomError.invalidArguments("--pattern-comments requires --patterns-dir <path>.")
     }
     return options
   }

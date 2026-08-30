@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.4.0**
+Current version: **0.5.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -41,6 +41,8 @@ The current usable slice includes:
 - Manifest validation and one-command multi-component project builds.
 - A versioned, validated Patterns catalog defining OS-agnostic layout and
   control semantics independently of SwiftUI and WinUI spellings.
+- An operational Pattern registry and stricter lint gate for bidirectional
+  platform mappings.
 
 ## Build and test
 
@@ -70,6 +72,7 @@ Inspect and validate semantic patterns:
 swift run loom patterns:list
 swift run loom patterns:show split-view
 swift run loom patterns:validate
+swift run loom patterns:lint
 ```
 
 The root [`Patterns`](Patterns) directory contains one precise metadata file
@@ -116,6 +119,15 @@ Generate a reviewable WinUI 3 XAML fragment:
 swift run loom generate:xaml MyView.swift \
   --root-view ContentView \
   --output Generated/ContentView.xaml
+```
+
+Trace which OS-agnostic patterns drove emitted XAML nodes:
+
+```sh
+swift run loom generate:xaml MyView.swift \
+  --root-view ContentView \
+  --patterns-dir Patterns \
+  --pattern-comments
 ```
 
 Projects with a consistent XAML resource prefix can retain their theme tokens:
@@ -175,7 +187,10 @@ machine-readable contract.
 
 ## Translation policy
 
-Loom translates intent, not spelling. For example, `HStack` does not always
+Loom translates intent, not spelling. The same Pattern vocabulary is intended
+to support SwiftUI-to-XAML and XAML-to-SwiftUI workflows; each platform is a
+mapping of a shared semantic pattern, not the canonical definition. For
+example, `HStack` does not always
 become `StackPanel`: a stack containing `Spacer`, flexible frames, or competing
 minimum widths needs a `Grid` with star-sized columns. `ZStack` naturally maps
 to layered Grid content. `ForEach` normally becomes a collection control and
@@ -198,8 +213,9 @@ See the [command organization](docs/COMMANDS.md) and the phased
 
 ## Roadmap
 
-1. Drive target mappings from Patterns instead of hardcoded emitter policy.
+1. Expand Pattern-driven emission from trace comments into full mapping policy.
 2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
 3. Add syntax-aware incremental XAML regions instead of whole-file replacement.
-4. Build Windows-hosted XAML compilation and screenshot comparison adapters.
-5. Add equivalent emitters for other declarative desktop UI targets.
+4. Add XAML ingestion so Windows layouts can be normalized into the shared IR.
+5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
+6. Add equivalent emitters for other declarative desktop UI targets.

@@ -12,6 +12,7 @@
 - Versioned semantic Patterns catalog covering every meaningful layout node.
 - Recursive component graph discovery for computed subviews and custom `View`
   structs across Swift source directories.
+- Pattern registry, operational linting, and opt-in XAML mapping trace comments.
 
 ## 0.4 — Recursive component graph
 
@@ -25,7 +26,18 @@ Status: shipped in 0.4.0.
 - It supports include/exclude globs so large applications can constrain source
   discovery deterministically.
 
-## 0.5 — Pattern-driven mapping registry and owned output
+## 0.5 — Pattern-driven mapping registry
+
+Status: initial mapping registry shipped in 0.5.0.
+
+- `patterns:lint` enforces operational mapping quality beyond structural
+  validity.
+- `generate:xaml --patterns-dir Patterns --pattern-comments` traces emitted
+  nodes back to OS-agnostic Pattern ids and WinUI constructs.
+- Pattern mappings remain direction-neutral so future XAML ingestion can target
+  the same IR used by SwiftUI extraction.
+
+## 0.6 — Owned output and target contracts
 
 - Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.
@@ -35,7 +47,7 @@ Status: shipped in 0.4.0.
 Acceptance: rerunning Loom updates a generated Voci region idempotently while
 leaving native Windows behavior and unrelated XAML byte-for-byte unchanged.
 
-## 0.6 — Windows proof adapter
+## 0.7 — Windows proof adapter
 
 - Compile generated fragments on a Windows App SDK host.
 - Capture deterministic reference-size renders and accessibility trees.

@@ -40,11 +40,15 @@ cannot drift independently from the executable.
 `Patterns/*.pattern.json` is the canonical vocabulary between source parsing
 and target emission. A pattern defines OS-agnostic intent, structure, sizing,
 attributes, constraints, accessibility behavior, and stable identity. SwiftUI
-and WinUI entries are explicitly mappings, not definitions of meaning.
+and WinUI entries are explicitly mappings, not definitions of meaning. This is
+direction-neutral by design: SwiftUI-to-XAML and XAML-to-SwiftUI should both
+normalize through the same shared IR and Pattern vocabulary.
 
 The catalog is governed by `Patterns/pattern.schema.json` and a typed runtime
 validator. Every meaningful `LoomNodeKind` must have exactly one pattern;
 synthetic roots and unsupported-source placeholders are intentionally excluded.
+`patterns:lint` adds operational mapping rules, and the XAML emitter can load a
+Pattern registry to trace which pattern drives an emitted WinUI node.
 
 ## Component Graphs
 

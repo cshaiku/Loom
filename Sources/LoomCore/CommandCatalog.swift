@@ -100,7 +100,7 @@ public enum LoomCommandCatalog {
       writeFlags: ["--output"],
       aliases: ["generate"],
       synopsis: [
-        "loom generate:xaml <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--output path]"
+        "loom generate:xaml <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--patterns-dir path] [--pattern-comments] [--output path]"
       ]
     ),
     LoomCommandInfo(
@@ -137,6 +137,14 @@ public enum LoomCommandCatalog {
       category: "patterns",
       access: .read,
       synopsis: ["loom patterns:validate [directory] [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "patterns:lint",
+      name: "Lint Operational Patterns",
+      description: "Enforce operational quality rules for bidirectional pattern mappings",
+      category: "patterns",
+      access: .read,
+      synopsis: ["loom patterns:lint [directory] [--json]"]
     ),
     LoomCommandInfo(
       command: "config:validate",

@@ -106,6 +106,26 @@ public struct LoomPatternValidationReport: Codable, Sendable {
   }
 }
 
+public struct LoomPatternRegistry: Sendable {
+  private let patternsByKind: [LoomNodeKind: LoomPattern]
+
+  public init(patterns: [LoomPattern]) {
+    self.patternsByKind = Dictionary(uniqueKeysWithValues: patterns.map { ($0.kind, $0) })
+  }
+
+  public init(directory: String) throws {
+    self.init(patterns: try LoomPatternCatalog().load(directory: directory))
+  }
+
+  public func pattern(for kind: LoomNodeKind) -> LoomPattern? {
+    patternsByKind[kind]
+  }
+
+  public func mapping(for kind: LoomNodeKind, platform: String) -> LoomPatternMapping? {
+    pattern(for: kind)?.mappings.first { $0.platform == platform }
+  }
+}
+
 public struct LoomPatternCatalog: Sendable {
   public init() {}
 
@@ -226,6 +246,52 @@ public struct LoomPatternCatalog: Sendable {
       }
     }
     return report(directory: standardized, count: patterns.count, issues: issues)
+  }
+
+  public func lint(directory: String) -> LoomPatternValidationReport {
+    var report = validate(directory: directory)
+    guard report.status == "ok" else { return report }
+    let patterns: [LoomPattern]
+    do {
+      patterns = try load(directory: directory)
+    } catch {
+      return validate(directory: directory)
+    }
+
+    var issues = report.issues
+    for pattern in patterns {
+      let path = "\(pattern.id).pattern.json"
+      if pattern.status != .stable {
+        issues.append(issue("PATTERN101", path, "Operational patterns must be stable."))
+      }
+      let platforms = Set(pattern.mappings.map(\.platform))
+      if !platforms.contains("swiftui") {
+        issues.append(issue("PATTERN102", path, "Pattern must include a swiftui mapping."))
+      }
+      if !platforms.contains("winui3") {
+        issues.append(issue("PATTERN103", path, "Pattern must include a winui3 mapping."))
+      }
+      if pattern.tags.isEmpty {
+        issues.append(issue("PATTERN104", path, "Pattern must include at least one tag."))
+      }
+      for mapping in pattern.mappings {
+        let mappingPath = "\(path)#mappings.\(mapping.platform)"
+        if mapping.constructs.isEmpty || mapping.strategy.isEmpty {
+          issues.append(
+            issue("PATTERN105", mappingPath, "Mapping constructs and strategy are required."))
+        }
+      }
+      for attribute in pattern.attributes where attribute.required {
+        let attributePath = "\(path)#attributes.\(attribute.name)"
+        if attribute.defaultValue != nil {
+          issues.append(
+            issue("PATTERN106", attributePath, "Required attributes must not declare defaults."))
+        }
+      }
+    }
+    report.issues = issues
+    report.status = issues.isEmpty ? "ok" : "error"
+    return report
   }
 
   public func json<T: Encodable>(_ value: T) throws -> String {

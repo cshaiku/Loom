@@ -35,6 +35,7 @@ repository-policy domain. The shared conventions are:
 | `patterns:list` | `r` | — |
 | `patterns:show` | `r` | — |
 | `patterns:validate` | `r` | — |
+| `patterns:lint` | `r` | — |
 | `config:validate` | `r` | — |
 | `config:schema` | `r` | — |
 
@@ -56,3 +57,13 @@ loom graph:components Sources/App --root-view ContentView --format dot --output 
 Use repeated `--include glob` and `--exclude glob` options to constrain large
 source trees. Hidden directories, `.git`, `.build`, `Build`, and `DerivedData`
 are skipped by default.
+
+## Pattern commands
+
+`patterns:validate` checks structural correctness and semantic-kind coverage.
+`patterns:lint` adds operational rules for mappings that can support both
+SwiftUI-to-XAML and XAML-to-SwiftUI translation paths.
+
+`generate:xaml --patterns-dir Patterns --pattern-comments` loads the Pattern
+registry and annotates emitted nodes with the pattern id and WinUI mapping that
+drove the output.
