@@ -138,6 +138,11 @@ private let sample = """
 
   let catalog = LoomCommandCatalog.catalogText()
   #expect(catalog.contains("inspection\n"))
+  #expect(catalog.contains("diagnostics\n"))
+  #expect(catalog.contains("checks:command-catalog"))
+  #expect(catalog.contains("guards:summary"))
+  #expect(catalog.contains("self-heal:plan"))
+  #expect(catalog.contains("verify"))
   #expect(catalog.contains("graph:components"))
   #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
@@ -153,6 +158,41 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func diagnosticsCommandsReportReadinessAndGuards() throws {
+  let repository = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let patterns = repository.appendingPathComponent("Patterns").path
+  let diagnostics = LoomDiagnostics()
+
+  let catalog = diagnostics.commandCatalogCheck()
+  #expect(catalog.status == "ok")
+  #expect(catalog.commands == LoomCommandCatalog.commands.count)
+
+  let verify = diagnostics.verify(patternDirectory: patterns)
+  #expect(verify.status == "ok")
+  #expect(verify.commandCatalog.status == "ok")
+  #expect(verify.patterns.status == "ok")
+  #expect(verify.patternLint.status == "ok")
+
+  let status = diagnostics.status(patternDirectory: patterns)
+  #expect(status.version == LoomDiagnostics.version)
+  #expect(status.patternStatus == "ok")
+  #expect(status.patternCount == 20)
+
+  let guards = diagnostics.guardsSummary()
+  #expect(guards.entries.contains { $0.command == "generate:xaml" && $0.writeFlags.contains("--replace-region") })
+  #expect(guards.entries.contains { $0.command == "project:build" && $0.writeFlags.isEmpty })
+
+  let plan = diagnostics.selfHealPlan()
+  #expect(plan.entries.contains { $0.command == "generate:xaml" && $0.flag == "--init-region" })
+
+  let json = try diagnostics.json(catalog)
+  let decoded = try JSONDecoder().decode(LoomCommandCatalogCheckReport.self, from: Data(json.utf8))
+  #expect(decoded.status == "ok")
 }
 
 @Test func targetContractsExtractBindingsBehaviorAndResources() throws {

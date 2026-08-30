@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.10.0**
+Current version: **0.11.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -44,6 +44,8 @@ The current usable slice includes:
 - Guarded self-healing for missing generated-region host files through explicit
   `--init-region`.
 - Global `--quiet` and `--verbose` runtime output controls for automation.
+- Vigil-inspired read-only diagnostics: `status`, `verify`,
+  `checks:command-catalog`, `guards:summary`, and `self-heal:plan`.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
   generated component coverage, and unsupported SwiftUI constructs.
 - Tests and a Voci integration profile.
@@ -75,6 +77,16 @@ swift run loom list
 swift run loom list --category inspection
 swift run loom list --json
 swift run loom help project:build
+```
+
+Run read-only diagnostics:
+
+```sh
+swift run loom status
+swift run loom verify --json
+swift run loom checks:command-catalog
+swift run loom guards:summary
+swift run loom self-heal:plan
 ```
 
 Global runtime flags can be placed before any command:

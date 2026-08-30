@@ -23,6 +23,7 @@ repository-policy domain. The shared conventions are:
 | `inspection` | Read SwiftUI structure and compare existing XAML. |
 | `generation` | Lower one component to a reviewable XAML fragment. |
 | `projects` | Run manifest-driven multi-component translation workflows. |
+| `diagnostics` | Report local readiness, command metadata, write guards, and self-healing actions. |
 | `patterns` | Inspect and validate OS-agnostic UI semantics. |
 | `setup` | Describe and validate Loom project configuration. |
 
@@ -38,6 +39,11 @@ repository-policy domain. The shared conventions are:
 | `generate:xaml` | `r/w` through `--output`, `--replace-region` | `generate` |
 | `generate:contracts` | `r/w` through `--output` | `contracts` |
 | `project:build` | `w` | `project` |
+| `status` | `r` | — |
+| `verify` | `r` | — |
+| `checks:command-catalog` | `r` | — |
+| `guards:summary` | `r` | — |
+| `self-heal:plan` | `r` | — |
 | `patterns:list` | `r` | — |
 | `patterns:show` | `r` | — |
 | `patterns:validate` | `r` | — |
@@ -47,6 +53,27 @@ repository-policy domain. The shared conventions are:
 
 Aliases preserve the 0.1 command surface, but documentation and automation
 should use canonical names.
+
+## Diagnostics commands
+
+Loom adopts a small subset of Vigil's operational command shape for local
+readiness and policy visibility:
+
+```sh
+loom status
+loom status --patterns-dir Patterns --json
+loom verify
+loom checks:command-catalog --json
+loom guards:summary
+loom self-heal:plan
+```
+
+`status` reports version, working directory, command count, and Pattern catalog
+health. `verify` runs the read-only command catalog check plus Pattern
+validation/lint. `checks:command-catalog` audits command metadata and aliases.
+`guards:summary` lists commands that can write and the flags that authorize
+writes. `self-heal:plan` lists explicit repair-style actions and their
+guardrails.
 
 ## XAML inspection command
 

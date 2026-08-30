@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0 — 2026-08-30
+
+- Added Vigil-inspired read-only diagnostics commands: `status`, `verify`,
+  `checks:command-catalog`, `guards:summary`, and `self-heal:plan`.
+- Added text and JSON output for diagnostics commands.
+- Added command-catalog validation for duplicate commands, alias collisions,
+  incomplete metadata, synopsis drift, and read/write access flag drift.
+- Added tests for diagnostics readiness, guard summaries, self-healing plan
+  visibility, and JSON report encoding.
+
 ## 0.10.0 — 2026-08-30
 
 - Added `generate:contracts` to emit WinUI behavior, binding, resource,

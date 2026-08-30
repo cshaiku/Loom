@@ -22,6 +22,8 @@
   explicit generated-region initialization, and automation-friendly CLI output.
 - WinUI target contract generation for native behavior, bindings, resources,
   accessibility, and component wiring that layout emission cannot own.
+- Vigil-inspired diagnostics commands for readiness, verification, command
+  catalog checks, write guards, and self-healing visibility.
 
 ## 0.4 — Recursive component graph
 
@@ -91,6 +93,20 @@ Status: shipped in 0.10.0.
   templates, accessibility metadata, theme resources, component boundaries, and
   unsupported expressions.
 - Supports text and JSON output plus `--output` for automation.
+
+## 0.11 — Vigil-style diagnostics
+
+Status: shipped in 0.11.0.
+
+- Added `status` for local Loom readiness and Pattern health.
+- Added `verify` for read-only command catalog and Pattern validation/lint
+  checks.
+- Added `checks:command-catalog` to audit command metadata, aliases, synopsis,
+  and access flags.
+- Added `guards:summary` to show commands capable of writing and the flags that
+  authorize writes.
+- Added `self-heal:plan` to document explicit self-healing actions and their
+  guardrails.
 
 ## 1.0 — Pattern-driven emitters
 

@@ -93,7 +93,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.10.0")
+      print("loom 0.11.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -151,6 +151,8 @@ private enum LoomCommand {
         outputDirectory: options.outputDirectory
       )
       print(LoomProjectRunner().text(run), terminator: "")
+    case "status", "verify", "checks:command-catalog", "guards:summary", "self-heal:plan":
+      try runDiagnosticCommand(command.command, arguments: arguments)
     case "config:validate":
       let options = try parseValidationOptions(arguments)
       let validator = LoomProjectValidator()
@@ -387,6 +389,39 @@ private enum LoomCommand {
     }
   }
 
+  private static func runDiagnosticCommand(_ command: String, arguments: [String]) throws {
+    let options = try parseDiagnosticOptions(arguments)
+    let diagnostics = LoomDiagnostics()
+    let output: String
+    let exitStatus: Int32
+    switch command {
+    case "status":
+      let report = diagnostics.status(patternDirectory: options.patternsDirectory)
+      output = options.json ? try diagnostics.json(report) : diagnostics.text(report)
+      exitStatus = report.patternStatus == "ok" ? 0 : 1
+    case "verify":
+      let report = diagnostics.verify(patternDirectory: options.patternsDirectory)
+      output = options.json ? try diagnostics.json(report) : diagnostics.text(report)
+      exitStatus = report.status == "ok" ? 0 : 1
+    case "checks:command-catalog":
+      let report = diagnostics.commandCatalogCheck()
+      output = options.json ? try diagnostics.json(report) : diagnostics.text(report)
+      exitStatus = report.status == "ok" ? 0 : 1
+    case "guards:summary":
+      let report = diagnostics.guardsSummary()
+      output = options.json ? try diagnostics.json(report) : diagnostics.text(report)
+      exitStatus = 0
+    case "self-heal:plan":
+      let report = diagnostics.selfHealPlan()
+      output = options.json ? try diagnostics.json(report) : diagnostics.text(report)
+      exitStatus = 0
+    default:
+      throw LoomError.invalidArguments("Unknown diagnostic command \(command).")
+    }
+    print(output, terminator: "")
+    if exitStatus != 0 { exit(exitStatus) }
+  }
+
   private static func parseSourceOptions(_ command: String, arguments: [String]) throws
     -> SourceOptions
   {
@@ -442,6 +477,38 @@ private enum LoomCommand {
     }
     if options.initRegion && options.replaceRegionPath == nil {
       throw LoomError.invalidArguments("--init-region requires --replace-region <path>.")
+    }
+    return options
+  }
+
+  private struct DiagnosticOptions {
+    var json = false
+    var patternsDirectory = "Patterns"
+  }
+
+  private static func parseDiagnosticOptions(_ arguments: [String]) throws -> DiagnosticOptions {
+    var options = DiagnosticOptions()
+    var index = 1
+    while index < arguments.count {
+      let argument = arguments[index]
+      switch argument {
+      case "--json":
+        options.json = true
+        index += 1
+      case "--patterns-dir":
+        guard index + 1 < arguments.count else {
+          throw LoomError.invalidArguments("Missing value for --patterns-dir.")
+        }
+        options.patternsDirectory = arguments[index + 1]
+        index += 2
+      default:
+        if argument.hasPrefix("--patterns-dir=") {
+          options.patternsDirectory = String(argument.dropFirst("--patterns-dir=".count))
+          index += 1
+        } else {
+          throw LoomError.invalidArguments("Unknown diagnostic option \(argument).")
+        }
+      }
     }
     return options
   }

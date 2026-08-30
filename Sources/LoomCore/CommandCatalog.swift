@@ -157,6 +157,46 @@ public enum LoomCommandCatalog {
       ]
     ),
     LoomCommandInfo(
+      command: "status",
+      name: "Status",
+      description: "Show local Loom readiness and pattern status",
+      category: "diagnostics",
+      access: .read,
+      synopsis: ["loom status [--patterns-dir path] [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "verify",
+      name: "Verify",
+      description: "Run Loom's read-only command catalog and pattern checks",
+      category: "diagnostics",
+      access: .read,
+      synopsis: ["loom verify [--patterns-dir path] [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "checks:command-catalog",
+      name: "Check Command Catalog",
+      description: "Audit command metadata, aliases, synopsis, and access flags",
+      category: "diagnostics",
+      access: .read,
+      synopsis: ["loom checks:command-catalog [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "guards:summary",
+      name: "Guards Summary",
+      description: "Show commands capable of writing and the flags that authorize writes",
+      category: "diagnostics",
+      access: .read,
+      synopsis: ["loom guards:summary [--json]"]
+    ),
+    LoomCommandInfo(
+      command: "self-heal:plan",
+      name: "Self-Heal Plan",
+      description: "Show explicit self-healing actions and their guardrails",
+      category: "diagnostics",
+      access: .read,
+      synopsis: ["loom self-heal:plan [--json]"]
+    ),
+    LoomCommandInfo(
       command: "patterns:list",
       name: "List Semantic Patterns",
       description: "List OS-agnostic layout and control patterns",
