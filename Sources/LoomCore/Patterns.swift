@@ -49,11 +49,39 @@ public struct LoomPatternConstraint: Codable, Sendable {
   public var message: String
 }
 
+public struct LoomPatternKeyboard: Codable, Sendable {
+  public var activation: [String]?
+  public var navigation: [String]?
+  public var escapeBehavior: String?
+
+  enum CodingKeys: String, CodingKey {
+    case activation, navigation
+    case escapeBehavior = "escape_behavior"
+  }
+}
+
+public struct LoomPatternMinimumTargetSize: Codable, Sendable {
+  public var width: Double
+  public var height: Double
+  public var unit: String
+}
+
 public struct LoomPatternAccessibility: Codable, Sendable {
   public var role: String
   public var nameSource: String
   public var focusBehavior: String
   public var notes: [String]
+  public var keyboard: LoomPatternKeyboard?
+  public var states: [String]?
+  public var properties: [String]?
+  public var minimumTargetSize: LoomPatternMinimumTargetSize?
+
+  enum CodingKeys: String, CodingKey {
+    case role, notes, keyboard, states, properties
+    case nameSource = "nameSource"
+    case focusBehavior = "focusBehavior"
+    case minimumTargetSize = "minimumTargetSize"
+  }
 }
 
 public struct LoomPatternMapping: Codable, Sendable {
@@ -234,6 +262,25 @@ public struct LoomPatternCatalog: Sendable {
       {
         issues.append(
           issue("PATTERN009", path, "Intent, semantic role, and category must be non-empty."))
+      }
+      if let minimumTargetSize = pattern.accessibility.minimumTargetSize,
+        minimumTargetSize.width <= 0 || minimumTargetSize.height <= 0
+          || minimumTargetSize.unit.isEmpty
+      {
+        issues.append(
+          issue(
+            "PATTERN018", "\(path)#accessibility.minimumTargetSize",
+            "Minimum target size width, height, and unit must be positive/non-empty."))
+      }
+      if let keyboard = pattern.accessibility.keyboard,
+        keyboard.activation?.contains(where: { $0.isEmpty }) == true
+          || keyboard.navigation?.contains(where: { $0.isEmpty }) == true
+          || keyboard.escapeBehavior == ""
+      {
+        issues.append(
+          issue(
+            "PATTERN019", "\(path)#accessibility.keyboard",
+            "Keyboard accessibility entries cannot be empty."))
       }
       var attributeNames = Set<String>()
       for attribute in pattern.attributes {

@@ -20,6 +20,7 @@ Then inspect the specific source surface before generating:
 
 ```sh
 loom inspect:errors ContentView.swift --root-view ContentView --json
+loom accessibility:audit ContentView.swift --root-view ContentView --json
 loom inspect:source ContentView.swift --root-view ContentView --json
 loom patterns:transfer ContentView.swift --from swiftui --to winui3 --format json
 loom inspect:ascii ContentView.swift --root-view ContentView
@@ -85,6 +86,23 @@ loom inspect:errors ContentView.swift --root-view ContentView --fail-on warning
 
 Without `--fail-on`, error inspection reports findings but exits successfully.
 This makes it useful in exploratory agent workflows.
+
+## Accessibility and layout audit
+
+Use `accessibility:audit` before generation when reviewing UI quality or
+transfer readiness:
+
+```sh
+loom accessibility:audit ContentView.swift --root-view ContentView --json
+loom accessibility:audit MainWindow.xaml --format json
+loom accessibility:audit ContentView.swift --fail-on warning
+```
+
+Treat `error` findings as blockers. Warnings usually mean a Pattern, layout
+policy, or native implementation contract needs an explicit decision. The audit
+covers missing accessible names, unlabeled images and inputs, small targets,
+color-only semantic risks, unsupported/malformed nodes, empty or redundant
+containers, nested scroll regions, and geometry-dependent layouts.
 
 ## Output discipline
 

@@ -137,6 +137,8 @@ private let sample = """
   #expect(alias?.writeFlags == ["--output"])
 
   let catalog = LoomCommandCatalog.catalogText()
+  #expect(catalog.contains("accessibility\n"))
+  #expect(catalog.contains("accessibility:audit"))
   #expect(catalog.contains("inspection\n"))
   #expect(catalog.contains("diagnostics\n"))
   #expect(catalog.contains("checks:command-catalog"))
@@ -268,6 +270,74 @@ private let sample = """
   let json = try LoomPatternTransferAnalyzer().json(report)
   let decoded = try JSONDecoder().decode(LoomPatternTransferReport.self, from: Data(json.utf8))
   #expect(decoded.items.count == report.items.count)
+}
+
+@Test func accessibilityAuditFindsA11yAndLayoutDesignIssues() throws {
+  let badLayout = LoomNode(
+    kind: .root,
+    expression: "body",
+    children: [
+      LoomNode(
+        kind: .verticalStack,
+        expression: "VStack",
+        children: [
+          LoomNode(
+            kind: .verticalStack,
+            expression: "VStack",
+            children: [LoomNode(kind: .text, expression: "Text", arguments: "\"Nested\"")]
+          ),
+          LoomNode(
+            kind: .button,
+            expression: "Button",
+            modifiers: [LoomModifier(name: "frame", arguments: "width: 20, height: 20")]
+          ),
+          LoomNode(kind: .image, expression: "Image", arguments: "\"icon\""),
+          LoomNode(kind: .textField, expression: "TextField", arguments: "\"\""),
+          LoomNode(kind: .color, expression: "Color.red"),
+          LoomNode(
+            kind: .scrollView,
+            expression: "ScrollView",
+            children: [
+              LoomNode(kind: .scrollView, expression: "ScrollView")
+            ]
+          ),
+          LoomNode(kind: .unsupported, expression: "CustomLayout")
+        ]
+      )
+    ]
+  )
+  let analysis = LoomAnalysis(
+    sourcePath: "Bad.swift",
+    rootView: "BadView",
+    component: "body",
+    syntaxNodeCount: 0,
+    layout: badLayout,
+    diagnostics: []
+  )
+
+  let auditor = LoomAccessibilityAuditor()
+  let report = auditor.audit(analysis)
+  #expect(report.status == "error")
+  #expect(report.findings.contains { $0.code == "AUDIT020" })
+  #expect(report.findings.contains { $0.code == "AUDIT030" })
+  #expect(report.findings.contains { $0.code == "AUDIT031" })
+  #expect(report.findings.contains { $0.code == "AUDIT040" })
+  #expect(report.findings.contains { $0.code == "AUDIT052" })
+  #expect(report.findings.contains { $0.code == "AUDIT014" })
+  #expect(report.findings.contains { $0.code == "AUDIT060" })
+  #expect(report.findings.contains { $0.code == "AUDIT061" })
+  #expect(report.findings.contains { $0.category == .redundant })
+  #expect(auditor.shouldFail(report, mode: .error))
+  #expect(auditor.shouldFail(report, mode: .warning))
+  #expect(!auditor.shouldFail(report, mode: .none))
+
+  let text = auditor.text(report)
+  #expect(text.contains("Loom accessibility audit"))
+  #expect(text.contains("AUDIT020"))
+
+  let json = try auditor.json(report)
+  let decoded = try JSONDecoder().decode(LoomAccessibilityAuditReport.self, from: Data(json.utf8))
+  #expect(decoded.findings.count == report.findings.count)
 }
 
 @Test func errorInspectionReportsSwiftSyntaxAndLoomDiagnostics() throws {

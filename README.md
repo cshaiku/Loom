@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.14.0**
+Current version: **0.15.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -69,6 +69,11 @@ The current usable slice includes:
 - ASCII Pattern rendering for a compact plaintext view of the layout shape.
 - Optional Pattern variants for compact, dense, accessibility, or adaptive
   layout policies.
+- Accessibility and layout design auditing for missing names, unlabeled
+  images/inputs, undersized targets, redundant wrappers, malformed nodes,
+  nested scroll regions, color-only semantics, and geometry-heavy layouts.
+- Optional Pattern accessibility metadata for keyboard behavior, states,
+  required accessibility properties, and minimum target sizes.
 
 ## Build and test
 
@@ -109,6 +114,19 @@ swift run loom inspect:errors MyView.swift --root-view ContentView
 swift run loom inspect:errors MainWindow.xaml --kind xaml --json
 swift run loom inspect:errors Patterns --kind patterns --fail-on error
 ```
+
+Audit accessibility and layout design quality:
+
+```sh
+swift run loom accessibility:audit MyView.swift --root-view ContentView
+swift run loom accessibility:audit MainWindow.xaml --format json
+swift run loom accessibility:audit MyView.swift --fail-on warning
+```
+
+The audit catches missing accessible names, unlabeled images and inputs,
+small interactive targets, color-only semantic risks, unsupported/malformed
+nodes, empty or redundant containers, nested scroll regions, geometry-dependent
+layout, and other transfer-hostile design issues.
 
 Global runtime flags can be placed before any command:
 

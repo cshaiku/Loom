@@ -87,6 +87,15 @@ private struct ErrorInspectionOptions {
   var outputPath: String?
 }
 
+private struct AccessibilityAuditOptions {
+  var path: String
+  var rootView = "ContentView"
+  var component = "body"
+  var format = "text"
+  var failOn = LoomErrorFailMode.none
+  var outputPath: String?
+}
+
 @main
 private enum LoomCommand {
   static func main() {
@@ -122,7 +131,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.14.0")
+      print("loom 0.15.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -164,6 +173,8 @@ private enum LoomCommand {
     }
 
     switch command.command {
+    case "accessibility:audit":
+      try runAccessibilityAuditCommand(arguments, runtime: runtime)
     case "inspect:ascii":
       try runASCIICommand(arguments, runtime: runtime)
     case "inspect:errors":
@@ -308,6 +319,27 @@ private enum LoomCommand {
     let output = options.format == "json" ? try diagnostics.json(report) : diagnostics.text(report)
     try writeOrPrint(output, path: options.outputPath, runtime: runtime)
     if diagnostics.shouldFail(report, mode: options.failOn) { exit(1) }
+  }
+
+  private static func runAccessibilityAuditCommand(_ arguments: [String], runtime: RuntimeOptions)
+    throws
+  {
+    let options = try parseAccessibilityAuditOptions(arguments)
+    let analysis: LoomAnalysis
+    if options.path.lowercased().hasSuffix(".xaml") {
+      analysis = try XAMLFrontend().analyze(sourcePath: options.path)
+    } else {
+      analysis = try SwiftUIFrontend().analyze(
+        sourcePath: options.path,
+        rootView: options.rootView,
+        component: options.component
+      )
+    }
+    let auditor = LoomAccessibilityAuditor()
+    let report = auditor.audit(analysis)
+    let output = options.format == "json" ? try auditor.json(report) : auditor.text(report)
+    try writeOrPrint(output, path: options.outputPath, runtime: runtime)
+    if auditor.shouldFail(report, mode: options.failOn) { exit(1) }
   }
 
   private static func runSwiftUICommand(_ arguments: [String], runtime: RuntimeOptions) throws {
@@ -801,6 +833,47 @@ private enum LoomCommand {
       case "--output": options.outputPath = value
       default:
         throw LoomError.invalidArguments("Unknown error inspection option \(flag).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseAccessibilityAuditOptions(_ arguments: [String]) throws
+    -> AccessibilityAuditOptions
+  {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("accessibility:audit requires a Swift or XAML source path.")
+    }
+    var options = AccessibilityAuditOptions(path: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--root-view": options.rootView = value
+      case "--component": options.component = value
+      case "--format":
+        guard value == "text" || value == "json" else {
+          throw LoomError.invalidArguments("--format must be text or json.")
+        }
+        options.format = value
+      case "--fail-on":
+        guard let failOn = LoomErrorFailMode(rawValue: value) else {
+          throw LoomError.invalidArguments("--fail-on must be none, error, or warning.")
+        }
+        options.failOn = failOn
+      case "--output": options.outputPath = value
+      default:
+        throw LoomError.invalidArguments("Unknown accessibility audit option \(flag).")
       }
       index += 2
     }

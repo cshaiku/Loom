@@ -20,6 +20,7 @@ repository-policy domain. The shared conventions are:
 
 | Category | Purpose |
 | --- | --- |
+| `accessibility` | Audit accessible semantics and layout design quality. |
 | `inspection` | Read SwiftUI structure and compare existing XAML. |
 | `generation` | Lower one component to a reviewable XAML fragment. |
 | `projects` | Run manifest-driven multi-component translation workflows. |
@@ -31,6 +32,7 @@ repository-policy domain. The shared conventions are:
 
 | Canonical command | Access | Alias |
 | --- | --- | --- |
+| `accessibility:audit` | `r/w` through `--output` | `a11y` |
 | `inspect:source` | `r/w` through `--output` | `analyze` |
 | `inspect:xaml` | `r/w` through `--output` | `xaml` |
 | `inspect:ascii` | `r/w` through `--output` | `ascii` |
@@ -78,6 +80,25 @@ validation/lint. `checks:command-catalog` audits command metadata and aliases.
 `guards:summary` lists commands that can write and the flags that authorize
 writes. `self-heal:plan` lists explicit repair-style actions and their
 guardrails.
+
+## Accessibility audit command
+
+`accessibility:audit` checks the normalized layout tree for accessibility and
+design-transfer problems:
+
+```sh
+loom accessibility:audit ContentView.swift --root-view ContentView
+loom accessibility:audit MainWindow.xaml --format json
+loom accessibility:audit ContentView.swift --fail-on warning
+```
+
+It reports missing button names, unlabeled images, inputs relying only on
+placeholders, undersized interactive targets, color-only semantic risks,
+unsupported or malformed nodes, empty containers, redundant wrappers, repeated
+nested layout wrappers, nested scroll regions, and geometry-dependent layouts.
+
+Use `--fail-on error` or `--fail-on warning` in automation. By default the
+command reports findings but exits successfully.
 
 ## XAML inspection command
 

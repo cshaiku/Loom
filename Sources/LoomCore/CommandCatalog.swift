@@ -51,6 +51,22 @@ public struct LoomCommandInfo: Codable, Sendable {
 public enum LoomCommandCatalog {
   public static let commands: [LoomCommandInfo] = [
     LoomCommandInfo(
+      command: "accessibility:audit",
+      name: "Audit Accessibility and Layout",
+      description: "Audit accessible names, target sizes, redundant layouts, malformed nodes, and layout design risks",
+      category: "accessibility",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["a11y"],
+      synopsis: [
+        "loom accessibility:audit <swift-file-or-xaml-file> [--root-view Name] [--component name] [--format text|json] [--fail-on none|error|warning] [--output path]"
+      ],
+      examples: [
+        "loom accessibility:audit ContentView.swift --root-view ContentView",
+        "loom accessibility:audit MainWindow.xaml --format json --fail-on warning",
+      ]
+    ),
+    LoomCommandInfo(
       command: "inspect:source",
       name: "Inspect SwiftUI Source",
       description: "Extract and report a SwiftUI layout tree",

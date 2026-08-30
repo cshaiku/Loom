@@ -65,7 +65,26 @@
         "role": { "type": "string", "minLength": 1 },
         "nameSource": { "type": "string", "minLength": 1 },
         "focusBehavior": { "type": "string", "minLength": 1 },
-        "notes": { "type": "array", "items": { "type": "string" } }
+        "notes": { "type": "array", "items": { "type": "string" } },
+        "keyboard": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "activation": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "navigation": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "escape_behavior": { "type": "string", "minLength": 1 }
+          }
+        },
+        "states": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "properties": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "minimumTargetSize": {
+          "type": "object", "additionalProperties": false,
+          "required": ["width", "height", "unit"],
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0 },
+            "height": { "type": "number", "exclusiveMinimum": 0 },
+            "unit": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     },
     "mappings": {

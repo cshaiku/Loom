@@ -12,6 +12,8 @@ Every `*.pattern.json` file is independently versioned and declares:
 - typed attributes with defaults, ranges, units, and enumerated values;
 - cross-attribute constraints;
 - accessibility behavior;
+- optional keyboard behavior, accessibility states/properties, and minimum
+  target size;
 - non-canonical source and target mappings for each platform.
 - optional named variants for compact, dense, accessibility, or adaptive
   layout policies.
@@ -49,6 +51,13 @@ Render the same normalized layout as an ASCII Pattern with:
 
 ```sh
 swift run loom inspect:ascii ContentView.swift --root-view ContentView
+```
+
+Audit accessibility and transfer-hostile layout design with:
+
+```sh
+swift run loom accessibility:audit ContentView.swift --root-view ContentView
+swift run loom accessibility:audit MainWindow.xaml --format json
 ```
 
 The normative metadata contract is `pattern.schema.json`.

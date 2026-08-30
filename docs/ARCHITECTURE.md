@@ -30,14 +30,17 @@ incorrect conversion.
    canonical Pattern and classified for OS-to-OS transfer readiness.
 10. **ASCII Pattern rendering**: the normalized tree can be emitted as a compact
     plaintext structural sketch for reviews, logs, and diffs.
-11. **Parity checking**: source-derived constraints and component references are
+11. **Accessibility/layout audit**: normalized layout is checked for missing
+    names, weak semantics, undersized targets, redundant wrappers, malformed
+    nodes, and transfer-hostile structure.
+12. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-12. **Project workflow**: a validated `loom.json` manifest selects components,
+13. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
-13. **Owned output**: generated XAML can be written back only inside explicit
+14. **Owned output**: generated XAML can be written back only inside explicit
     Loom marker pairs, preserving surrounding handwritten platform code.
-14. **Runtime controls**: command success chatter is controlled globally by
+15. **Runtime controls**: command success chatter is controlled globally by
     `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
 
 ## Command architecture
@@ -73,6 +76,29 @@ Patterns may also declare optional variants. A variant describes a named
 layout policy under conditions such as compact width, dense information mode,
 large text, or accessibility-first rendering. Variants are intentionally
 policy metadata, not platform-specific code.
+
+Pattern accessibility metadata can be extended with optional keyboard behavior,
+state names, required accessibility properties, and minimum target size. These
+fields let the Pattern catalog describe more than roles: it can define the
+observable accessibility contract that must survive OS transfer.
+
+## Accessibility and layout audit
+
+`accessibility:audit` checks the shared IR rather than raw framework syntax, so
+the same rules apply to SwiftUI and WinUI XAML input. The first audit pass
+focuses on issues that directly affect interface transfer:
+
+- missing accessible names for buttons and stateful controls;
+- images without either labels or decorative-hidden intent;
+- text inputs relying on placeholder-only naming;
+- interactive controls below a 44-by-44 target-size heuristic;
+- color surfaces that may be carrying meaning without text/state backup;
+- empty, malformed, unsupported, redundant, or repeatedly nested layout nodes;
+- nested scroll regions and geometry-dependent layout.
+
+The audit is intentionally conservative. It reports risks and required review
+work; it does not claim to prove accessibility compliance without platform
+runtime inspection.
 
 ## Pattern Transfer
 

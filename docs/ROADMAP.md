@@ -36,6 +36,11 @@
 - ASCII Pattern rendering for plaintext layout sketches in logs, reviews, and
   agent workflows.
 - Optional Pattern variants for adaptive layout policy metadata.
+- Accessibility/layout auditing for missing names, unlabeled media/inputs,
+  undersized controls, redundant wrappers, malformed nodes, nested scroll
+  regions, and weak layout-transfer design.
+- Optional richer Pattern accessibility metadata for keyboard behavior, states,
+  required properties, and minimum target size.
 
 ## 0.4 — Recursive component graph
 
@@ -154,6 +159,19 @@ Status: shipped in 0.14.0.
   Pattern trees.
 - Added optional Pattern variants in the schema/model for compact, dense,
   accessibility, and adaptive layout policy metadata.
+
+## 0.15 — Accessibility and layout audit
+
+Status: shipped in 0.15.0.
+
+- Added `accessibility:audit` for SwiftUI and WinUI XAML inputs.
+- Reports missing accessible names, unlabeled images and inputs, small
+  interactive targets, color-only semantic risks, unsupported/malformed nodes,
+  empty or redundant containers, nested scroll regions, and geometry-dependent
+  layouts.
+- Supports text/JSON output, `--output`, and `--fail-on none|error|warning`.
+- Extended optional Pattern accessibility metadata for keyboard behavior,
+  states, required properties, and minimum target size.
 
 ## 1.0 — Pattern-driven emitters
 

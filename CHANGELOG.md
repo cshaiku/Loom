@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.15.0 — 2026-08-30
+
+- Added `accessibility:audit` for SwiftUI and WinUI XAML sources.
+- Added audit rules for missing accessible names, unlabeled images, unlabeled
+  text inputs, placeholder-only input naming, undersized interactive targets,
+  color-only semantic risks, unsupported/malformed nodes, empty containers,
+  redundant wrappers, repeated nested layout wrappers, nested scroll regions,
+  and geometry-dependent layout.
+- Added text/JSON audit output plus `--output` and
+  `--fail-on none|error|warning`.
+- Extended optional Pattern accessibility metadata with keyboard behavior,
+  states, required accessibility properties, and minimum target size.
+- Updated README, command docs, architecture notes, Pattern docs, AI agent
+  guidance, roadmap, and VERSION.
+- Added tests for accessibility/layout/design audit findings and JSON report
+  round trips.
+
 ## 0.14.0 — 2026-08-30
 
 - Added `patterns:transfer` to classify interface layout transfer readiness
