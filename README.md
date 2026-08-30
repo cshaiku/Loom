@@ -1,6 +1,6 @@
 # Loom
 
-Version: **0.18.0**
+Version: **0.19.0**
 
 Loom is a cross-platform Go CLI for UI layout analysis, Pattern catalog
 validation, transfer planning, and workflow diagnostics.
@@ -20,6 +20,8 @@ validation, transfer planning, and workflow diagnostics.
 - Provide curated cross-platform error guidance and suggested fixes (`suggestions:os-errors`).
 - Provide CLI self-diagnostics and guard reporting (`status`, `verify`,
   `checks:command-catalog`, `guards:summary`, `self-heal:plan`).
+- Write deterministic LF output by default, with `--line-ending crlf` for Windows
+  artifacts and `--line-ending native` for host-native text output.
 
 The following commands are retained in the catalog for parity but are intentionally
 not yet implemented in the Go runtime. They return a clear message when invoked:
@@ -49,6 +51,7 @@ loom verify --json
 loom checks:command-catalog --json
 loom inspect:xaml MainWindow.xaml --format json
 loom inspect:ascii MainWindow.xaml --output Layout.txt
+loom inspect:ascii MainWindow.xaml --output Layout.txt --line-ending crlf
 loom accessibility:audit MainWindow.xaml --format json --fail-on warning
 loom patterns:lint
 loom patterns:transfer MainWindow.xaml --from winui3 --to macos
@@ -75,4 +78,4 @@ loom patterns:transfer MainWindow.xaml --from winui3 --to macos
 2. Run `make test`.
 3. Run `git add`, commit, and push.
 4. Tag the release, e.g.:
-   `git tag -a v0.18.0 -m "Go runtime parity and Swift runtime removal"; git push --tags`.
+   `git tag -a v0.19.0 -m "Line-ending controls and function output polish"; git push --tags`.

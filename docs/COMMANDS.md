@@ -38,6 +38,8 @@ The following are not implemented in the Go runtime yet and return a clear
 
 - `--quiet` suppresses successful write confirmations.
 - `--verbose` prints write diagnostics to stderr.
+- `--line-ending lf|crlf|native` controls text output line endings. Loom uses
+  `lf` by default for deterministic artifacts.
 - Most read/write report commands accept `--json`.
 - Most commands accept `--help` for catalog-driven synopsis.
 
@@ -52,4 +54,5 @@ loom self-heal:plan
 loom inspect:errors MainWindow.xaml --kind xaml --json --fail-on error
 loom patterns:transfer MainWindow.xaml --from winui3 --to macos --format json
 loom accessibility:audit MainWindow.xaml --fail-on warning
+loom inspect:ascii MainWindow.xaml --output Layout.txt --line-ending crlf
 ```

@@ -184,7 +184,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.18.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.19.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -228,6 +228,50 @@ func TestFunctionJSONUsesStableEmptyArrays(t *testing.T) {
 	for _, needle := range []string{`"sourceConstructs": []`, `"targetConstructs": []`, `"contracts": []`, `"policies": []`} {
 		if !strings.Contains(text, needle) {
 			t.Fatalf("expected stable empty array %s in %s", needle, text)
+		}
+	}
+}
+
+func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if got := stdout.String(); got != "loom 0.19.0\r\n" {
+		t.Fatalf("expected CRLF stdout, got %q", got)
+	}
+
+	path := fixtureXAML(t, `<Button Content="Save" />`)
+	out := filepath.Join(t.TempDir(), "tree.txt")
+	stdout.Reset()
+	if err := Run([]string{"inspect:ascii", path, "--output", out, "--line-ending", "crlf"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(stdout.String(), "\r\n") {
+		t.Fatalf("expected CRLF write confirmation, got %q", stdout.String())
+	}
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(data, []byte("\r\n")) || bytes.Contains(data, []byte("\r\r\n")) {
+		t.Fatalf("expected normalized CRLF file output, got %q", string(data))
+	}
+	if err := Run([]string{"--line-ending", "weird", "version"}, &stdout, &stderr); err == nil {
+		t.Fatal("expected invalid line ending to fail")
+	}
+}
+
+func TestLineEndingPolicyFileExists(t *testing.T) {
+	data, err := os.ReadFile("../../.gitattributes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, rule := range []string{"* text=auto eol=lf", "*.bat text eol=crlf", "*.cmd text eol=crlf", "*.ps1 text eol=crlf"} {
+		if !strings.Contains(text, rule) {
+			t.Fatalf("missing line-ending policy rule %q in %s", rule, text)
 		}
 	}
 }

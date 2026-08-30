@@ -64,6 +64,9 @@ Use JSON output for downstream automations and preserve `platform`, `query`, and
 - Treat `schema_version`, `status`, command-specific `summary` objects, and
   `suggested_fixes` as stable coordination fields.
 - Empty lists are emitted as `[]` for implemented report surfaces.
+- Use `--line-ending lf` for deterministic cross-OS artifacts, `--line-ending crlf`
+  for Windows-facing text files, and `--line-ending native` only when matching
+  the current host is explicitly useful.
 - Reserved commands return a deterministic unavailable-command error; do not
   retry them as implementation steps.
 - Use `--quiet` when also passing `--output` so successful writes do not add

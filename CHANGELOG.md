@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.18.0 ""- 2026-08-30
+## 0.19.0 - 2026-08-30
+
+- Added repository line-ending policy through `.gitattributes`.
+- Added global `--line-ending lf|crlf|native` handling for deterministic LF,
+  Windows CRLF, and host-native text output.
+- Kept LF as the default for stable cross-platform reports and CI artifacts.
+- Improved function-facing JSON output by preserving readable `<placeholder>`
+  synopsis text and emitting stable empty arrays instead of `null`.
+- Updated README and AI-agent docs with line-ending guidance.
+
+## 0.18.0 - 2026-08-30
 
 - Completed the Go port as the active runtime by removing SwiftPM manifest and
   Swift runtime source/test files.
@@ -15,7 +25,7 @@
 - Added `inspect:errors` + `audit` + `suggestions:os-errors` integration
   improvements for WinUI/SwiftUI boundary and design-risk guidance.
 
-## 0.17.0 ""- 2026-08-30
+## 0.17.0 - 2026-08-30
 
 - Started the Go migration so Loom can ship as a single cross-platform CLI for
   macOS, Windows, and Linux.
@@ -30,7 +40,7 @@
   boundaries, structured suggested fixes, transfer classification, OS error
   matching, CLI JSON output, version output, and `--quiet` write behavior.
 
-## 0.16.0 ""- 2026-08-30
+## 0.16.0 - 2026-08-30
 
 - Added explicit `XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warnings for native
   WinUI controls without Loom semantic mappings.
@@ -49,7 +59,7 @@
 - Added tests for native WinUI component-boundary diagnostics, audit/transfer
   surfacing, OS error suggestions, and enriched error inspection findings.
 
-## 0.15.0 ""- 2026-08-30
+## 0.15.0 - 2026-08-30
 
 - Added `accessibility:audit` for SwiftUI and WinUI XAML sources.
 - Added audit rules for missing accessible names, unlabeled images, unlabeled
@@ -66,7 +76,7 @@
 - Added tests for accessibility/layout/design audit findings and JSON report
   round trips.
 
-## 0.14.0 ""- 2026-08-30
+## 0.14.0 - 2026-08-30
 
 - Added `patterns:transfer` to classify interface layout transfer readiness
   between SwiftUI and WinUI.
@@ -80,7 +90,7 @@
 - Added tests for transfer classification, ASCII rendering, and JSON report
   round trips.
 
-## 0.13.0 ""- 2026-08-30
+## 0.13.0 - 2026-08-30
 
 - Added `patterns:export` to derive integration-oriented JSON from the
   canonical Pattern catalog.
@@ -90,7 +100,7 @@
 - Added `--format`, `--directory`, and `--output` handling for Pattern exports.
 - Added tests for external export shapes and command catalog visibility.
 
-## 0.12.0 ""- 2026-08-30
+## 0.12.0 - 2026-08-30
 
 - Added `inspect:errors` to report Swift parser diagnostics, Loom extraction
   diagnostics, XAML parse failures, manifest validation issues, and Pattern
@@ -104,7 +114,7 @@
 - Added tests for Swift syntax error inspection, XAML parse errors, Pattern
   errors, fail modes, and command catalog coverage.
 
-## 0.11.0 ""- 2026-08-30
+## 0.11.0 - 2026-08-30
 
 - Added Vigil-inspired read-only diagnostics commands: `status`, `verify`,
   `checks:command-catalog`, `guards:summary`, and `self-heal:plan`.
@@ -114,7 +124,7 @@
 - Added tests for diagnostics readiness, guard summaries, self-healing plan
   visibility, and JSON report encoding.
 
-## 0.10.0 ""- 2026-08-30
+## 0.10.0 - 2026-08-30
 
 - Added `generate:contracts` to emit WinUI behavior, binding, resource,
   accessibility, visibility, collection, component, and unsupported-work
@@ -133,7 +143,7 @@
 - Added a deep-layout regression test for node counting and component-reference
   traversal.
 
-## 0.9.0 ""- 2026-08-30
+## 0.9.0 - 2026-08-30
 
 - Added global `--quiet` / `-q` and `--verbose` / `-v` runtime output controls.
 - Added explicit `--init-region` self-healing for missing generated XAML host
@@ -146,7 +156,7 @@
 - Corrected command metadata so `--replace-region` is advertised only for
   `generate:xaml`.
 
-## 0.8.0 ""- 2026-08-30
+## 0.8.0 - 2026-08-30
 
 - Added safe Loom-owned XAML region replacement through
   `generate:xaml --replace-region ... --region-id ...`.
@@ -155,7 +165,7 @@
 - Preserved handwritten XAML outside the marked generated region.
 - Added tests for successful replacement and refusal of unsafe marker states.
 
-## 0.7.0 ""- 2026-08-30
+## 0.7.0 - 2026-08-30
 
 - Added `generate:swiftui` to emit reviewable SwiftUI scaffolds from WinUI XAML.
 - Added a SwiftUI emitter that maps XAML-normalized IR containers and controls
@@ -165,7 +175,7 @@
 - Added tests for supported XAML-to-SwiftUI generation and unsupported-control
   preservation.
 
-## 0.6.0 ""- 2026-08-30
+## 0.6.0 - 2026-08-30
 
 - Added `inspect:xaml` to parse WinUI XAML into Loom's platform-neutral
   `LoomNode` layout tree.
@@ -176,7 +186,7 @@
 - Added tests proving hand-written and Loom-generated XAML normalize into
   comparable IR.
 
-## 0.5.0 ""- 2026-08-30
+## 0.5.0 - 2026-08-30
 
 - Added an operational Pattern registry for looking up semantic mappings by
   `LoomNodeKind`.
@@ -189,7 +199,7 @@
 - Documented the direction-neutral mapping model needed for future
   Windows-to-macOS translation.
 
-## 0.4.0 ""- 2026-08-30
+## 0.4.0 - 2026-08-30
 
 - Added `graph:components` to discover reachable SwiftUI layout components from
   a Swift file or source directory.
@@ -200,7 +210,7 @@
 - Added include/exclude globs for deterministic source discovery in larger
   applications.
 
-## 0.3.0 ""- 2026-08-30
+## 0.3.0 - 2026-08-30
 
 - Added a normative `Patterns` catalog with one OS-agnostic semantic definition
   for every meaningful layout and control kind Loom recognizes.
@@ -210,7 +220,7 @@
 - Added typed pattern APIs, cross-file identity and kind validation, and full
   semantic-kind coverage tests.
 
-## 0.2.0 ""- 2026-08-30
+## 0.2.0 - 2026-08-30
 
 - Added a Vigil-inspired command registry with colon-namespaced canonical
   commands, grouped categories, access metadata, aliases, JSON catalogs, and
@@ -222,7 +232,7 @@
   aliases.
 - Upgraded the Voci integration to the manifest-driven project workflow.
 
-## 0.1.0 ""- 2026-08-29
+## 0.1.0 - 2026-08-29
 
 - Introduced the SwiftParser/SwiftSyntax frontend and SwiftUI view discovery.
 - Added the platform-neutral layout model and text/JSON analysis reports.

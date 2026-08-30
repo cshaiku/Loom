@@ -1,6 +1,6 @@
 # Loom roadmap
 
-## 0.17 ""- Go runtime foundation
+## 0.17 - Go runtime foundation
 
 - Forward Go CLI introduced under `cmd/loom`.
 - Command catalog, status/verification diagnostics, pattern operations, and command
@@ -9,13 +9,13 @@
   `patterns:*`, and OS error suggestions.
 - CLI output contracts for automation (`--json`, `--quiet`, `--verbose`).
 
-## 0.18 ""- Go analyzer baseline
+## 0.18 - Go analyzer baseline
 
 - `inspect:errors` and `inspect:source` path planning moved toward Go ownership.
 - `graph:components` command retained in catalog and prepared for re-implementation.
 - Cross-command consistency checks expanded (`checks:command-catalog`).
 
-## 0.19 ""- Go emitter and manifest parity work (next)
+## 0.19 - Go emitter and manifest parity work (next)
 
 - Implement `generate:xaml`, `generate:swiftui`, `generate:contracts`,
   and `project:build` in Go.

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const Version = "0.18.0"
+const Version = "0.19.0"
 
 type CommandAccess string
 
@@ -97,7 +97,7 @@ func catalogText(category string) string {
 	}
 	sort.Strings(categories)
 	var b strings.Builder
-	b.WriteString("Usage:\n  loom [--quiet|--verbose] <command> [args]\n  loom help <command>\n  loom list [--category NAME] [--json]\n\n")
+	b.WriteString("Usage:\n  loom [--quiet|--verbose] [--line-ending lf|crlf|native] <command> [args]\n  loom help <command>\n  loom list [--category NAME] [--json]\n\n")
 	for _, category := range categories {
 		sort.Slice(groups[category], func(i, j int) bool { return groups[category][i].Command < groups[category][j].Command })
 		b.WriteString(category + "\n")

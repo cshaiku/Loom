@@ -5,24 +5,26 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 )
 
 type runtimeOptions struct {
-	quiet   bool
-	verbose bool
+	quiet      bool
+	verbose    bool
+	lineEnding string
 }
 
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
-	runtime, args := parseRuntime(args)
+	runtime, args, err := parseRuntime(args)
+	if err != nil {
+		return err
+	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Fprint(stdout, "Loom: cross-platform interface layout analysis CLI\n\n")
-		fmt.Fprint(stdout, catalogText(""))
-		return nil
+		return writeText("Loom: cross-platform interface layout analysis CLI\n\n"+catalogText(""), stdout, runtime)
 	}
 	if args[0] == "version" || args[0] == "--version" {
-		fmt.Fprintf(stdout, "loom %s\n", Version)
-		return nil
+		return writeText(fmt.Sprintf("loom %s\n", Version), stdout, runtime)
 	}
 	if args[0] == "list" || args[0] == "commands" {
 		category, jsonOut, err := parseList(args[1:])
@@ -43,15 +45,13 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 			if err != nil {
 				return err
 			}
-			fmt.Fprint(stdout, text)
-			return nil
+			return writeText(text, stdout, runtime)
 		}
 		text := catalogText(category)
 		if text == "" {
 			return fmt.Errorf("unknown or empty command category %s", category)
 		}
-		fmt.Fprint(stdout, text)
-		return nil
+		return writeText(text, stdout, runtime)
 	}
 	if args[0] == "man" || args[0] == "explain" {
 		if len(args) != 2 {
@@ -61,16 +61,14 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		if text == "" {
 			return fmt.Errorf("unknown command manual request")
 		}
-		fmt.Fprint(stdout, text)
-		return nil
+		return writeText(text, stdout, runtime)
 	}
 	command, ok := resolveCommand(args[0])
 	if !ok {
 		return fmt.Errorf("unknown command %s", args[0])
 	}
 	if len(args) > 1 && (args[1] == "--help" || args[1] == "-h") {
-		fmt.Fprint(stdout, manual(command.Command))
-		return nil
+		return writeText(manual(command.Command), stdout, runtime)
 	}
 	switch command.Command {
 	case "status":
@@ -108,15 +106,28 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 }
 
-func parseRuntime(args []string) (runtimeOptions, []string) {
-	var runtime runtimeOptions
+func parseRuntime(args []string) (runtimeOptions, []string, error) {
+	runtime := runtimeOptions{lineEnding: "lf"}
 	var remaining []string
-	for _, arg := range args {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
 		switch arg {
 		case "--quiet", "-q":
 			runtime.quiet = true
 		case "--verbose", "-v":
 			runtime.verbose = true
+		case "--line-ending":
+			i++
+			if i >= len(args) {
+				return runtimeOptions{}, nil, fmt.Errorf("missing value for --line-ending")
+			}
+			value := strings.ToLower(strings.TrimSpace(args[i]))
+			switch value {
+			case "lf", "crlf", "native":
+				runtime.lineEnding = value
+			default:
+				return runtimeOptions{}, nil, fmt.Errorf("unsupported line ending %s", args[i])
+			}
 		default:
 			remaining = append(remaining, arg)
 		}
@@ -124,10 +135,11 @@ func parseRuntime(args []string) (runtimeOptions, []string) {
 	if runtime.quiet {
 		runtime.verbose = false
 	}
-	return runtime, remaining
+	return runtime, remaining, nil
 }
 
 func writeOrPrint(text, output string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	text = applyLineEnding(text, runtime.lineEnding)
 	if output == "" {
 		fmt.Fprint(stdout, text)
 		return nil
@@ -139,12 +151,38 @@ func writeOrPrint(text, output string, stdout, stderr io.Writer, runtime runtime
 		return err
 	}
 	if runtime.verbose {
-		fmt.Fprintf(stderr, "[info] wrote %s (%d bytes)\n", output, len(text))
+		fmt.Fprint(stderr, applyLineEnding(fmt.Sprintf("[info] wrote %s (%d bytes)\n", output, len(text)), runtime.lineEnding))
 	}
 	if !runtime.quiet {
-		fmt.Fprintf(stdout, "Wrote %s\n", output)
+		return writeText(fmt.Sprintf("Wrote %s\n", output), stdout, runtime)
 	}
 	return nil
+}
+
+func writeText(text string, stdout io.Writer, runtime runtimeOptions) error {
+	_, err := fmt.Fprint(stdout, applyLineEnding(text, runtime.lineEnding))
+	return err
+}
+
+func applyLineEnding(text, mode string) string {
+	lineEnding := "\n"
+	switch mode {
+	case "crlf":
+		lineEnding = "\r\n"
+	case "native":
+		if goruntime.GOOS == "windows" {
+			lineEnding = "\r\n"
+		}
+	case "", "lf":
+		lineEnding = "\n"
+	default:
+		lineEnding = "\n"
+	}
+	if lineEnding == "\n" {
+		return strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
+	}
+	normalized := strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
+	return strings.ReplaceAll(normalized, "\n", lineEnding)
 }
 
 func runPattern(command string, args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
@@ -369,8 +407,7 @@ func SuggestionsText(report OSErrorSuggestionReport) string {
 func runStatus(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	_ = stderr
 	if contains(args, "--help") || contains(args, "-h") {
-		fmt.Fprint(stdout, manual("status"))
-		return nil
+		return writeText(manual("status"), stdout, runtime)
 	}
 	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
 	format := firstNonEmpty(flagValue(args, "--format"), "text")
@@ -407,8 +444,7 @@ func runVerify(args []string, stdout io.Writer, runtime runtimeOptions) error {
 
 func runChecksCommandCatalog(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	if contains(args, "--help") || contains(args, "-h") {
-		fmt.Fprint(stdout, manual("checks:command-catalog"))
-		return nil
+		return writeText(manual("checks:command-catalog"), stdout, runtime)
 	}
 	format := firstNonEmpty(flagValue(args, "--format"), "text")
 	if contains(args, "--json") {
@@ -430,36 +466,24 @@ func runChecksCommandCatalog(args []string, stdout, stderr io.Writer, runtime ru
 
 func runGuardsSummary(args []string, stdout io.Writer, runtime runtimeOptions) error {
 	if contains(args, "--help") || contains(args, "-h") {
-		fmt.Fprint(stdout, manual("guards:summary"))
-		return nil
+		return writeText(manual("guards:summary"), stdout, runtime)
 	}
 	if contains(args, "--json") {
 		text, _ := prettyJSON(DiagnosticsGuardsSummary())
-		_, err := fmt.Fprint(stdout, text)
-		if err != nil {
-			return err
-		}
-		return nil
+		return writeText(text, stdout, runtime)
 	}
-	_, err := fmt.Fprint(stdout, LoomGuardsSummaryText(DiagnosticsGuardsSummary()))
-	return err
+	return writeText(LoomGuardsSummaryText(DiagnosticsGuardsSummary()), stdout, runtime)
 }
 
 func runSelfHealPlan(args []string, stdout io.Writer, runtime runtimeOptions) error {
 	if contains(args, "--help") || contains(args, "-h") {
-		fmt.Fprint(stdout, manual("self-heal:plan"))
-		return nil
+		return writeText(manual("self-heal:plan"), stdout, runtime)
 	}
 	if contains(args, "--json") {
 		text, _ := prettyJSON(DiagnosticsSelfHealPlan())
-		_, err := fmt.Fprint(stdout, text)
-		if err != nil {
-			return err
-		}
-		return nil
+		return writeText(text, stdout, runtime)
 	}
-	_, err := fmt.Fprint(stdout, LoomSelfHealPlanText(DiagnosticsSelfHealPlan()))
-	return err
+	return writeText(LoomSelfHealPlanText(DiagnosticsSelfHealPlan()), stdout, runtime)
 }
 
 func runConfigSchema(args []string, stdout io.Writer, runtime runtimeOptions) error {
@@ -471,8 +495,7 @@ func runConfigSchema(args []string, stdout io.Writer, runtime runtimeOptions) er
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprint(stdout, text)
-	return err
+	return writeText(text, stdout, runtime)
 }
 
 func runConfigValidate(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
