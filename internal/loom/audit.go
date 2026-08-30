@@ -52,7 +52,7 @@ type AuditReport struct {
 }
 
 func Audit(analysis Analysis) AuditReport {
-	var findings []AuditFinding
+	findings := []AuditFinding{}
 	var walk func(Node, string, int, []NodeKind)
 	walk = func(node Node, path string, depth int, ancestors []NodeKind) {
 		if node.Properties["componentBoundary"] == "native-winui-control" {
@@ -107,7 +107,7 @@ func Audit(analysis Analysis) AuditReport {
 	} else if summary.Warnings > 0 {
 		status = "warning"
 	}
-	return AuditReport{"1", status, analysis.SourcePath, analysis.RootView, analysis.Component, summary, findings, analysis.Diagnostics}
+	return AuditReport{"1", status, analysis.SourcePath, analysis.RootView, analysis.Component, summary, findings, nonNilDiagnostics(analysis.Diagnostics)}
 }
 
 func AuditText(report AuditReport) string {
@@ -121,7 +121,7 @@ func AuditText(report AuditReport) string {
 		if len(finding.SuggestedFixes) > 0 {
 			b.WriteString("  suggested fixes:\n")
 			for _, fix := range finding.SuggestedFixes {
-				fmt.Fprintf(&b, "    - %s: %s — %s\n", fix.Audience, fix.Action, fix.Detail)
+				fmt.Fprintf(&b, "    - %s: %s - %s\n", fix.Audience, fix.Action, fix.Detail)
 			}
 		}
 	}

@@ -7,7 +7,7 @@ validation, transfer planning, and workflow diagnostics.
 
 ## What Loom does today
 
-- Parse WinUI XAML and normalize it into Loom’s shared layout model (`inspect:xaml`).
+- Parse WinUI XAML and normalize it into Loom's shared layout model (`inspect:xaml`).
 - Preserve WinUI Grid row/column definitions as layout metadata for transfer planning.
 - Render parsed layouts as a compact plaintext ASCII tree (`inspect:ascii`).
 - Validate and lint the `Patterns` catalog (`patterns:validate`, `patterns:lint`).

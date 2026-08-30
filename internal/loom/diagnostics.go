@@ -358,7 +358,7 @@ func InspectErrors(path string, kind, rootView, component, failOn string) LoomEr
 		kind = string(inferErrorInspectionKind(path))
 	}
 	kind = strings.ToLower(kind)
-	var findings []LoomErrorInspectionFinding
+	findings := []LoomErrorInspectionFinding{}
 	switch LoomErrorInspectionKind(kind) {
 	case LoomErrorInspectionSwift:
 		findings = inspectSwiftErrors(path, rootView, component)
@@ -373,6 +373,9 @@ func InspectErrors(path string, kind, rootView, component, failOn string) LoomEr
 	}
 	for i := range findings {
 		s := &findings[i]
+		if s.SuggestedFixes == nil {
+			s.SuggestedFixes = []SuggestedFix{}
+		}
 		for _, fix := range suggestFixesForInspectionFinding(*s) {
 			s.SuggestedFixes = append(s.SuggestedFixes, fix)
 		}
@@ -471,7 +474,7 @@ func LoomErrorInspectionText(report LoomErrorInspectionReport) string {
 		if len(finding.SuggestedFixes) > 0 {
 			b.WriteString("  suggested fixes:\n")
 			for _, fix := range finding.SuggestedFixes {
-				b.WriteString(fmt.Sprintf("    - %s: %s — %s\n", fix.Audience, fix.Action, fix.Detail))
+				b.WriteString(fmt.Sprintf("    - %s: %s - %s\n", fix.Audience, fix.Action, fix.Detail))
 				if fix.Command != "" {
 					b.WriteString(fmt.Sprintf("      command: %s\n", fix.Command))
 				}

@@ -54,7 +54,7 @@ var osSuggestionCatalog = []OSErrorSuggestion{
 }
 
 func OSErrorSuggestions(platform, query string) OSErrorSuggestionReport {
-	var out []OSErrorSuggestion
+	out := []OSErrorSuggestion{}
 	for _, suggestion := range osSuggestionCatalog {
 		if platform != "" && string(suggestion.Platform) != platform {
 			continue

@@ -5,12 +5,12 @@ OS-agnostic `Patterns` and command outputs.
 
 ## Runtime direction
 
-Loom’s active runtime is Go. It is designed to run on macOS, Windows, and
+Loom's active runtime is Go. It is designed to run on macOS, Windows, and
 Linux as a native CLI (`cmd/loom`).
 
 ## Current Go-owned surface
 
-- `inspect:xaml`: parse WinUI XAML into Loom’s shared tree.
+- `inspect:xaml`: parse WinUI XAML into Loom's shared tree.
 - `inspect:ascii`: render that tree as a plain text structure.
 - `inspect:errors`: classify and report source, XAML, manifest, and pattern
   issues.

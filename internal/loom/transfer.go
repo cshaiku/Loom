@@ -55,7 +55,7 @@ func Transfer(analysis Analysis, patterns []Pattern, from, to string) TransferRe
 	for _, pattern := range patterns {
 		byKind[pattern.Kind] = pattern
 	}
-	var items []TransferItem
+	items := []TransferItem{}
 	var walk func(Node, string)
 	walk = func(node Node, path string) {
 		items = append(items, transferItem(node, path, byKind, from, to))
@@ -81,7 +81,7 @@ func Transfer(analysis Analysis, patterns []Pattern, from, to string) TransferRe
 			summary.Unsupported++
 		}
 	}
-	return TransferReport{"1", analysis.SourcePath, from, to, analysis.RootView, analysis.Component, ASCIIAnalysis(analysis), summary, items, analysis.Diagnostics}
+	return TransferReport{"1", analysis.SourcePath, from, to, analysis.RootView, analysis.Component, ASCIIAnalysis(analysis), summary, items, nonNilDiagnostics(analysis.Diagnostics)}
 }
 
 func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, to string) TransferItem {
@@ -105,7 +105,19 @@ func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, t
 		disposition = TransferNeedsPolicy
 		reason = "The element transfers after project policy decisions such as sizing, spacing, or token selection."
 	}
-	return TransferItem{path, node.Kind, node.Expression, pattern.ID, pattern.Name, disposition, reason, source.Constructs, target.Constructs, contracts, policies}
+	return TransferItem{
+		Path:             path,
+		Kind:             node.Kind,
+		Expression:       node.Expression,
+		PatternID:        pattern.ID,
+		PatternName:      pattern.Name,
+		Disposition:      disposition,
+		Reason:           reason,
+		SourceConstructs: nonNilStrings(source.Constructs),
+		TargetConstructs: nonNilStrings(target.Constructs),
+		Contracts:        nonNilStrings(contracts),
+		Policies:         nonNilStrings(policies),
+	}
 }
 
 func TransferText(report TransferReport) string {
@@ -150,7 +162,7 @@ func contractsFor(node Node) []string {
 	case KindComponent:
 		return []string{"component boundary"}
 	default:
-		return nil
+		return []string{}
 	}
 }
 
@@ -167,6 +179,20 @@ func policiesFor(node Node) []string {
 	case KindText, KindTextField, KindButton:
 		return []string{"Confirm typography, minimum target size, and platform theme token policy."}
 	default:
-		return nil
+		return []string{}
 	}
+}
+
+func nonNilStrings(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+	return values
+}
+
+func nonNilDiagnostics(values []Diagnostic) []Diagnostic {
+	if values == nil {
+		return []Diagnostic{}
+	}
+	return values
 }

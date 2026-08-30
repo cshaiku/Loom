@@ -360,7 +360,7 @@ func SuggestionsText(report OSErrorSuggestionReport) string {
 	for _, suggestion := range report.Suggestions {
 		fmt.Fprintf(&b, "[%s] %s: %s\n  issue: %s\n  reference: %s\n", suggestion.Platform, suggestion.Category, suggestion.Matcher, suggestion.Issue, suggestion.Reference)
 		for _, fix := range suggestion.SuggestedFixes {
-			fmt.Fprintf(&b, "  - %s: %s — %s\n", fix.Audience, fix.Action, fix.Detail)
+			fmt.Fprintf(&b, "  - %s: %s - %s\n", fix.Audience, fix.Action, fix.Detail)
 		}
 	}
 	return b.String()

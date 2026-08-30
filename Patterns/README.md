@@ -1,6 +1,6 @@
 # Loom Patterns
 
-Patterns are Loom’s canonical, operating-system-independent definitions of layout and
+Patterns are Loom's canonical, operating-system-independent definitions of layout and
 control intent.
 
 Each `*.pattern.json` file is a metadata contract for how a UI construct should be

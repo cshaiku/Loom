@@ -145,7 +145,7 @@ func ValidatePatterns(directory string) PatternValidationReport {
 	if err != nil {
 		return PatternValidationReport{"1", "error", abs, 0, []PatternIssue{{SeverityError, "PATTERN001", abs, "Pattern directory cannot be read."}}}
 	}
-	var issues []PatternIssue
+	issues := []PatternIssue{}
 	if len(patterns) == 0 {
 		issues = append(issues, PatternIssue{SeverityError, "PATTERN003", abs, "No .pattern.json files were found."})
 	}

@@ -198,6 +198,38 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if len(commands) == 0 {
 		t.Fatal("expected commands in JSON output")
 	}
+	if strings.Contains(stdout.String(), `\u003c`) {
+		t.Fatalf("command JSON should keep synopsis placeholders readable, got %q", stdout.String())
+	}
+}
+
+func TestFunctionJSONUsesStableEmptyArrays(t *testing.T) {
+	patternReport := ValidatePatterns("../../Patterns")
+	text, err := prettyJSON(patternReport)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(text, `"issues": null`) {
+		t.Fatalf("expected empty issues array, got %s", text)
+	}
+	suggestions := OSErrorSuggestions("windows", "no matching issue")
+	text, err = prettyJSON(suggestions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(text, `"suggestions": null`) {
+		t.Fatalf("expected empty suggestions array, got %s", text)
+	}
+	transfer := Transfer(Analysis{Layout: Node{Children: []Node{{Kind: KindUnsupported, Expression: "Unknown"}}}}, nil, "winui3", "macos")
+	text, err = prettyJSON(transfer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, needle := range []string{`"sourceConstructs": []`, `"targetConstructs": []`, `"contracts": []`, `"policies": []`} {
+		if !strings.Contains(text, needle) {
+			t.Fatalf("expected stable empty array %s in %s", needle, text)
+		}
+	}
 }
 
 func TestCLIQuietOutputWrite(t *testing.T) {

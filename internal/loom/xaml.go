@@ -16,9 +16,9 @@ func AnalyzeXAML(path string) (Analysis, error) {
 	decoder := xml.NewDecoder(strings.NewReader(string(data)))
 	var stack []Node
 	var propertyStack []string
-	var roots []Node
+	roots := []Node{}
 	elementCount := 0
-	var diagnostics []Diagnostic
+	diagnostics := []Diagnostic{}
 	for {
 		token, err := decoder.Token()
 		if err == io.EOF {
@@ -183,13 +183,13 @@ func localXMLName(name string) string {
 
 func frameModifiers(attributes map[string]string) []Modifier {
 	var parts []string
-	for xaml, swift := range map[string]string{"Width": "width", "Height": "height", "MinWidth": "minWidth", "MinHeight": "minHeight"} {
+	for xaml, irName := range map[string]string{"Width": "width", "Height": "height", "MinWidth": "minWidth", "MinHeight": "minHeight"} {
 		if value := attributes[xaml]; value != "" {
-			parts = append(parts, swift+": "+value)
+			parts = append(parts, irName+": "+value)
 		}
 	}
 	if len(parts) == 0 {
-		return nil
+		return []Modifier{}
 	}
 	return []Modifier{{Name: "frame", Arguments: strings.Join(parts, ", ")}}
 }
@@ -198,7 +198,7 @@ func accessibilityModifiers(attributes map[string]string) []Modifier {
 	if value := firstNonEmpty(attributes["AutomationId"], attributes["Name"]); value != "" {
 		return []Modifier{{Name: "accessibilityIdentifier", Arguments: quote(value)}}
 	}
-	return nil
+	return []Modifier{}
 }
 
 func firstNonEmpty(values ...string) string {
