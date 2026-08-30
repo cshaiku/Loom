@@ -2,13 +2,13 @@ import Foundation
 import SwiftParser
 import SwiftSyntax
 
-private struct CollectedView {
+struct CollectedView {
   var name: String
   var source: String
   var offset: Int
 }
 
-private final class ViewDeclarationCollector: SyntaxVisitor {
+final class ViewDeclarationCollector: SyntaxVisitor {
   var views: [CollectedView] = []
 
   init() {
@@ -117,7 +117,7 @@ public struct SwiftUIFrontend: Sendable {
   }
 }
 
-private enum ComputedPropertyExtractor {
+enum ComputedPropertyExtractor {
   static func extract(property: String, from source: String) -> String? {
     let characters = Array(source)
     var index = 0
@@ -142,6 +142,36 @@ private enum ComputedPropertyExtractor {
       return String(characters[(openingBrace + 1)..<closingBrace])
     }
     return nil
+  }
+
+  static func properties(from source: String) -> [String] {
+    let characters = Array(source)
+    var index = 0
+    var names: [String] = []
+
+    while index < characters.count {
+      guard let varRange = findKeyword("var", in: characters, startingAt: index) else {
+        break
+      }
+      var cursor = varRange.upperBound
+      skipTrivia(in: characters, cursor: &cursor)
+      let name = readIdentifier(in: characters, cursor: &cursor)
+      guard !name.isEmpty else {
+        index = varRange.upperBound
+        continue
+      }
+
+      guard let openingBrace = findOpeningBraceBeforeLineBreak(in: characters, startingAt: cursor),
+        let closingBrace = matchingBrace(in: characters, openingAt: openingBrace)
+      else {
+        index = varRange.upperBound
+        continue
+      }
+
+      names.append(name)
+      index = closingBrace + 1
+    }
+    return names
   }
 
   private static func findKeyword(
@@ -178,6 +208,22 @@ private enum ComputedPropertyExtractor {
     while index < characters.count {
       updateState(characters, index: &index, state: &state)
       guard state == .code else { continue }
+      if characters[index] == "{" { return index }
+      index += 1
+    }
+    return nil
+  }
+
+  private static func findOpeningBraceBeforeLineBreak(
+    in characters: [Character],
+    startingAt start: Int
+  ) -> Int? {
+    var index = start
+    var state = ScanState.code
+    while index < characters.count {
+      updateState(characters, index: &index, state: &state)
+      guard state == .code else { continue }
+      if characters[index] == "\n" || characters[index] == "\r" { return nil }
       if characters[index] == "{" { return index }
       index += 1
     }

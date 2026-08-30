@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-08-30
+
+- Added `graph:components` to discover reachable SwiftUI layout components from
+  a Swift file or source directory.
+- Resolved same-view computed subview references and cross-file custom `View`
+  structs without manifest enumeration.
+- Added text, JSON, and DOT graph output.
+- Added cycle and unresolved custom-view diagnostics.
+- Added include/exclude globs for deterministic source discovery in larger
+  applications.
+
 ## 0.3.0 — 2026-08-30
 
 - Added a normative `Patterns` catalog with one OS-agnostic semantic definition

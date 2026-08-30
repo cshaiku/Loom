@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.3.0**
+Current version: **0.4.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -29,6 +29,8 @@ The current usable slice includes:
 - A Codable platform-neutral layout tree.
 - Recognition of common SwiftUI stacks, split views, controls, conditionals,
   loops, modifiers, and custom component references.
+- Recursive component graph discovery for same-view computed subviews and
+  custom `View` structs across Swift source directories.
 - WinUI 3 XAML fragment generation.
 - Text and JSON analysis reports.
 - A conservative XAML parity scan for fixed layout dimensions, scroll regions,
@@ -90,6 +92,23 @@ swift run loom inspect:source MyView.swift \
   --root-view ContentView \
   --component operatorTopBar
 ```
+
+Discover reachable SwiftUI layout components:
+
+```sh
+swift run loom graph:components Sources/App --root-view ContentView
+swift run loom graph:components Sources/App \
+  --root-view ContentView \
+  --format dot \
+  --output Generated/component-graph.dot
+```
+
+`graph:components` scans Swift files under the supplied path, starts from
+`RootView.body` by default, resolves lower-case references that match computed
+view properties on the current view, resolves upper-case references that match
+custom SwiftUI `View` structs, detects cycles, and reports unresolved custom
+views. Use repeated `--include` and `--exclude` globs to constrain large source
+sets deterministically.
 
 Generate a reviewable WinUI 3 XAML fragment:
 
@@ -179,9 +198,8 @@ See the [command organization](docs/COMMANDS.md) and the phased
 
 ## Roadmap
 
-1. Resolve custom computed subviews recursively across Swift files.
-2. Add a configurable semantic-token and control mapping registry.
-3. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
-4. Add syntax-aware incremental XAML regions instead of whole-file replacement.
-5. Build Windows-hosted XAML compilation and screenshot comparison adapters.
-6. Add equivalent emitters for other declarative desktop UI targets.
+1. Drive target mappings from Patterns instead of hardcoded emitter policy.
+2. Generate `x:Bind` view-model contracts and C++/WinRT event stubs.
+3. Add syntax-aware incremental XAML regions instead of whole-file replacement.
+4. Build Windows-hosted XAML compilation and screenshot comparison adapters.
+5. Add equivalent emitters for other declarative desktop UI targets.

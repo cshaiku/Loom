@@ -76,6 +76,22 @@ public enum LoomCommandCatalog {
       ]
     ),
     LoomCommandInfo(
+      command: "graph:components",
+      name: "Graph SwiftUI Components",
+      description: "Discover reachable SwiftUI computed views and custom View dependencies",
+      category: "inspection",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["graph"],
+      synopsis: [
+        "loom graph:components <swift-file-or-directory> [--root-view Name] [--component name] [--format text|json|dot] [--include glob] [--exclude glob]"
+      ],
+      examples: [
+        "loom graph:components Sources/App --root-view ContentView",
+        "loom graph:components Sources/App --format dot --output graph.dot",
+      ]
+    ),
+    LoomCommandInfo(
       command: "generate:xaml",
       name: "Generate WinUI XAML",
       description: "Emit a reviewable WinUI 3 XAML fragment",

@@ -123,6 +123,7 @@ private let sample = """
 
   let catalog = LoomCommandCatalog.catalogText()
   #expect(catalog.contains("inspection\n"))
+  #expect(catalog.contains("graph:components"))
   #expect(catalog.contains("generation\n"))
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
@@ -133,6 +134,62 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func componentGraphDiscoversComputedAndCustomViewDependencies() throws {
+  let directory = FileManager.default.temporaryDirectory
+    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+  try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+  defer { try? FileManager.default.removeItem(at: directory) }
+
+  try """
+  import SwiftUI
+
+  struct ContentView: View {
+    @State private var isRunning = false
+
+    var body: some View {
+      VStack {
+        header
+        DetailsView()
+        Button("Run") { performAction() }
+      }
+    }
+
+    private var header: some View {
+      Text("Header")
+    }
+  }
+  """.write(
+    to: directory.appendingPathComponent("ContentView.swift"), atomically: true, encoding: .utf8)
+  try """
+  import SwiftUI
+
+  struct DetailsView: View {
+    var body: some View {
+      List {
+        Text("Detail")
+      }
+    }
+  }
+  """.write(
+    to: directory.appendingPathComponent("DetailsView.swift"), atomically: true, encoding: .utf8)
+
+  let graph = try LoomComponentGraphBuilder().build(
+    sourceRoot: directory.path,
+    rootView: "ContentView"
+  )
+  #expect(graph.status == "ok")
+  #expect(graph.nodes.map(\.id.description) == [
+    "ContentView.body", "ContentView.header", "DetailsView.body",
+  ])
+  #expect(
+    graph.edges.map { "\($0.from.description)->\($0.to.description)" } == [
+      "ContentView.body->ContentView.header",
+      "ContentView.body->DetailsView.body",
+    ])
+  #expect(graph.nodes.allSatisfy { !$0.unresolvedReferences.contains("performAction") })
+  #expect(LoomComponentGraphBuilder().dot(graph).contains("\"ContentView.body\" -> \"DetailsView.body\""))
 }
 
 @Test func patternCatalogIsValidAndCoversSemanticNodeKinds() throws {

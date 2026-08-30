@@ -29,6 +29,7 @@ repository-policy domain. The shared conventions are:
 | --- | --- | --- |
 | `inspect:source` | `r/w` through `--output` | `analyze` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
+| `graph:components` | `r/w` through `--output` | `graph` |
 | `generate:xaml` | `r/w` through `--output` | `generate` |
 | `project:build` | `w` | `project` |
 | `patterns:list` | `r` | — |
@@ -39,3 +40,19 @@ repository-policy domain. The shared conventions are:
 
 Aliases preserve the 0.1 command surface, but documentation and automation
 should use canonical names.
+
+## Component graph command
+
+`graph:components` discovers the reachable SwiftUI layout surface from a root
+view without requiring every computed subview in a manifest. It accepts a Swift
+file or source directory, resolves same-view computed properties and custom
+`View` structs, and emits text, JSON, or DOT.
+
+```sh
+loom graph:components Sources/App --root-view ContentView
+loom graph:components Sources/App --root-view ContentView --format dot --output graph.dot
+```
+
+Use repeated `--include glob` and `--exclude glob` options to constrain large
+source trees. Hidden directories, `.git`, `.build`, `Build`, and `DerivedData`
+are skipped by default.

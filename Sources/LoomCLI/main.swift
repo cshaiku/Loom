@@ -20,6 +20,16 @@ private struct SourceOptions {
   var themeResourcePrefix: String?
 }
 
+private struct GraphOptions {
+  var sourceRoot: String
+  var rootView = "ContentView"
+  var component = "body"
+  var format = "text"
+  var outputPath: String?
+  var include: [String] = []
+  var exclude: [String] = []
+}
+
 private struct ProjectOptions {
   var manifestPath: String
   var projectRoot: String?
@@ -46,7 +56,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String]) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.3.0")
+      print("loom 0.4.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -90,6 +100,8 @@ private enum LoomCommand {
     switch command.command {
     case "inspect:source", "inspect:parity", "generate:xaml":
       try runSourceCommand(command.command, arguments: arguments)
+    case "graph:components":
+      try runGraphCommand(arguments)
     case "project:build":
       let options = try parseProjectOptions(arguments)
       let run = try LoomProjectRunner().run(
@@ -149,6 +161,28 @@ private enum LoomCommand {
       throw LoomError.invalidArguments("Unknown source command \(command).")
     }
     try writeOrPrint(output, path: options.outputPath)
+  }
+
+  private static func runGraphCommand(_ arguments: [String]) throws {
+    let options = try parseGraphOptions(arguments)
+    let graph = try LoomComponentGraphBuilder().build(
+      sourceRoot: options.sourceRoot,
+      rootView: options.rootView,
+      component: options.component,
+      options: LoomComponentGraphOptions(
+        include: options.include.isEmpty ? ["*.swift", "**/*.swift"] : options.include,
+        exclude: options.exclude
+      )
+    )
+    let output: String
+    switch options.format {
+    case "text": output = LoomComponentGraphBuilder().text(graph)
+    case "json": output = try LoomComponentGraphBuilder().json(graph)
+    case "dot": output = LoomComponentGraphBuilder().dot(graph)
+    default: throw LoomError.invalidArguments("--format must be text, json, or dot.")
+    }
+    try writeOrPrint(output, path: options.outputPath)
+    if graph.status != "ok" { exit(1) }
   }
 
   private static func printCatalog(_ arguments: [String]) throws {
@@ -275,6 +309,41 @@ private enum LoomCommand {
       case "--xaml": options.xamlPath = value
       case "--theme-prefix": options.themeResourcePrefix = value
       default: throw LoomError.invalidArguments("Unknown option \(flag).")
+      }
+      index += 2
+    }
+    return options
+  }
+
+  private static func parseGraphOptions(_ arguments: [String]) throws -> GraphOptions {
+    guard arguments.count >= 2 else {
+      throw LoomError.invalidArguments("graph:components requires a Swift source path or directory.")
+    }
+    var options = GraphOptions(sourceRoot: arguments[1])
+    var index = 2
+    while index < arguments.count {
+      let flag = arguments[index]
+      if flag == "--json" {
+        options.format = "json"
+        index += 1
+        continue
+      }
+      guard index + 1 < arguments.count else {
+        throw LoomError.invalidArguments("Missing value for \(flag).")
+      }
+      let value = arguments[index + 1]
+      switch flag {
+      case "--root-view": options.rootView = value
+      case "--component": options.component = value
+      case "--format":
+        guard ["text", "json", "dot"].contains(value) else {
+          throw LoomError.invalidArguments("--format must be text, json, or dot.")
+        }
+        options.format = value
+      case "--output": options.outputPath = value
+      case "--include": options.include.append(value)
+      case "--exclude": options.exclude.append(value)
+      default: throw LoomError.invalidArguments("Unknown graph option \(flag).")
       }
       index += 2
     }

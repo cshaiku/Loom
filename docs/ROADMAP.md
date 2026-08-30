@@ -10,19 +10,20 @@
   metadata.
 - Voci project profile with six translated shell regions.
 - Versioned semantic Patterns catalog covering every meaningful layout node.
+- Recursive component graph discovery for computed subviews and custom `View`
+  structs across Swift source directories.
 
 ## 0.4 — Recursive component graph
 
-- Discover computed SwiftUI subviews without requiring every property in the
-  manifest.
-- Resolve custom `View` structs across multiple Swift files.
-- Emit a component dependency graph with cycle and unresolved-reference
-  diagnostics.
-- Add project include/exclude rules so large applications can constrain source
-  discovery deterministically.
+Status: shipped in 0.4.0.
 
-Acceptance: Voci's root shell graph resolves its local computed subviews and
-dialog `View` types across the macOS source set without duplicate work.
+- `graph:components` discovers computed SwiftUI subviews without requiring
+  every property in the manifest.
+- It resolves custom `View` structs across multiple Swift files.
+- It emits text, JSON, and DOT component dependency graphs.
+- It reports cycles and unresolved custom-view references.
+- It supports include/exclude globs so large applications can constrain source
+  discovery deterministically.
 
 ## 0.5 — Pattern-driven mapping registry and owned output
 

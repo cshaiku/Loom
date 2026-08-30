@@ -14,14 +14,17 @@ incorrect conversion.
    selected computed view property and recognizes SwiftUI construction syntax.
 3. **Layout IR**: a Codable tree records containers, controls, conditions,
    component references, raw arguments, modifiers, and diagnostics.
-4. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
+4. **Component graph**: recursive discovery starts from a root `View`
+   component, resolves same-view computed properties and custom SwiftUI `View`
+   structs across source files, and reports cycles or missing custom views.
+5. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
    `StackPanel`, `Grid`, collection control, layered container, or placeholder.
-5. **XAML emission**: Loom emits a valid, reviewable fragment with comments at
+6. **XAML emission**: Loom emits a valid, reviewable fragment with comments at
    every semantic boundary that still needs a human decision.
-6. **Parity checking**: source-derived constraints and component references are
+7. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-7. **Project workflow**: a validated `loom.json` manifest selects components,
+8. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
 
 ## Command architecture
@@ -42,6 +45,16 @@ and WinUI entries are explicitly mappings, not definitions of meaning.
 The catalog is governed by `Patterns/pattern.schema.json` and a typed runtime
 validator. Every meaningful `LoomNodeKind` must have exactly one pattern;
 synthetic roots and unsupported-source placeholders are intentionally excluded.
+
+## Component Graphs
+
+`graph:components` builds a deterministic dependency graph over reachable
+SwiftUI layout components. Nodes are identified as `View.component`, where the
+component is usually `body` or a computed view property. Lower-case component
+references only become graph edges when they match a computed property on the
+current view, which prevents action calls from becoming visual dependencies.
+Upper-case references become edges when they match a custom SwiftUI `View` with
+an extractable `body`.
 
 ## Trust boundaries
 
