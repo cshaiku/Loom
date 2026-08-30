@@ -1,6 +1,6 @@
 # Loom
 
-Current version: **0.9.0**
+Current version: **0.10.0**
 
 Loom is a compiler-assisted bridge from SwiftUI layout source to WinUI 3 XAML.
 It extracts a SwiftUI view hierarchy, lowers it into a platform-neutral layout
@@ -32,6 +32,9 @@ The current usable slice includes:
 - Recursive component graph discovery for same-view computed subviews and
   custom `View` structs across Swift source directories.
 - WinUI 3 XAML fragment generation.
+- WinUI target contract generation for native bindings, actions, lifecycle
+  hooks, visibility rules, accessibility metadata, theme resources,
+  collections, components, and unsupported behavior.
 - Text and JSON analysis reports for SwiftUI and WinUI XAML sources.
 - WinUI XAML ingestion into the same platform-neutral layout tree used by the
   SwiftUI frontend.
@@ -155,6 +158,22 @@ swift run loom generate:xaml MyView.swift \
   --root-view ContentView \
   --output Generated/ContentView.xaml
 ```
+
+Generate WinUI target contracts for behavior Loom intentionally leaves native:
+
+```sh
+swift run loom generate:contracts MyView.swift --root-view ContentView
+swift run loom generate:contracts MyView.swift \
+  --root-view ContentView \
+  --theme-prefix Voci \
+  --format json \
+  --output Generated/ContentView.contracts.json
+```
+
+Contracts are the companion checklist for native Windows implementation:
+bindings, button actions, lifecycle handlers, resource tokens, visibility
+rules, collections, accessibility metadata, component boundaries, and
+unsupported expressions.
 
 Update a Loom-owned region inside an existing XAML file:
 

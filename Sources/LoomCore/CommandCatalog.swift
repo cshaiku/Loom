@@ -130,6 +130,22 @@ public enum LoomCommandCatalog {
       examples: ["loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold"]
     ),
     LoomCommandInfo(
+      command: "generate:contracts",
+      name: "Generate Target Contracts",
+      description: "Emit WinUI behavior, binding, resource, and accessibility contract stubs",
+      category: "generation",
+      access: .conditionalWrite,
+      writeFlags: ["--output"],
+      aliases: ["contracts"],
+      synopsis: [
+        "loom generate:contracts <swift-file> [--root-view Name] [--component name] [--theme-prefix Prefix] [--format text|json] [--output path]"
+      ],
+      examples: [
+        "loom generate:contracts ContentView.swift --root-view ContentView",
+        "loom generate:contracts ContentView.swift --format json --output contracts.json",
+      ]
+    ),
+    LoomCommandInfo(
       command: "project:build",
       name: "Build Project Translation",
       description: "Generate all manifest-declared analyses, XAML fragments, and parity reports",

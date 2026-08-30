@@ -93,7 +93,7 @@ private enum LoomCommand {
 
   private static func dispatch(_ arguments: [String], runtime: RuntimeOptions) throws {
     if arguments == ["--version"] || arguments == ["version"] {
-      print("loom 0.9.0")
+      print("loom 0.10.0")
       return
     }
     if arguments.isEmpty || arguments == ["help"] || arguments == ["--help"] || arguments == ["-h"]
@@ -135,7 +135,7 @@ private enum LoomCommand {
     }
 
     switch command.command {
-    case "inspect:source", "inspect:parity", "generate:xaml":
+    case "inspect:source", "inspect:parity", "generate:xaml", "generate:contracts":
       try runSourceCommand(command.command, arguments: arguments, runtime: runtime)
     case "inspect:xaml":
       try runXAMLCommand(arguments, runtime: runtime)
@@ -207,6 +207,13 @@ private enum LoomCommand {
       } else {
         output = XAMLParityChecker().text(report)
       }
+    case "generate:contracts":
+      let generator = LoomTargetContractGenerator()
+      let report = try generator.generate(
+        analysis: analysis,
+        options: LoomTargetContractOptions(themeResourcePrefix: options.themeResourcePrefix)
+      )
+      output = options.format == "json" ? try generator.json(report) : generator.text(report)
     default:
       throw LoomError.invalidArguments("Unknown source command \(command).")
     }

@@ -141,6 +141,7 @@ private let sample = """
   #expect(catalog.contains("graph:components"))
   #expect(catalog.contains("inspect:xaml"))
   #expect(catalog.contains("generation\n"))
+  #expect(catalog.contains("generate:contracts"))
   #expect(catalog.contains("generate:swiftui"))
   #expect(catalog.contains("projects\n"))
   #expect(catalog.contains("patterns\n"))
@@ -152,6 +153,49 @@ private let sample = """
   let decoded = try JSONDecoder().decode([LoomCommandInfo].self, from: Data(json.utf8))
   #expect(decoded.allSatisfy { $0.category == "setup" })
   #expect(decoded.map(\.command).contains("config:validate"))
+}
+
+@Test func targetContractsExtractBindingsBehaviorAndResources() throws {
+  let source = """
+  import SwiftUI
+
+  struct ContractView: View {
+    var body: some View {
+      VStack {
+        Text(statusText)
+        TextField("Search", text: $query)
+          .accessibilityIdentifier("searchBox")
+        if isReady {
+          Button("Run") { startRun() }
+        }
+      }
+      .onAppear { load() }
+    }
+  }
+  """
+  let analysis = try SwiftUIFrontend().analyze(source: source, rootView: "ContractView")
+  let generator = LoomTargetContractGenerator()
+  let report = try generator.generate(
+    analysis: analysis,
+    options: .init(themeResourcePrefix: "Loom")
+  )
+
+  #expect(report.target == "winui3")
+  #expect(report.items.contains { $0.kind == .binding && $0.name == "statusText" })
+  #expect(report.items.contains { $0.kind == .binding && $0.source.contains("TextField") })
+  #expect(report.items.contains { $0.kind == .accessibility && $0.name == "searchBox" })
+  #expect(report.items.contains { $0.kind == .visibility && $0.name == "isReady" })
+  #expect(report.items.contains { $0.kind == .action && $0.name == "startRun" })
+  #expect(report.items.contains { $0.kind == .lifecycle && $0.name == "onAppear" })
+  #expect(report.items.contains { $0.kind == .themeResource && $0.name == "Loom.*" })
+
+  let text = generator.text(report)
+  #expect(text.contains("Loom target contracts"))
+  #expect(text.contains("[action] startRun"))
+
+  let json = try generator.json(report)
+  let decoded = try JSONDecoder().decode(LoomTargetContractReport.self, from: Data(json.utf8))
+  #expect(decoded.items.count == report.items.count)
 }
 
 @Test func swiftUIEmitterGeneratesScaffoldFromXAMLIR() throws {

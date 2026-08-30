@@ -20,6 +20,8 @@
   content outside explicit markers.
 - Reliability guards for malformed XAML, graph cycles, unsafe owned-region ids,
   explicit generated-region initialization, and automation-friendly CLI output.
+- WinUI target contract generation for native behavior, bindings, resources,
+  accessibility, and component wiring that layout emission cannot own.
 
 ## 0.4 — Recursive component graph
 
@@ -79,7 +81,18 @@ Status: shipped in 0.9.0.
 - Added tests for malformed XAML, graph cycles, unsafe region ids, no-op region
   updates, path-level region initialization, and operational pattern lint gaps.
 
-## 1.0 — Target contracts
+## 0.10 — Target contracts
+
+Status: shipped in 0.10.0.
+
+- Added `generate:contracts` for the native WinUI implementation surface beside
+  generated layout.
+- Reports actions, bindings, lifecycle hooks, visibility rules, collection
+  templates, accessibility metadata, theme resources, component boundaries, and
+  unsupported expressions.
+- Supports text and JSON output plus `--output` for automation.
+
+## 1.0 — Pattern-driven emitters
 
 - Drive semantic color, control, event, and binding mappings from Patterns.
 - Generate C++/WinRT event and view-model contract stubs.

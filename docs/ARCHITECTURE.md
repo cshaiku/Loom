@@ -24,14 +24,16 @@ incorrect conversion.
 7. **Target emission**: Loom emits valid, reviewable target scaffolds with
    comments at every semantic boundary that still needs a human decision.
    Current targets are WinUI XAML fragments and SwiftUI scaffolds from XAML.
-8. **Parity checking**: source-derived constraints and component references are
+8. **Target contracts**: behavior and state that cannot be safely translated as
+   layout is emitted as a companion contract report for native WinUI wiring.
+9. **Parity checking**: source-derived constraints and component references are
    compared with an existing XAML surface. Later adapters can compile and render
    the result on Windows for image and accessibility-tree comparison.
-9. **Project workflow**: a validated `loom.json` manifest selects components,
+10. **Project workflow**: a validated `loom.json` manifest selects components,
    target resources, existing XAML, and deterministic output artifacts.
-10. **Owned output**: generated XAML can be written back only inside explicit
+11. **Owned output**: generated XAML can be written back only inside explicit
     Loom marker pairs, preserving surrounding handwritten platform code.
-11. **Runtime controls**: command success chatter is controlled globally by
+12. **Runtime controls**: command success chatter is controlled globally by
     `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
 
 ## Command architecture
@@ -84,6 +86,17 @@ frame and accessibility metadata, and preserves unsupported XAML controls as
 comments plus `EmptyView()` placeholders. The output is intended for review and
 native completion, not as proof that Windows behavior or styling has been
 ported.
+
+## Target Contracts
+
+`generate:contracts` converts SwiftUI-normalized IR into a WinUI implementation
+contract. The report intentionally separates layout from platform behavior:
+dynamic text becomes a binding requirement, buttons become command/click
+requirements, lifecycle modifiers become page/control lifecycle hooks,
+conditionals become visibility or visual-state requirements, collections become
+ItemsSource/DataTemplate requirements, and component references become
+generated-region/UserControl decisions. This keeps generated XAML reviewable
+without hiding missing native work.
 
 ## Trust boundaries
 

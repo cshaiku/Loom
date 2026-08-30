@@ -34,8 +34,9 @@ repository-policy domain. The shared conventions are:
 | `inspect:xaml` | `r/w` through `--output` | `xaml` |
 | `inspect:parity` | `r/w` through `--output` | `parity` |
 | `graph:components` | `r/w` through `--output` | `graph` |
-| `generate:xaml` | `r/w` through `--output`, `--replace-region` | `generate` |
 | `generate:swiftui` | `r/w` through `--output` | — |
+| `generate:xaml` | `r/w` through `--output`, `--replace-region` | `generate` |
+| `generate:contracts` | `r/w` through `--output` | `contracts` |
 | `project:build` | `w` | `project` |
 | `patterns:list` | `r` | — |
 | `patterns:show` | `r` | — |
@@ -122,3 +123,18 @@ behavior, bindings, styles, and unsupported XAML controls as placeholders.
 loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold
 loom generate:swiftui MainWindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
 ```
+
+## Target contract command
+
+`generate:contracts` emits the native WinUI contract surface that must be wired
+around generated layout. It reports bindings, button actions, lifecycle
+handlers, visibility rules, collection sources/templates, accessibility
+metadata, theme resources, component boundaries, and unsupported behavior.
+
+```sh
+loom generate:contracts ContentView.swift --root-view ContentView
+loom generate:contracts ContentView.swift --root-view ContentView --format json --output ContentView.contracts.json
+```
+
+Use this beside `generate:xaml`: XAML provides the reviewable layout fragment;
+contracts provide the target-side implementation checklist.

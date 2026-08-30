@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — 2026-08-30
+
+- Added `generate:contracts` to emit WinUI behavior, binding, resource,
+  accessibility, visibility, collection, component, and unsupported-work
+  contracts from SwiftUI-normalized IR.
+- Added text and JSON contract reports with `--output` support.
+- Added command catalog metadata and alias `contracts`.
+- Added tests for contract extraction, JSON encoding, and command registry
+  coverage.
 
 - Replaced recursive `LoomNode` aggregation helpers with iterative traversals
   to avoid stack growth on deeply nested generated layout trees.
