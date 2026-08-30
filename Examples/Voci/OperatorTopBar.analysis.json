@@ -1,0 +1,190 @@
+{
+  "component" : "operatorTopBar",
+  "diagnostics" : [
+
+  ],
+  "layout" : {
+    "arguments" : "",
+    "children" : [
+      {
+        "arguments" : "spacing: 12",
+        "children" : [
+          {
+            "arguments" : "",
+            "children" : [
+
+            ],
+            "expression" : "nowPlayingArtwork",
+            "kind" : "component",
+            "modifiers" : [
+              {
+                "arguments" : "width: 48, height: 48",
+                "name" : "frame"
+              }
+            ],
+            "properties" : {
+
+            }
+          },
+          {
+            "arguments" : "alignment: .leading, spacing: 3",
+            "children" : [
+              {
+                "arguments" : "topBarTitle",
+                "children" : [
+
+                ],
+                "expression" : "Text",
+                "kind" : "text",
+                "modifiers" : [
+                  {
+                    "arguments" : ".system(size: 15, weight: .bold)",
+                    "name" : "font"
+                  },
+                  {
+                    "arguments" : "VociUITheme.textPrimary",
+                    "name" : "foregroundStyle"
+                  },
+                  {
+                    "arguments" : "1",
+                    "name" : "lineLimit"
+                  }
+                ],
+                "properties" : {
+
+                }
+              },
+              {
+                "arguments" : "topBarDetail",
+                "children" : [
+
+                ],
+                "expression" : "Text",
+                "kind" : "text",
+                "modifiers" : [
+                  {
+                    "arguments" : ".system(size: 13)",
+                    "name" : "font"
+                  },
+                  {
+                    "arguments" : "VociUITheme.textSecondary",
+                    "name" : "foregroundStyle"
+                  },
+                  {
+                    "arguments" : "1",
+                    "name" : "lineLimit"
+                  }
+                ],
+                "properties" : {
+
+                }
+              }
+            ],
+            "expression" : "VStack",
+            "kind" : "verticalStack",
+            "modifiers" : [
+              {
+                "arguments" : "minWidth: 230, maxWidth: 360, alignment: .leading",
+                "name" : "frame"
+              }
+            ],
+            "properties" : {
+
+            }
+          },
+          {
+            "arguments" : "",
+            "children" : [
+
+            ],
+            "expression" : "topBarProgress",
+            "kind" : "component",
+            "modifiers" : [
+              {
+                "arguments" : "minWidth: 300, maxWidth: .infinity",
+                "name" : "frame"
+              }
+            ],
+            "properties" : {
+
+            }
+          },
+          {
+            "arguments" : "",
+            "children" : [
+
+            ],
+            "expression" : "topBarTransportControls",
+            "kind" : "component",
+            "modifiers" : [
+
+            ],
+            "properties" : {
+
+            }
+          },
+          {
+            "arguments" : "",
+            "children" : [
+
+            ],
+            "expression" : "musicVolumeControl",
+            "kind" : "component",
+            "modifiers" : [
+
+            ],
+            "properties" : {
+
+            }
+          }
+        ],
+        "expression" : "HStack",
+        "kind" : "horizontalStack",
+        "modifiers" : [
+          {
+            "arguments" : ".horizontal, 14",
+            "name" : "padding"
+          },
+          {
+            "arguments" : ".vertical, 10",
+            "name" : "padding"
+          },
+          {
+            "arguments" : "maxWidth: .infinity, minHeight: 78",
+            "name" : "frame"
+          },
+          {
+            "arguments" : "VociUITheme.surface",
+            "name" : "background"
+          },
+          {
+            "arguments" : "RoundedRectangle(cornerRadius: 8, style: .continuous)",
+            "name" : "clipShape"
+          },
+          {
+            "arguments" : "\n            RoundedRectangle(cornerRadius: 8, style: .continuous)\n                .stroke(VociUITheme.border, lineWidth: 1)\n        ",
+            "name" : "overlay"
+          },
+          {
+            "arguments" : "\n            Rectangle()\n                .fill(sideSpotColor)\n                .frame(width: sideSpotWidth),\n            alignment: .leading\n        ",
+            "name" : "overlay"
+          }
+        ],
+        "properties" : {
+
+        }
+      }
+    ],
+    "expression" : "operatorTopBar",
+    "kind" : "root",
+    "modifiers" : [
+
+    ],
+    "properties" : {
+      "declaringView" : "ContentView"
+    }
+  },
+  "rootView" : "ContentView",
+  "sourcePath" : "/private/SDF/Voci/platform/macos/VociMacApp.swift",
+  "syntaxNodeCount" : 57975
+}

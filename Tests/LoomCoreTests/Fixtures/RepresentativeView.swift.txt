@@ -1,0 +1,17 @@
+import SwiftUI
+
+struct RepresentativeView: View {
+    let showDetails: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Representative")
+            if showDetails {
+                ScrollView {
+                    detailsPanel
+                }
+            }
+        }
+        .padding(10)
+    }
+}

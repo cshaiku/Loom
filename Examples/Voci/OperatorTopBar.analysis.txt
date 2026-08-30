@@ -1,0 +1,19 @@
+Loom analysis
+Source: /private/SDF/Voci/platform/macos/VociMacApp.swift
+View: ContentView.operatorTopBar
+Swift syntax nodes: 57975
+Layout nodes: 9
+Component references: 4
+
+Layout tree
+└─ horizontalStack: HStack(spacing: 12)
+   ├─ component: nowPlayingArtwork
+   ├─ verticalStack: VStack(alignment: .leading, spacing: 3)
+   │  ├─ text: Text(topBarTitle)
+   │  └─ text: Text(topBarDetail)
+   ├─ component: topBarProgress
+   ├─ component: topBarTransportControls
+   └─ component: musicVolumeControl
+
+Diagnostics: 0
+  none
