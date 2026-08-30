@@ -1,237 +1,85 @@
 # Loom architecture
 
-## Design goal
-
-Loom converts the layout semantics that SwiftUI and WinUI 3 can reasonably
-share. It never hides platform behavior behind an apparently successful but
-incorrect conversion.
+Loom keeps a platform-neutral layout model at the center and maps it through
+OS-agnostic `Patterns` and command outputs.
 
 ## Runtime direction
 
-Loom is moving to Go as its forward implementation so the CLI can run as a
-native binary on macOS, Windows, and Linux. The Swift implementation remains as
-the 0.16.0 reference for SwiftUI parsing, generation, project workflows, and
-owned-region guards until those pieces are ported.
+Loom’s active runtime is Go. It is designed to run on macOS, Windows, and
+Linux as a native CLI (`cmd/loom`).
 
-The Go runtime currently owns Pattern catalog operations, WinUI XAML ingestion,
-ASCII Pattern rendering, accessibility/layout audit, Pattern transfer, OS error
-suggestions, command listing/help, `status`, `verify`, JSON output, `--quiet`,
-and `--verbose`.
+## Current Go-owned surface
 
-## Pipeline
+- `inspect:xaml`: parse WinUI XAML into Loom’s shared tree.
+- `inspect:ascii`: render that tree as a plain text structure.
+- `inspect:errors`: classify and report Swift-like, XAML, manifest, and pattern
+  issues.
+- `patterns:list|show|validate|lint|export|transfer`: canonical pattern
+  validation, transfer scoring, and interoperability exports.
+- `accessibility:audit`: identify layout design and accessibility risks.
+- `suggestions:os-errors`: return curated fix recommendations.
+- `status`, `verify`, `checks:command-catalog`, `guards:summary`,
+  `config:validate`, `config:schema`, `self-heal:plan`.
 
-1. **Swift frontend**: SwiftParser produces a source-accurate SwiftSyntax tree.
-   Loom uses it to identify real `View` declarations and their source regions.
-2. **View expression extraction**: a conservative result-builder parser reads a
-   selected computed view property and recognizes SwiftUI construction syntax.
-3. **Layout IR**: a Codable tree records containers, controls, conditions,
-   component references, raw arguments, modifiers, and diagnostics.
-4. **Component graph**: recursive discovery starts from a root `View`
-   component, resolves same-view computed properties and custom SwiftUI `View`
-   structs across source files, and reports cycles or missing custom views.
-5. **XAML frontend**: WinUI XAML is parsed as XML and normalized into the same
-   `LoomNode` IR used by SwiftUI extraction.
-6. **Target lowering**: WinUI mapping decides whether a SwiftUI stack needs a
-   `StackPanel`, `Grid`, collection control, layered container, or placeholder.
-7. **Target emission**: Loom emits valid, reviewable target scaffolds with
-   comments at every semantic boundary that still needs a human decision.
-   Current targets are WinUI XAML fragments and SwiftUI scaffolds from XAML.
-8. **Target contracts**: behavior and state that cannot be safely translated as
-   layout is emitted as a companion contract report for native WinUI wiring.
-9. **Pattern transfer planning**: each normalized layout node is matched to a
-   canonical Pattern and classified for OS-to-OS transfer readiness.
-10. **ASCII Pattern rendering**: the normalized tree can be emitted as a compact
-    plaintext structural sketch for reviews, logs, and diffs.
-11. **Accessibility/layout audit**: normalized layout is checked for missing
-    names, weak semantics, undersized targets, redundant wrappers, malformed
-    nodes, unsupported native component boundaries, and transfer-hostile
-    structure. Findings include structured suggested fixes for both users and
-    AI agents.
-12. **OS error suggestions**: inspected SwiftUI, WinUI, XAML, macOS, and
-    Windows error patterns are mapped to user decisions and AI-agent actions.
-13. **Parity checking**: source-derived constraints and component references are
-   compared with an existing XAML surface. Later adapters can compile and render
-   the result on Windows for image and accessibility-tree comparison.
-14. **Project workflow**: a validated `loom.json` manifest selects components,
-   target resources, existing XAML, and deterministic output artifacts.
-15. **Owned output**: generated XAML can be written back only inside explicit
-    Loom marker pairs, preserving surrounding handwritten platform code.
-16. **Runtime controls**: command success chatter is controlled globally by
-    `--quiet` and `--verbose`, while fatal diagnostics always remain visible.
+## Catalog compatibility placeholders
 
-## Command architecture
+These are intentionally present in the command catalog but not yet implemented in
+Go:
 
-Loom mirrors Vigil's command ergonomics at a smaller scale. A central catalog
-defines canonical colon-namespaced commands, categories, access modes, write
-flags, aliases, synopsis text, and examples. Help, list, JSON catalog, manuals,
-and dispatch all resolve through that same metadata so the advertised surface
-cannot drift independently from the executable.
+- `inspect:source`
+- `inspect:parity`
+- `graph:components`
+- `generate:xaml`
+- `generate:swiftui`
+- `generate:contracts`
+- `project:build`
 
-## Semantic Patterns
+Invocations return a deterministic
+`is reserved for catalog parity only and is not yet available in the Go runtime`
+diagnostic.
 
-`Patterns/*.pattern.json` is the canonical vocabulary between source parsing
-and target emission. A pattern defines OS-agnostic intent, structure, sizing,
-attributes, constraints, accessibility behavior, and stable identity. SwiftUI
-and WinUI entries are explicitly mappings, not definitions of meaning. This is
-direction-neutral by design: SwiftUI-to-XAML and XAML-to-SwiftUI should both
-normalize through the same shared IR and Pattern vocabulary.
+## Core pipeline (implemented in Go)
 
-The catalog is governed by `Patterns/pattern.schema.json` and a typed runtime
-validator. Every meaningful `LoomNodeKind` must have exactly one pattern;
-synthetic roots and unsupported-source placeholders are intentionally excluded.
-`patterns:lint` adds operational mapping rules, and the XAML emitter can load a
-Pattern registry to trace which pattern drives an emitted WinUI node.
-
-`patterns:export` derives interoperability views from the canonical Pattern
-files. DTCG-style tokens, Open UI-style component metadata, ARIA summaries, and
-Style Dictionary-compatible packages are export shapes for external tools;
-they are not alternate sources of truth. Changes should be made in
-`*.pattern.json` first and then re-exported.
-
-Patterns may also declare optional variants. A variant describes a named
-layout policy under conditions such as compact width, dense information mode,
-large text, or accessibility-first rendering. Variants are intentionally
-policy metadata, not platform-specific code.
-
-Pattern accessibility metadata can be extended with optional keyboard behavior,
-state names, required accessibility properties, and minimum target size. These
-fields let the Pattern catalog describe more than roles: it can define the
-observable accessibility contract that must survive OS transfer.
-
-## Accessibility and layout audit
-
-`accessibility:audit` checks the shared IR rather than raw framework syntax, so
-the same rules apply to SwiftUI and WinUI XAML input. The first audit pass
-focuses on issues that directly affect interface transfer:
-
-- missing accessible names for buttons and stateful controls;
-- images without either labels or decorative-hidden intent;
-- text inputs relying on placeholder-only naming;
-- interactive controls below a 44-by-44 target-size heuristic;
-- color surfaces that may be carrying meaning without text/state backup;
-- empty, malformed, unsupported, redundant, or repeatedly nested layout nodes;
-- native WinUI controls preserved as unsupported component boundaries;
-- nested scroll regions and geometry-dependent layout.
-
-The audit is intentionally conservative. It reports risks and required review
-work; it does not claim to prove accessibility compliance without platform
-runtime inspection. Each finding includes a human recommendation and
-machine-readable `suggested_fixes` entries split between user decisions and
-agent implementation actions.
-
-## OS error suggestions
-
-`suggestions:os-errors` exposes a curated platform error catalog for SwiftUI,
-WinUI, XAML, macOS, and Windows. `inspect:errors` uses the same catalog to
-attach `suggested_fixes` directly to findings.
-
-The catalog focuses on failure modes that matter for layout/interface transfer:
-Swift parser and result-builder failures, large SwiftUI type-checking failures,
-SwiftUI accessibility labels/hidden decoration, XAML parse and resource lookup
-failures, WinUI AutomationProperties naming, AccessibilityView tree exposure,
-custom automation peers, native component boundaries, and binding/data-context
-gaps.
-
-This layer is intentionally curated. It should prefer official platform
-documentation and concrete next actions over trying to enumerate every possible
-compiler/runtime diagnostic.
-
-## Pattern Transfer
-
-`patterns:transfer` is the transferability layer between inspection and
-generation. It answers whether the interface design can move from one platform
-to another before code is emitted. Each visual node is classified:
-
-- `direct`: target mapping exists and no extra policy or native contract was
-  detected.
-- `needs-policy`: target mapping exists, but spacing, sizing, typography,
-  adaptive breakpoints, or tokens require a project decision.
-- `needs-native-contract`: layout transfers, but state, actions, lifecycle,
-  collections, accessibility metadata, or component boundaries need native
-  implementation.
-- `lossy`: target representation exists but platform-specific behavior may
-  degrade without review.
-- `unsupported`: no target mapping exists or the node is explicitly
-  unsupported.
-
-This makes Patterns operational: they are not only definitions of UI meaning,
-but also evidence for safe interface transfer.
-
-## ASCII Patterns
-
-`inspect:ascii` renders the normalized layout tree as a plain text structure:
-
-```text
-= ContentView.body
-\-- vertical-stack / VStack
-    |-- text / Text
-    \-- button / Button
-```
-
-The renderer uses simple ASCII connectors so the output works in terminals,
-plain logs, code reviews, and agent messages without relying on screenshots.
-
-## Component Graphs
-
-`graph:components` builds a deterministic dependency graph over reachable
-SwiftUI layout components. Nodes are identified as `View.component`, where the
-component is usually `body` or a computed view property. Lower-case component
-references only become graph edges when they match a computed property on the
-current view, which prevents action calls from becoming visual dependencies.
-Upper-case references become edges when they match a custom SwiftUI `View` with
-an extractable `body`.
-
-## XAML Ingestion
-
-`inspect:xaml` converts WinUI controls into the same platform-neutral IR used
-by `inspect:source`. The first supported set covers `Grid`, `StackPanel`,
-`TextBlock`, `Button`, `TextBox`, `Image`, `ScrollViewer`, `ListView`, sliders,
-toggles, dividers, and background borders. Original attributes are retained
-under `xaml.*` properties so later emitters can preserve platform detail when
-generating SwiftUI scaffolds.
-
-Native WinUI controls without a Loom semantic mapping are preserved as
-component boundaries with `componentBoundary = native-winui-control` and a
-`XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warning. This keeps native controls
-visible to transfer planning and accessibility audit instead of silently
-pretending they are portable layout.
-
-## SwiftUI Scaffolds
-
-`generate:swiftui` converts XAML-normalized IR into a SwiftUI source scaffold.
-It maps supported containers and controls to SwiftUI equivalents, carries simple
-frame and accessibility metadata, and preserves unsupported XAML controls as
-comments plus `EmptyView()` placeholders. The output is intended for review and
-native completion, not as proof that Windows behavior or styling has been
-ported.
-
-## Target Contracts
-
-`generate:contracts` converts SwiftUI-normalized IR into a WinUI implementation
-contract. The report intentionally separates layout from platform behavior:
-dynamic text becomes a binding requirement, buttons become command/click
-requirements, lifecycle modifiers become page/control lifecycle hooks,
-conditionals become visibility or visual-state requirements, collections become
-ItemsSource/DataTemplate requirements, and component references become
-generated-region/UserControl decisions. This keeps generated XAML reviewable
-without hiding missing native work.
+1. **Input normalization**: parse WinUI XAML and normalize to Loom IR.
+2. **Pattern matching**: map normalized nodes to canonical Patterns where
+   possible.
+3. **Transfer planning**: score each node as `direct`, `needs-policy`,
+   `needs-native-contract`, `lossy`, or `unsupported`.
+4. **ASCII rendering**: produce deterministic text tree output for review and logs.
+5. **Diagnostics**: run command-scoped validation with structured severities and
+   optional JSON output.
+6. **Accessibility/risk audit**: report missing names, weak interaction targets,
+   malformed/redundant structures, unsupported native boundaries, and other
+   transfer hazards.
 
 ## Trust boundaries
 
-- SwiftSyntax validates and structures Swift declarations. The extracted
-  SwiftUI DSL remains intentionally narrower than the complete Swift grammar.
-- Generated XAML is an input to review and Windows compilation, not proof of
-  visual or behavioral parity.
-- Existing platform code is never overwritten by `analyze` or `parity`.
-- `generate` writes only when an explicit output path is supplied by the user.
-- `generate:xaml --replace-region` writes only between a single matching
-  `LOOM-BEGIN` / `LOOM-END` marker pair and refuses ambiguous marker state.
-- `--init-region` only creates a missing generated host file; existing files
-  still require explicit markers before Loom will write into them.
+- Layout analysis is intentionally conservative and does not imply behavioral
+  parity.
+- Unsupported constructs are surfaced as diagnostics, not silently flattened.
+- Generated or derived output should always be reviewed before running in another UI
+  runtime.
 
-## Incremental generation direction
+## Pattern model
 
-Whole-file generation is unsuitable for mature native applications. Loom will
-use named generated regions or generated UserControls, leaving event routing,
-native menus, media surfaces, and platform services in handwritten files. A
-future merge engine must parse XAML and refuse to alter unowned nodes.
+`Patterns/*.pattern.json` remain canonical. They define:
+
+- semantic intent, child policy, sizing/order, constraints, and stable identity;
+- typed attributes with explicit value domains;
+- optional variant policy metadata;
+- optional accessibility metadata and target mappings.
+
+The catalog is OS-agnostic by design. Platform mappings are treated as platform
+realization guidance, not the definition of meaning.
+
+## Reporting
+
+Most commands support:
+
+- `--json` for machine-readable output.
+- `--output` for writing report artifacts.
+- `--quiet` to suppress success chatter.
+- `--verbose` to include write diagnostics.
+
+Suggested fixes are attached to relevant findings to support both human review and
+AI-agent actioning.

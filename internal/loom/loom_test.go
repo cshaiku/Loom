@@ -118,7 +118,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.17.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.18.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -151,5 +151,85 @@ func TestCLIQuietOutputWrite(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "button / Button") {
 		t.Fatalf("unexpected ASCII output: %s", string(data))
+	}
+}
+
+func TestCommandCatalogCoverage(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"list", "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var commands []CommandInfo
+	if err := json.Unmarshal(stdout.Bytes(), &commands); err != nil {
+		t.Fatal(err)
+	}
+	if len(commands) < 16 {
+		t.Fatalf("expected expanded command coverage, got %d", len(commands))
+	}
+	found := 0
+	required := map[string]struct{}{"config:validate": {}, "config:schema": {}, "checks:command-catalog": {}, "guards:summary": {}, "self-heal:plan": {}, "inspect:errors": {}, "project:build": {}, "generate:xaml": {}}
+	for _, command := range commands {
+		if _, ok := required[command.Command]; ok {
+			found++
+			delete(required, command.Command)
+		}
+	}
+	if len(required) > 0 {
+		missing := make([]string, 0, len(required))
+		for command := range required {
+			missing = append(missing, command)
+		}
+		t.Fatalf("missing required command coverage: %s", strings.Join(missing, ", "))
+	}
+	if found != 8 {
+		t.Fatalf("unexpected required command count %d", found)
+	}
+}
+
+func TestDiagnosticCommandJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"checks:command-catalog", "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var report LoomCommandCatalogCheckReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "ok" {
+		t.Fatalf("expected catalog checks ok, got %s", report.Status)
+	}
+}
+
+func TestInspectErrorsAndFailMode(t *testing.T) {
+	path := fixtureXAML(t, `<Grid><TextBlock></Grid>`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"inspect:errors", path, "--kind", "xaml", "--format", "json", "--fail-on", "error"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected malformed xaml to fail")
+	}
+	if !strings.Contains(strings.TrimSpace(stdout.String()), "\"status\": \"error\"") && !strings.Contains(stdout.String(), "LOOM.XAML") {
+		t.Fatalf("expected error report, got %q", stdout.String())
+	}
+	var report LoomErrorInspectionReport
+	if err2 := json.Unmarshal(stdout.Bytes(), &report); err2 == nil {
+		if report.Status != "error" {
+			t.Fatalf("expected report status error, got %s", report.Status)
+		}
+	}
+	if !strings.Contains(err.Error(), "command completed") {
+		t.Fatal(err)
+	}
+	_ = stderr
+}
+
+func TestUnavailableSwiftOnlyCommand(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"generate:xaml", "MainView.swift"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected go-only unsupported error")
 	}
 }

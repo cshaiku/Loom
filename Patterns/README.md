@@ -1,68 +1,41 @@
 # Loom Patterns
 
-Patterns are Loom's canonical, operating-system-independent definitions of UI
-layout and control intent. A pattern describes what an element means before a
-SwiftUI parser or WinUI emitter decides how to express it.
+Patterns are Loom’s canonical, operating-system-independent definitions of layout and
+control intent.
 
-Every `*.pattern.json` file is independently versioned and declares:
+Each `*.pattern.json` file is a metadata contract for how a UI construct should be
+understood before any target mapping. Patterns define:
 
-- stable identity, semantic kind, lifecycle status, and category;
-- intended and inappropriate uses;
-- child, sizing, and ordering semantics;
-- typed attributes with defaults, ranges, units, and enumerated values;
-- cross-attribute constraints;
-- accessibility behavior;
-- optional keyboard behavior, accessibility states/properties, and minimum
-  target size;
-- non-canonical source and target mappings for each platform.
-- optional named variants for compact, dense, accessibility, or adaptive
-  layout policies.
+- stable ID and kind
+- intent, lifecycle context, and category
+- child structure, sizing, ordering, and constraints
+- typed attributes with defaults and ranges
+- optional accessibility metadata and variant policy profiles
+- optional platform mappings (`swiftui`, `winui3`, etc.)
 
-Platform mappings are evidence about how an OS framework can represent the
-pattern. They do not define the pattern itself.
+The `.pattern.json` files are the source of truth. Export formats are derived.
 
-Validate the complete catalog with:
+## Canonical operations
 
-```sh
-swift run loom patterns:validate
-```
+- `loom patterns:list [--directory Patterns] [--json]`
+- `loom patterns:show <id> [--directory Patterns] [--output path]`
+- `loom patterns:validate [--directory Patterns] [--json]`
+- `loom patterns:lint [--directory Patterns] [--json]`
+- `loom patterns:export [--directory Patterns] [--format loom|dtcg|open-ui|aria|style-dictionary]`
 
-Export derived integration views with:
+## Transfer and audit entry points
 
-```sh
-swift run loom patterns:export --format dtcg
-swift run loom patterns:export --format open-ui
-swift run loom patterns:export --format aria
-swift run loom patterns:export --format style-dictionary
-```
+- `loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui`
+- `loom patterns:transfer ContentView.swift --from swiftui --to winui3`
+- `loom accessibility:audit MainWindow.xaml --json`
+- `loom inspect:errors MainWindow.xaml --kind xaml --json`
 
-The export formats are downstream compatibility shapes for design-token,
-component-inventory, accessibility-review, and design-system tooling. The
-`*.pattern.json` files remain canonical.
+## Export formats
 
-Plan OS-to-OS layout transfer with:
+- `loom patterns:export --format dtcg`
+- `loom patterns:export --format open-ui`
+- `loom patterns:export --format aria`
+- `loom patterns:export --format style-dictionary`
 
-```sh
-swift run loom patterns:transfer ContentView.swift --from swiftui --to winui3
-swift run loom patterns:transfer MainWindow.xaml --from winui3 --to swiftui
-```
-
-Render the same normalized layout as an ASCII Pattern with:
-
-```sh
-swift run loom inspect:ascii ContentView.swift --root-view ContentView
-```
-
-Audit accessibility and transfer-hostile layout design with:
-
-```sh
-swift run loom accessibility:audit ContentView.swift --root-view ContentView
-swift run loom accessibility:audit MainWindow.xaml --format json
-```
-
-Audit JSON includes `suggested_fixes` entries for user decisions and agent
-implementation actions. Native WinUI controls that lack Loom Pattern mappings
-are preserved as unsupported component boundaries so they can be reviewed
-instead of silently flattened.
-
-The normative metadata contract is `pattern.schema.json`.
+Use exported formats for downstream tooling. Do not mutate canonical
+`*.pattern.json` files from exported output.

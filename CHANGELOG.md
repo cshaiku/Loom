@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.18.0 — 2026-08-30
+
+- Completed the Go port as the active runtime by removing SwiftPM manifest and
+  Swift runtime source/test files.
+- Added build-time installation behavior (`make build`) that installs
+  `loom` into `/opt/homebrew/bin` for shared local use.
+- Added robust unsupported-native-boundary warnings and transfer classifications
+  for WinUI-only controls through the Go diagnostics pipeline.
+- Added malformed/redundant layout risk diagnostics and audit surfaced fixes for
+  both users and agents.
+- Added catalog-reserved placeholders for generation/parity/project commands with
+  explicit guarded unsupported-command output.
+- Added `inspect:errors` + `audit` + `suggestions:os-errors` integration
+  improvements for WinUI/SwiftUI boundary and design-risk guidance.
+
 ## 0.17.0 — 2026-08-30
 
 - Started the Go migration so Loom can ship as a single cross-platform CLI for

@@ -16,7 +16,7 @@ type runtimeOptions struct {
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	runtime, args := parseRuntime(args)
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Fprint(stdout, "Loom: SwiftUI to WinUI Layout Compiler\n\n")
+		fmt.Fprint(stdout, "Loom: cross-platform interface layout analysis CLI\n\n")
 		fmt.Fprint(stdout, catalogText(""))
 		return nil
 	}
@@ -74,15 +74,31 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 	switch command.Command {
 	case "status":
-		return runStatus(args[1:], stdout)
+		return runStatus(args[1:], stdout, stderr, runtime)
 	case "verify":
-		return runVerify(args[1:], stdout)
+		return runVerify(args[1:], stdout, runtime)
+	case "checks:command-catalog":
+		return runChecksCommandCatalog(args[1:], stdout, stderr, runtime)
+	case "config:validate":
+		return runConfigValidate(args[1:], stdout, stderr, runtime)
+	case "config:schema":
+		return runConfigSchema(args[1:], stdout, runtime)
+	case "guards:summary":
+		return runGuardsSummary(args[1:], stdout, runtime)
+	case "self-heal:plan":
+		return runSelfHealPlan(args[1:], stdout, runtime)
+	case "project:build":
+		return runProjectBuild(args[1:], stdout, runtime)
 	case "patterns:list", "patterns:show", "patterns:validate", "patterns:lint", "patterns:export":
 		return runPattern(command.Command, args[1:], stdout, stderr, runtime)
 	case "inspect:xaml":
 		return runInspectXAML(args[1:], stdout, stderr, runtime)
 	case "inspect:ascii":
 		return runASCII(args[1:], stdout, stderr, runtime)
+	case "inspect:errors":
+		return runInspectErrors(args[1:], stdout, stderr, runtime)
+	case "inspect:source", "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts":
+		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
 	case "patterns:transfer":
@@ -352,37 +368,193 @@ func SuggestionsText(report OSErrorSuggestionReport) string {
 	return b.String()
 }
 
-func runStatus(args []string, stdout io.Writer) error {
-	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
-	report := ValidatePatterns(dir)
-	if contains(args, "--json") {
-		text, _ := prettyJSON(map[string]any{"schema_version": "1", "version": Version, "commands": len(Commands), "patternStatus": report.Status, "patternCount": report.PatternCount})
-		fmt.Fprint(stdout, text)
+func runStatus(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	_ = stderr
+	if contains(args, "--help") || contains(args, "-h") {
+		fmt.Fprint(stdout, manual("status"))
 		return nil
 	}
-	fmt.Fprintf(stdout, "Loom status\nVersion: %s\nCommands: %d\nPatterns: %s (%d)\n", Version, len(Commands), report.Status, report.PatternCount)
-	return nil
+	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
+	if contains(args, "--json") {
+		format = "json"
+	}
+	report := DiagnosticsStatus(dir)
+	text := LoomStatusText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	return writeOrPrint(text, "", stdout, stderr, runtime)
 }
 
-func runVerify(args []string, stdout io.Writer) error {
+func runVerify(args []string, stdout io.Writer, runtime runtimeOptions) error {
 	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
-	patterns := ValidatePatterns(dir)
-	lint := LintPatterns(dir)
-	status := "ok"
-	if patterns.Status != "ok" || lint.Status != "ok" {
-		status = "error"
-	}
-	report := map[string]any{"schema_version": "1", "status": status, "commands": len(Commands), "patterns": patterns, "patternLint": lint}
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
 	if contains(args, "--json") {
-		text, _ := prettyJSON(report)
-		fmt.Fprint(stdout, text)
-	} else {
-		fmt.Fprintf(stdout, "Loom verify\nStatus: %s\nPatterns: %s\nPattern lint: %s\n", status, patterns.Status, lint.Status)
+		format = "json"
 	}
-	if status != "ok" {
+	report := DiagnosticsVerify(dir)
+	text := LoomVerifyText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	if err := writeOrPrint(text, "", stdout, os.Stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status != "ok" {
 		return ErrCommandFailed
 	}
 	return nil
+}
+
+func runChecksCommandCatalog(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	if contains(args, "--help") || contains(args, "-h") {
+		fmt.Fprint(stdout, manual("checks:command-catalog"))
+		return nil
+	}
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
+	if contains(args, "--json") {
+		format = "json"
+	}
+	report := DiagnosticsCommandCatalogCheck()
+	text := LoomCommandCatalogCheckText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	if err := writeOrPrint(text, "", stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runGuardsSummary(args []string, stdout io.Writer, runtime runtimeOptions) error {
+	if contains(args, "--help") || contains(args, "-h") {
+		fmt.Fprint(stdout, manual("guards:summary"))
+		return nil
+	}
+	if contains(args, "--json") {
+		text, _ := prettyJSON(DiagnosticsGuardsSummary())
+		_, err := fmt.Fprint(stdout, text)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	_, err := fmt.Fprint(stdout, LoomGuardsSummaryText(DiagnosticsGuardsSummary()))
+	return err
+}
+
+func runSelfHealPlan(args []string, stdout io.Writer, runtime runtimeOptions) error {
+	if contains(args, "--help") || contains(args, "-h") {
+		fmt.Fprint(stdout, manual("self-heal:plan"))
+		return nil
+	}
+	if contains(args, "--json") {
+		text, _ := prettyJSON(DiagnosticsSelfHealPlan())
+		_, err := fmt.Fprint(stdout, text)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	_, err := fmt.Fprint(stdout, LoomSelfHealPlanText(DiagnosticsSelfHealPlan()))
+	return err
+}
+
+func runConfigSchema(args []string, stdout io.Writer, runtime runtimeOptions) error {
+	_ = runtime
+	if len(args) != 0 {
+		return fmt.Errorf("config:schema accepts no arguments")
+	}
+	text, err := DiagnosticsProjectConfigSchema()
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprint(stdout, text)
+	return err
+}
+
+func runConfigValidate(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	_ = stderr
+	if len(args) == 0 {
+		return fmt.Errorf("config:validate requires a manifest path")
+	}
+	manifestPath := args[0]
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
+	projectRoot := flagValue(args, "--project-root")
+	if contains(args, "--json") {
+		format = "json"
+	}
+	report := DiagnosticsProjectConfigValidate(manifestPath, projectRoot)
+	text := LoomManifestValidationText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	if err := writeOrPrint(text, "", stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status != "ok" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runProjectBuild(args []string, stdout io.Writer, runtime runtimeOptions) error {
+	if len(args) == 0 {
+		return fmt.Errorf("project:build requires a manifest path")
+	}
+	manifestPath := args[0]
+	projectRoot := flagValue(args, "--project-root")
+	outputDir := flagValue(args, "--output-dir")
+	text, err := DiagnosticsProjectBuild(manifestPath, projectRoot, outputDir)
+	_, writeErr := fmt.Fprint(stdout, string(text))
+	if writeErr != nil {
+		return writeErr
+	}
+	if err != nil {
+		if err.Error() == "project:build is not implemented in Go CLI yet" {
+			return err
+		}
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runInspectErrors(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	if len(args) < 1 {
+		return fmt.Errorf("inspect:errors requires a source path")
+	}
+	path := args[0]
+	kind := flagValue(args, "--kind")
+	rootView := flagValue(args, "--root-view")
+	component := flagValue(args, "--component")
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
+	failOn := firstNonEmpty(flagValue(args, "--fail-on"), "none")
+	output := flagValue(args, "--output")
+	if contains(args, "--json") {
+		format = "json"
+	}
+	report := InspectErrors(path, kind, rootView, component, failOn)
+	text := LoomErrorInspectionText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	if err := writeOrPrint(text, output, stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if ShouldFailForInspection(report, failOn) {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runUnavailableCommand(command string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	_ = stderr
+	_ = runtime
+	return fmt.Errorf("%s is reserved for catalog parity only and is not yet available in the Go runtime", command)
 }
 
 func AnalysisText(analysis Analysis) string {

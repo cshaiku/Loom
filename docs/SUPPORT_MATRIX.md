@@ -1,4 +1,4 @@
-# SwiftUI to WinUI 3 support matrix
+# SwiftUI ↔ WinUI 3 support matrix (for transfer planning)
 
 | SwiftUI construct | WinUI 3 strategy | Current status |
 | --- | --- | --- |
@@ -23,3 +23,6 @@
 | `NSViewRepresentable` | Native Windows control or interop surface | Diagnostic only |
 | Custom `Layout` | Project mapping or handwritten target control | Diagnostic only |
 | Arbitrary runtime geometry | View model or `SizeChanged` adapter | Diagnostic only |
+
+Rows describe planned transfer outcomes in Loom’s `patterns:transfer` model; many
+entries are still design-policy decisions and require human review before release.
