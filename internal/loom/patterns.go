@@ -239,6 +239,9 @@ func LintPatterns(directory string) PatternValidationReport {
 		if !platforms["winui3"] {
 			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN103", pattern.ID + ".pattern.json", "pattern must include a winui3 mapping."})
 		}
+		if !platforms["qt"] {
+			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN104", pattern.ID + ".pattern.json", "pattern must include a qt mapping."})
+		}
 	}
 	if len(report.Issues) > 0 {
 		report.Status = "error"

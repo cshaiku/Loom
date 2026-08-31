@@ -5,8 +5,8 @@
 - Forward Go CLI introduced under `cmd/loom`.
 - Command catalog, status/verification diagnostics, pattern operations, and command
   guard outputs.
-- `inspect:xaml`, `inspect:swiftui`, `inspect:source`, `inspect:ascii`,
-  `inspect:errors`, `accessibility:audit`,
+- `inspect:xaml`, `inspect:swiftui`, `inspect:qt`, `inspect:source`,
+  `inspect:ascii`, `inspect:errors`, `inspect:parity`, `accessibility:audit`,
   `patterns:*`, and OS error suggestions.
 - CLI output contracts for automation (`--json`, `--quiet`, `--verbose`).
 
@@ -26,9 +26,9 @@
 
 ## Current compatibility layer
 
-`inspect:parity`, `graph:components`, `generate:xaml`, `generate:swiftui`,
-`generate:contracts`, and `project:build` remain catalog placeholders until they
-are implemented in the Go runtime.
+`graph:components`, `generate:xaml`, `generate:swiftui`, `generate:contracts`,
+and `project:build` remain catalog placeholders until they are implemented in
+the Go runtime.
 
 ## Near-term priorities
 
@@ -37,5 +37,6 @@ are implemented in the Go runtime.
 - Add explicit malformed-input and memory/guard regression tests.
 - Improve malformed layout diagnostics for nested scroll and geometry-dependent
   constructs.
+- Deepen Qt parsing beyond conservative QML/UI/C++ layout heuristics.
 - Extend suggestions to cover additional WinUI, XAML, SwiftUI, and Windows
   parity failure classes.

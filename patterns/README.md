@@ -12,6 +12,7 @@ understood before any target mapping. patterns define:
 - typed attributes with defaults and ranges
 - optional accessibility metadata and variant policy profiles
 - optional platform mappings (`winui3`, `swiftui`/`macos`, etc.)
+- Qt mappings for Linux/Qt transfer planning.
 
 The `.pattern.json` files are the source of truth. Export formats are derived.
 
@@ -27,6 +28,8 @@ The `.pattern.json` files are the source of truth. Export formats are derived.
 
 - `loom patterns:transfer mainwindow.xaml --from winui3 --to macos`
 - `loom patterns:transfer contentview.swift --from swiftui --to windows`
+- `loom patterns:transfer mainwindow.qml --from qt --to windows`
+- `loom inspect:parity contentview.swift --target mainwindow.qml --from swiftui --to qt --json`
 - `loom accessibility:audit mainwindow.xaml --json`
 - `loom inspect:errors mainwindow.xaml --kind xaml --json`
 

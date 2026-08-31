@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.22.0 - 2026-08-31
+
+- Added initial `inspect:qt` support for Qt QML, Qt Designer `.ui`, and common
+  Qt C++ layout/control constructs.
+- Added Qt platform mappings to the `patterns` catalog for Linux/Qt transfer
+  planning.
+- Implemented `inspect:parity` for structural layout comparison across SwiftUI,
+  WinUI XAML, and Qt sources.
+- Extended `inspect:source` auto-detection to `.qml`, `.ui`, and common Qt C++
+  file extensions.
+- Added neutral Qt sample input and sample outputs for Qt transfer/parity.
+- Added regression coverage for Qt inspection, Qt diagnostics, Qt transfer, and
+  SwiftUI ↔ Qt parity.
+
 ## 0.21.0 - 2026-08-30
 
 - Added initial Go-native `inspect:swiftui` support for common SwiftUI layout

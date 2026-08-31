@@ -13,7 +13,11 @@ Linux as a native CLI (`cmd/loom`).
 - `inspect:xaml`: parse WinUI XAML into loom's shared tree.
 - `inspect:swiftui`: parse common SwiftUI layout/control constructs into
   loom's shared tree.
-- `inspect:source`: auto-detect SwiftUI or WinUI XAML source and inspect it.
+- `inspect:qt`: parse Qt QML, Qt Designer UI, and common Qt C++ layout/control
+  constructs into loom's shared tree.
+- `inspect:source`: auto-detect SwiftUI, WinUI XAML, or Qt source and inspect it.
+- `inspect:parity`: compare normalized layout structure across supported
+  dialects.
 - `inspect:ascii`: render the shared tree as a plain text structure.
 - `inspect:errors`: classify and report source, XAML, manifest, and pattern
   issues.
@@ -29,7 +33,6 @@ Linux as a native CLI (`cmd/loom`).
 These are intentionally present in the command catalog but not yet implemented in
 Go:
 
-- `inspect:parity`
 - `graph:components`
 - `generate:xaml`
 - `generate:swiftui`
@@ -42,8 +45,8 @@ diagnostic.
 
 ## Core pipeline (implemented in Go)
 
-1. **Input normalization**: parse WinUI XAML or common SwiftUI constructs and
-   normalize to loom IR.
+1. **Input normalization**: parse WinUI XAML, common SwiftUI constructs, or Qt
+   layout sources and normalize to loom IR.
 2. **pattern matching**: map normalized nodes to canonical patterns where
    possible.
 3. **Transfer planning**: score each node as `direct`, `needs-policy`,

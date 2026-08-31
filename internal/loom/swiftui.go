@@ -158,13 +158,19 @@ func (p *swiftParser) parseNode() (Node, bool) {
 	}
 	p.index++
 	args := ""
+	hadCallOrBlock := false
 	if p.peekValue("(") {
+		hadCallOrBlock = true
 		args = p.consumeBalanced("(", ")")
 	}
 	children := []Node{}
 	if p.peekValue("{") {
+		hadCallOrBlock = true
 		p.index++
 		children = p.parseBlock("}")
+	}
+	if swiftUIConstructKind(name) == "" && !hadCallOrBlock {
+		return Node{}, false
 	}
 	node, ok := makeSwiftUINode(name, args, children, token.offset, &p.diagnostics)
 	if !ok {
@@ -335,8 +341,12 @@ func componentNameFromSwiftSource(tokens []swiftToken) string {
 
 func countSwiftConstructTokens(tokens []swiftToken) int {
 	count := 0
-	for _, token := range tokens {
-		if token.kind == swiftTokenIdentifier && !shouldSkipSwiftIdentifier(token.value) && token.value != "View" && (swiftUIConstructKind(token.value) != "" || isLikelySwiftUIView(token.value)) {
+	for i, token := range tokens {
+		if token.kind != swiftTokenIdentifier || shouldSkipSwiftIdentifier(token.value) || token.value == "View" {
+			continue
+		}
+		hasCallOrBlock := i+1 < len(tokens) && (tokens[i+1].value == "(" || tokens[i+1].value == "{")
+		if swiftUIConstructKind(token.value) != "" || (isLikelySwiftUIView(token.value) && hasCallOrBlock) {
 			count++
 		}
 	}
@@ -344,11 +354,48 @@ func countSwiftConstructTokens(tokens []swiftToken) int {
 }
 
 func swiftUIConstructKind(name string) NodeKind {
-	node, ok := makeSwiftUINode(name, "", nil, 0, &[]Diagnostic{})
-	if !ok {
+	switch name {
+	case "VStack", "LazyVStack":
+		return KindVerticalStack
+	case "HStack", "LazyHStack":
+		return KindHorizontalStack
+	case "ZStack":
+		return KindOverlayStack
+	case "Grid", "LazyVGrid", "LazyHGrid":
+		return KindGrid
+	case "ScrollView":
+		return KindScrollView
+	case "List", "Table":
+		return KindList
+	case "Text", "Label":
+		return KindText
+	case "TextField", "SecureField", "TextEditor":
+		return KindTextField
+	case "Button":
+		return KindButton
+	case "Image", "AsyncImage":
+		return KindImage
+	case "Slider", "ProgressView", "Gauge":
+		return KindSlider
+	case "Toggle", "Picker":
+		return KindToggle
+	case "Spacer":
+		return KindSpacer
+	case "Divider":
+		return KindDivider
+	case "Color", "Material":
+		return KindColor
+	case "GeometryReader":
+		return KindGeometryReader
+	case "NavigationSplitView", "HSplitView", "VSplitView":
+		return KindSplitView
+	case "ForEach":
+		return KindLoop
+	case "if":
+		return KindConditional
+	default:
 		return ""
 	}
-	return node.Kind
 }
 
 func swiftDelimiterDiagnostics(tokens []swiftToken) []Diagnostic {

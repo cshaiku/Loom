@@ -91,13 +91,17 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runInspectXAML(args[1:], stdout, stderr, runtime)
 	case "inspect:swiftui":
 		return runInspectSwiftUI(args[1:], stdout, stderr, runtime)
+	case "inspect:qt":
+		return runInspectQt(args[1:], stdout, stderr, runtime)
 	case "inspect:source":
 		return runInspectSource(args[1:], stdout, stderr, runtime)
 	case "inspect:ascii":
 		return runASCII(args[1:], stdout, stderr, runtime)
 	case "inspect:errors":
 		return runInspectErrors(args[1:], stdout, stderr, runtime)
-	case "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
+	case "inspect:parity":
+		return runInspectParity(args[1:], stdout, stderr, runtime)
+	case "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
 		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
@@ -333,6 +337,25 @@ func runInspectSwiftUI(args []string, stdout, stderr io.Writer, runtime runtimeO
 	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
 }
 
+func runInspectQt(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	path, format, output, err := sourceArgs(args)
+	if err != nil {
+		return err
+	}
+	analysis, err := AnalyzeQt(path)
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		text, err := prettyJSON(analysis)
+		if err != nil {
+			return err
+		}
+		return writeOrPrint(text, output, stdout, stderr, runtime)
+	}
+	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+}
+
 func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	path, format, output, err := sourceArgs(args)
 	if err != nil {
@@ -350,6 +373,34 @@ func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOp
 		return writeOrPrint(text, output, stdout, stderr, runtime)
 	}
 	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+}
+
+func runInspectParity(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	if len(args) == 0 {
+		return fmt.Errorf("inspect:parity requires a source path")
+	}
+	source := args[0]
+	target := firstNonEmpty(flagValue(args, "--target"), flagValue(args, "--xaml"))
+	if target == "" {
+		return fmt.Errorf("inspect:parity requires --target path")
+	}
+	format := firstNonEmpty(flagValue(args, "--format"), "text")
+	if contains(args, "--json") {
+		format = "json"
+	}
+	output := flagValue(args, "--output")
+	report, err := InspectParity(source, target, flagValue(args, "--from"), flagValue(args, "--to"))
+	if err != nil {
+		return err
+	}
+	text := ParityText(report)
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	return writeOrPrint(text, output, stdout, stderr, runtime)
 }
 
 func runASCII(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {

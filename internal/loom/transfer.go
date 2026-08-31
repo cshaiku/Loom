@@ -145,6 +145,8 @@ func canonicalPatternPlatform(platform string) string {
 		return "swiftui"
 	case "windows", "winui", "xaml":
 		return "winui3"
+	case "linux", "qtquick", "qtwidgets", "qml":
+		return "qt"
 	default:
 		return strings.ToLower(strings.TrimSpace(platform))
 	}

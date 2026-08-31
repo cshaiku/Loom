@@ -14,6 +14,7 @@ type LoomErrorInspectionKind string
 const (
 	LoomErrorInspectionSwift    LoomErrorInspectionKind = "swift"
 	LoomErrorInspectionXAML     LoomErrorInspectionKind = "xaml"
+	LoomErrorInspectionQt       LoomErrorInspectionKind = "qt"
 	LoomErrorInspectionManifest LoomErrorInspectionKind = "manifest"
 	LoomErrorInspectionPatterns LoomErrorInspectionKind = "patterns"
 )
@@ -368,6 +369,8 @@ func InspectErrors(path string, kind, rootView, component, failOn string) LoomEr
 		findings = inspectSwiftErrors(path, rootView, component)
 	case LoomErrorInspectionXAML:
 		findings = inspectXAMLErrors(path)
+	case LoomErrorInspectionQt:
+		findings = inspectQtErrors(path)
 	case LoomErrorInspectionManifest:
 		findings = inspectManifestErrors(path)
 	case LoomErrorInspectionPatterns:
@@ -566,6 +569,8 @@ func inferErrorInspectionKind(path string) LoomErrorInspectionKind {
 		return LoomErrorInspectionSwift
 	case ".xaml", ".xml":
 		return LoomErrorInspectionXAML
+	case ".qml", ".ui", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".h":
+		return LoomErrorInspectionQt
 	case ".json":
 		if strings.HasSuffix(strings.ToLower(filepath.Base(path)), ".pattern.json") {
 			return LoomErrorInspectionPatterns
@@ -616,6 +621,22 @@ func inspectPatternErrors(directory string) []LoomErrorInspectionFinding {
 	findings := make([]LoomErrorInspectionFinding, 0, len(issues))
 	for _, issue := range issues {
 		findings = append(findings, LoomErrorInspectionFinding{Severity: issue.Severity, Code: issue.Code, Source: issue.Path, Message: fmt.Sprintf("%s: %s", issue.Path, issue.Detail)})
+	}
+	return findings
+}
+
+func inspectQtErrors(path string) []LoomErrorInspectionFinding {
+	analysis, err := AnalyzeQt(path)
+	if err != nil {
+		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "QT.SOURCE", Source: path, Message: err.Error()}}
+	}
+	findings := []LoomErrorInspectionFinding{}
+	for _, diagnostic := range analysis.Diagnostics {
+		finding := LoomErrorInspectionFinding{Severity: diagnostic.Severity, Code: diagnostic.Code, Source: path, Message: diagnostic.Message}
+		if diagnostic.SourceOffset != nil {
+			finding.Offset = diagnostic.SourceOffset
+		}
+		findings = append(findings, finding)
 	}
 	return findings
 }

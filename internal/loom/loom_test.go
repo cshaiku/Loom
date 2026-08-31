@@ -38,6 +38,32 @@ struct ContentView: View {
 	return path
 }
 
+func fixtureQML(t *testing.T, body string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "mainwindow.qml")
+	source := `import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+` + body + `
+`
+	if err := os.WriteFile(path, []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func fixtureQtCPP(t *testing.T, body string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "mainwindow.cpp")
+	if err := os.WriteFile(path, []byte(body), 0644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestLoadAndValidatePatterns(t *testing.T) {
 	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
@@ -49,6 +75,116 @@ func TestLoadAndValidatePatterns(t *testing.T) {
 	report := ValidatePatterns("../../patterns")
 	if report.Status != "ok" {
 		t.Fatalf("expected valid patterns, got %#v", report.Issues)
+	}
+}
+
+func TestAnalyzeQtQMLCommonLayout(t *testing.T) {
+	path := fixtureQML(t, `ColumnLayout {
+  Text { text: "Title" }
+  RowLayout {
+    TextField { placeholderText: "Name" }
+    Button { text: "Save" }
+  }
+}`)
+	analysis, err := AnalyzeQt(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if analysis.Layout.Properties["sourceDialect"] != "qt" {
+		t.Fatalf("expected qt dialect, got %#v", analysis.Layout.Properties)
+	}
+	if len(analysis.Layout.Children) != 1 || analysis.Layout.Children[0].Kind != KindVerticalStack {
+		t.Fatalf("expected root ColumnLayout, got %#v", analysis.Layout.Children)
+	}
+	stack := analysis.Layout.Children[0]
+	if len(stack.Children) != 2 || stack.Children[1].Kind != KindHorizontalStack {
+		t.Fatalf("expected parsed Qt child layout, got %#v", stack.Children)
+	}
+}
+
+func TestAnalyzeQtCPPHeuristicLayout(t *testing.T) {
+	path := fixtureQtCPP(t, `auto *layout = new QVBoxLayout();
+auto *title = new QLabel("Title");
+auto *name = new QLineEdit();
+auto *save = new QPushButton("Save");`)
+	analysis, err := AnalyzeQt(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if analysis.Layout.Properties["sourceDialect"] != "qt" {
+		t.Fatalf("expected qt dialect, got %#v", analysis.Layout.Properties)
+	}
+	kinds := flattenedKinds(analysis.Layout)
+	for _, expected := range []NodeKind{KindVerticalStack, KindText, KindTextField, KindButton} {
+		if !containsNodeKind(kinds, expected) {
+			t.Fatalf("expected Qt C++ kind %s in %#v", expected, kinds)
+		}
+	}
+}
+
+func containsNodeKind(values []NodeKind, expected NodeKind) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
+}
+
+func TestQtToWindowsTransferUsesWinUIMappings(t *testing.T) {
+	path := fixtureQML(t, `ColumnLayout {
+  Text { text: "Title" }
+  Button { text: "Save" }
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"patterns:transfer", path, "--from", "qt", "--to", "windows", "--format", "json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var report TransferReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.From != "qt" || report.To != "windows" || report.Summary.Unsupported != 0 {
+		t.Fatalf("expected Qt to Windows transfer report, got %#v", report)
+	}
+}
+
+func TestInspectParityComparesSwiftUIAndQt(t *testing.T) {
+	swiftPath := fixtureSwiftUI(t, `VStack {
+  Text("Title")
+  Button("Save") {}
+}`)
+	qtPath := fixtureQML(t, `ColumnLayout {
+  Text { text: "Title" }
+  Button { text: "Save" }
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"inspect:parity", swiftPath, "--target", qtPath, "--from", "swiftui", "--to", "qt", "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var report ParityReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "ok" || report.SourceDialect != "swiftui" || report.TargetDialect != "qt" {
+		t.Fatalf("expected clean SwiftUI/Qt parity report, got %#v", report)
+	}
+}
+
+func TestInspectQtReportsDelimiterErrors(t *testing.T) {
+	path := fixtureQML(t, `ColumnLayout {
+  Text { text: "Broken" }
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"inspect:errors", path, "--kind", "qt", "--format", "json", "--fail-on", "error"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected malformed Qt source to fail")
+	}
+	if !strings.Contains(stdout.String(), "QT.PARSE") {
+		t.Fatalf("expected Qt parse finding, got %s", stdout.String())
 	}
 }
 
@@ -80,6 +216,28 @@ func TestAnalyzeSwiftUICommonLayout(t *testing.T) {
 	}
 	if stack.Children[0].Kind != KindText || stack.Children[1].Kind != KindButton || stack.Children[2].Kind != KindTextField || stack.Children[3].Kind != KindSpacer {
 		t.Fatalf("unexpected SwiftUI child kinds: %#v", stack.Children)
+	}
+}
+
+func TestAnalyzeSwiftUIIgnoresUncalledTypeReferences(t *testing.T) {
+	path := fixtureSwiftUI(t, `let type = SomeModel.self
+VStack {
+  CustomRow()
+  Text("Title")
+}`)
+	analysis, err := AnalyzeSwiftUI(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := flattenedKinds(analysis.Layout)
+	componentCount := 0
+	for _, kind := range kinds {
+		if kind == KindComponent {
+			componentCount++
+		}
+	}
+	if componentCount != 1 {
+		t.Fatalf("expected only called custom view to become component, got %#v", kinds)
 	}
 }
 
@@ -363,7 +521,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.21.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.22.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -417,7 +575,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.21.0\r\n" {
+	if got := stdout.String(); got != "loom 0.22.0\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 

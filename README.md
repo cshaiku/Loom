@@ -1,6 +1,6 @@
 # loom
 
-Version: **0.21.0**
+Version: **0.22.0**
 
 loom is a cross-platform Go CLI for UI layout analysis, pattern catalog
 validation, transfer planning, and workflow diagnostics.
@@ -10,11 +10,14 @@ validation, transfer planning, and workflow diagnostics.
 - Parse WinUI XAML and normalize it into loom's shared layout model (`inspect:xaml`).
 - Parse common SwiftUI layout/control constructs into the same shared model
   (`inspect:swiftui`, `inspect:source`).
+- Parse common Qt QML, Qt Designer UI, and Qt C++ layout constructs into the
+  same shared model (`inspect:qt`, `inspect:source`).
 - Preserve WinUI Grid row/column definitions as layout metadata for transfer planning.
 - Render parsed layouts as a compact plaintext ASCII tree (`inspect:ascii`).
 - Validate and lint the `patterns` catalog (`patterns:validate`, `patterns:lint`).
 - Transfer-plan layout compatibility in both WinUI → macOS and macOS/SwiftUI →
   Windows directions (`patterns:transfer`).
+- Compare layout parity across supported source dialects (`inspect:parity`).
 - Audit accessibility/layout quality for unsupported boundaries, small targets,
   malformed or redundant structures, and scan-friendly risks (`accessibility:audit`).
 - Run manifest validation (`config:validate` / `config:schema`).
@@ -40,7 +43,6 @@ lint, list, export, and transfer-plan against loom's own pattern definitions.
 The following commands are retained in the catalog for parity but are intentionally
 not yet implemented in the Go runtime. They return a clear message when invoked:
 
-- `inspect:parity`
 - `graph:components`
 - `generate:xaml`
 - `generate:swiftui`
@@ -64,13 +66,16 @@ loom verify --json
 loom checks:command-catalog --json
 loom inspect:source contentview.swift --json
 loom inspect:swiftui contentview.swift --format json
+loom inspect:qt mainwindow.qml --format json
 loom inspect:xaml mainwindow.xaml --format json
+loom inspect:parity contentview.swift --target mainwindow.qml --from swiftui --to qt --json
 loom inspect:ascii mainwindow.xaml --output layout.txt
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 loom accessibility:audit mainwindow.xaml --format json --fail-on warning
 loom patterns:lint
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos
 loom patterns:transfer contentview.swift --from swiftui --to windows
+loom patterns:transfer mainwindow.qml --from qt --to windows
 ```
 
 ## repository layout
@@ -95,4 +100,4 @@ loom patterns:transfer contentview.swift --from swiftui --to windows
 2. Run `make test`.
 3. Run `git add`, commit, and push.
 4. Tag the release, e.g.:
-   `git tag -a v0.21.0 -m "swiftui inspection and mac to windows transfer"; git push --tags`.
+   `git tag -a v0.22.0 -m "qt inspection and cross-platform parity"; git push --tags`.
