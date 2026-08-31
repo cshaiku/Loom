@@ -1,0 +1,9 @@
+{
+  "schema_version":"1","id":"color-surface","version":"1.0.0","name":"color surface","kind":"color","status":"stable","category":"decoration",
+  "intent":{"summary":"Fills a bounded region with a semantic color or material resource.","useWhen":["A region requires background, state, or brand surface treatment"],"avoidWhen":["Color alone would be the only carrier of information"]},
+  "semantics":{"role":"non-content visual surface","childPolicy":"no children; compose with an overlay container to place content above it","sizing":"fills parent-proposed bounds unless explicitly constrained","ordering":"painted at its declared layer"},
+  "attributes":[{"name":"fill","valueType":"resource","required":true,"description":"Semantic color or material token with light, dark, contrast, and state variants."},{"name":"opacity","valueType":"number","required":false,"description":"Fill alpha multiplier.","defaultValue":"1","minimum":0,"maximum":1}],
+  "constraints":[{"expression":"0 <= opacity <= 1","message":"Opacity must be in the inclusive unit interval."}],
+  "accessibility":{"role":"none","nameSource":"none","focusBehavior":"not focusable","notes":["Any meaning conveyed by color must have a non-color equivalent."]},
+  "mappings":[{"platform":"swiftui","constructs":["Color","Material","background"],"strategy":"Resolve source values to semantic resource identities.","caveats":["Materials can include blur and vibrancy beyond solid color."]},{"platform":"winui3","constructs":["Border.Background","ThemeResource","AcrylicBrush","Mica"],"strategy":"Map semantic resources through the target theme registry.","caveats":["Material availability depends on host and accessibility settings."]}],"tags":["decoration","color","theme"]
+}

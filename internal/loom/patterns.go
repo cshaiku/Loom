@@ -12,6 +12,8 @@ import (
 type PatternStatus string
 type PatternValueType string
 
+const DefaultPatternDirectory = "patterns"
+
 type PatternIntent struct {
 	Summary   string   `json:"summary"`
 	UseWhen   []string `json:"useWhen"`
@@ -113,6 +115,7 @@ type PatternValidationReport struct {
 }
 
 func LoadPatterns(directory string) ([]Pattern, error) {
+	directory = ResolvePatternDirectory(directory)
 	entries, err := os.ReadDir(directory)
 	if err != nil {
 		return nil, fmt.Errorf("could not read pattern directory at %s: %w", directory, err)
@@ -139,11 +142,39 @@ func LoadPatterns(directory string) ([]Pattern, error) {
 	return patterns, nil
 }
 
+func ResolvePatternDirectory(directory string) string {
+	if directory == "" {
+		directory = DefaultPatternDirectory
+	}
+	if directory != DefaultPatternDirectory {
+		return directory
+	}
+	candidates := []string{DefaultPatternDirectory}
+	if executable, err := os.Executable(); err == nil {
+		executableDir := filepath.Dir(executable)
+		candidates = append(candidates,
+			filepath.Join(executableDir, DefaultPatternDirectory),
+			filepath.Join(executableDir, "..", "share", "loom", DefaultPatternDirectory),
+		)
+	}
+	for _, candidate := range candidates {
+		if entries, err := os.ReadDir(candidate); err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".pattern.json") {
+					return candidate
+				}
+			}
+		}
+	}
+	return directory
+}
+
 func ValidatePatterns(directory string) PatternValidationReport {
-	abs, _ := filepath.Abs(directory)
-	patterns, err := LoadPatterns(directory)
+	resolved := ResolvePatternDirectory(directory)
+	abs, _ := filepath.Abs(resolved)
+	patterns, err := LoadPatterns(resolved)
 	if err != nil {
-		return PatternValidationReport{"1", "error", abs, 0, []PatternIssue{{SeverityError, "PATTERN001", abs, "Pattern directory cannot be read."}}}
+		return PatternValidationReport{"1", "error", abs, 0, []PatternIssue{{SeverityError, "PATTERN001", abs, "pattern directory cannot be read."}}}
 	}
 	issues := []PatternIssue{}
 	if len(patterns) == 0 {
@@ -198,10 +229,10 @@ func LintPatterns(directory string) PatternValidationReport {
 			platforms[mapping.Platform] = true
 		}
 		if !platforms["swiftui"] {
-			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN102", pattern.ID + ".pattern.json", "Pattern must include a swiftui mapping."})
+			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN102", pattern.ID + ".pattern.json", "pattern must include a swiftui mapping."})
 		}
 		if !platforms["winui3"] {
-			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN103", pattern.ID + ".pattern.json", "Pattern must include a winui3 mapping."})
+			report.Issues = append(report.Issues, PatternIssue{SeverityError, "PATTERN103", pattern.ID + ".pattern.json", "pattern must include a winui3 mapping."})
 		}
 	}
 	if len(report.Issues) > 0 {
@@ -244,7 +275,7 @@ func ExportPatterns(patterns []Pattern, format string) (string, error) {
 			Description string             `json:"$description"`
 			Extensions  map[string]Pattern `json:"$extensions"`
 		}
-		out := map[string]any{"$description": "Loom OS-agnostic UI Pattern catalog exported as DTCG-compatible token objects.", "loom": map[string]token{}}
+		out := map[string]any{"$description": "loom OS-agnostic UI pattern catalog exported as DTCG-compatible token objects.", "loom": map[string]token{}}
 		tokens := out["loom"].(map[string]token)
 		for _, pattern := range patterns {
 			tokens[pattern.ID] = token{"other", map[string]any{"id": pattern.ID, "name": pattern.Name, "kind": pattern.Kind, "category": pattern.Category}, pattern.Intent.Summary, map[string]Pattern{"loom": pattern}}

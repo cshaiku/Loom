@@ -1,0 +1,9 @@
+{
+  "schema_version":"1","id":"divider","version":"1.0.0","name":"divider","kind":"divider","status":"stable","category":"decoration",
+  "intent":{"summary":"Visually separates adjacent content regions without implying interactive resizing.","useWhen":["A subtle boundary improves grouping comprehension"],"avoidWhen":["Users can resize adjacent panes; use a split-view divider"]},
+  "semantics":{"role":"visual separator","childPolicy":"no children","sizing":"one logical stroke by default across the parent cross axis","ordering":"occupies a visual layout position"},
+  "attributes":[{"name":"orientation","valueType":"enum","required":false,"description":"Direction of the separator line.","defaultValue":"automatic","allowedValues":["automatic","horizontal","vertical"]},{"name":"thickness","valueType":"length","required":false,"description":"Rendered stroke thickness.","defaultValue":"1","minimum":0,"units":["logical-pixel","design-token"]},{"name":"color","valueType":"resource","required":false,"description":"Semantic border or separator color token.","defaultValue":"separator"}],
+  "constraints":[{"expression":"thickness >= 0","message":"Divider thickness cannot be negative."}],
+  "accessibility":{"role":"separator only when it conveys structure; otherwise none","nameSource":"none","focusBehavior":"not focusable","notes":["Purely decorative dividers are excluded from the accessibility tree."]},
+  "mappings":[{"platform":"swiftui","constructs":["Divider"],"strategy":"Infer orientation from parent axis and preserve semantic color tokens.","caveats":[]},{"platform":"winui3","constructs":["Rectangle","Border"],"strategy":"Render a non-interactive themed stroke.","caveats":[]}],"tags":["decoration","separator","non-interactive"]
+}

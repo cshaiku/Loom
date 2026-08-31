@@ -12,7 +12,7 @@ import (
 func fixtureXAML(t *testing.T, body string) string {
 	t.Helper()
 	dir := t.TempDir()
-	path := filepath.Join(dir, "MainWindow.xaml")
+	path := filepath.Join(dir, "mainwindow.xaml")
 	source := `<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">` + body + `</Grid>`
 	if err := os.WriteFile(path, []byte(source), 0644); err != nil {
 		t.Fatal(err)
@@ -21,14 +21,14 @@ func fixtureXAML(t *testing.T, body string) string {
 }
 
 func TestLoadAndValidatePatterns(t *testing.T) {
-	patterns, err := LoadPatterns("../../Patterns")
+	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(patterns) < 20 {
 		t.Fatalf("expected at least 20 patterns, got %d", len(patterns))
 	}
-	report := ValidatePatterns("../../Patterns")
+	report := ValidatePatterns("../../patterns")
 	if report.Status != "ok" {
 		t.Fatalf("expected valid patterns, got %#v", report.Issues)
 	}
@@ -112,7 +112,7 @@ func TestTransferFlagsUnsupportedNativeBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	patterns, err := LoadPatterns("../../Patterns")
+	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestTransferIncludesGridTrackPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	patterns, err := LoadPatterns("../../Patterns")
+	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +153,7 @@ func TestTransferMacOSTargetUsesSwiftUIMappings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	patterns, err := LoadPatterns("../../Patterns")
+	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.19.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.20.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -246,7 +246,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 }
 
 func TestFunctionJSONUsesStableEmptyArrays(t *testing.T) {
-	patternReport := ValidatePatterns("../../Patterns")
+	patternReport := ValidatePatterns("../../patterns")
 	text, err := prettyJSON(patternReport)
 	if err != nil {
 		t.Fatal(err)
@@ -280,7 +280,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.19.0\r\n" {
+	if got := stdout.String(); got != "loom 0.20.0\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 

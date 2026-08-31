@@ -21,7 +21,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		return writeText("Loom: cross-platform interface layout analysis CLI\n\n"+catalogText(""), stdout, runtime)
+		return writeText("loom: cross-platform interface layout analysis CLI\n\n"+catalogText(""), stdout, runtime)
 	}
 	if args[0] == "version" || args[0] == "--version" {
 		return writeText(fmt.Sprintf("loom %s\n", Version), stdout, runtime)
@@ -186,7 +186,7 @@ func applyLineEnding(text, mode string) string {
 }
 
 func runPattern(command string, args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	directory := "Patterns"
+	directory := DefaultPatternDirectory
 	format := "text"
 	exportFormat := "loom"
 	output := ""
@@ -284,7 +284,7 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 
 func PatternReportText(report PatternValidationReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom pattern validation\nStatus: %s\nDirectory: %s\nPatterns: %d\nIssues: %d\n", report.Status, report.Directory, report.PatternCount, len(report.Issues))
+	fmt.Fprintf(&b, "loom pattern validation\nstatus: %s\ndirectory: %s\npatterns: %d\nissues: %d\n", report.Status, report.Directory, report.PatternCount, len(report.Issues))
 	for _, issue := range report.Issues {
 		fmt.Fprintf(&b, "  [%s] %s %s: %s\n", issue.Severity, issue.Code, issue.Path, issue.Detail)
 	}
@@ -354,7 +354,7 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 	if err != nil {
 		return err
 	}
-	patternDir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
+	patternDir := firstNonEmpty(flagValue(args, "--patterns-dir"), DefaultPatternDirectory)
 	from := firstNonEmpty(flagValue(args, "--from"), "winui3")
 	to := firstNonEmpty(flagValue(args, "--to"), "macos")
 	analysis, err := AnalyzeXAML(path)
@@ -394,7 +394,7 @@ func runSuggestions(args []string, stdout, stderr io.Writer, runtime runtimeOpti
 
 func SuggestionsText(report OSErrorSuggestionReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom OS error suggestions\nStatus: %s\nPlatform: %s\nQuery: %s\nSuggestions: %d\n\n", report.Status, firstNonEmpty(string(report.Platform), "all"), firstNonEmpty(report.Query, "none"), len(report.Suggestions))
+	fmt.Fprintf(&b, "loom OS error suggestions\nstatus: %s\nplatform: %s\nquery: %s\nsuggestions: %d\n\n", report.Status, firstNonEmpty(string(report.Platform), "all"), firstNonEmpty(report.Query, "none"), len(report.Suggestions))
 	for _, suggestion := range report.Suggestions {
 		fmt.Fprintf(&b, "[%s] %s: %s\n  issue: %s\n  reference: %s\n", suggestion.Platform, suggestion.Category, suggestion.Matcher, suggestion.Issue, suggestion.Reference)
 		for _, fix := range suggestion.SuggestedFixes {
@@ -409,7 +409,7 @@ func runStatus(args []string, stdout, stderr io.Writer, runtime runtimeOptions) 
 	if contains(args, "--help") || contains(args, "-h") {
 		return writeText(manual("status"), stdout, runtime)
 	}
-	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
+	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), DefaultPatternDirectory)
 	format := firstNonEmpty(flagValue(args, "--format"), "text")
 	if contains(args, "--json") {
 		format = "json"
@@ -423,7 +423,7 @@ func runStatus(args []string, stdout, stderr io.Writer, runtime runtimeOptions) 
 }
 
 func runVerify(args []string, stdout io.Writer, runtime runtimeOptions) error {
-	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), "Patterns")
+	dir := firstNonEmpty(flagValue(args, "--patterns-dir"), DefaultPatternDirectory)
 	format := firstNonEmpty(flagValue(args, "--format"), "text")
 	if contains(args, "--json") {
 		format = "json"
@@ -558,7 +558,7 @@ func runUnavailableCommand(command string, stdout, stderr io.Writer, runtime run
 }
 
 func AnalysisText(analysis Analysis) string {
-	return fmt.Sprintf("Loom analysis\nSource: %s\nView: %s.%s\nSource nodes: %d\nLayout nodes: %d\n\n%s", analysis.SourcePath, analysis.RootView, analysis.Component, analysis.SyntaxNodeCount, analysis.Layout.RecursiveNodeCount(), ASCIIAnalysis(analysis))
+	return fmt.Sprintf("loom analysis\nsource: %s\nview: %s.%s\nsource nodes: %d\nlayout nodes: %d\n\n%s", analysis.SourcePath, analysis.RootView, analysis.Component, analysis.SyntaxNodeCount, analysis.Layout.RecursiveNodeCount(), ASCIIAnalysis(analysis))
 }
 
 func sourceArgs(args []string) (path, format, output string, err error) {

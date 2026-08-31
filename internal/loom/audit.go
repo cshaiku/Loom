@@ -56,7 +56,7 @@ func Audit(analysis Analysis) AuditReport {
 	var walk func(Node, string, int, []NodeKind)
 	walk = func(node Node, path string, depth int, ancestors []NodeKind) {
 		if node.Properties["componentBoundary"] == "native-winui-control" {
-			findings = append(findings, auditFinding(SeverityWarning, AuditDesign, "AUDIT070", path, node.Kind, "Native WinUI control is preserved as an unsupported component boundary.", "Keep it as handwritten native UI, add a project-specific Pattern mapping, or declare its transfer contract explicitly."))
+			findings = append(findings, auditFinding(SeverityWarning, AuditDesign, "AUDIT070", path, node.Kind, "native WinUI control is preserved as an unsupported component boundary.", "keep it as handwritten native UI, add a project-specific pattern mapping, or declare its transfer contract explicitly."))
 		}
 		if isContainer(node.Kind) && len(node.Children) == 0 {
 			findings = append(findings, auditFinding(SeverityWarning, AuditMissing, "AUDIT011", path, node.Kind, "Container has no visible children.", "Remove the empty container or add an explicit placeholder/empty-state element."))
@@ -112,7 +112,7 @@ func Audit(analysis Analysis) AuditReport {
 
 func AuditText(report AuditReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom accessibility audit\nStatus: %s\nSource: %s\nView: %s.%s\n\nFindings: %d\n", report.Status, report.SourcePath, report.RootView, report.Component, len(report.Findings))
+	fmt.Fprintf(&b, "loom accessibility audit\nstatus: %s\nsource: %s\nview: %s.%s\n\nfindings: %d\n", report.Status, report.SourcePath, report.RootView, report.Component, len(report.Findings))
 	if len(report.Findings) == 0 {
 		b.WriteString("  none\n")
 	}
@@ -135,7 +135,7 @@ func auditFinding(severity DiagnosticSeverity, category AuditCategory, code stri
 func auditSuggestedFixes(code, recommendation string) []SuggestedFix {
 	switch code {
 	case "AUDIT070":
-		return []SuggestedFix{{FixUser, "Choose native-boundary strategy", "Keep native, replace with portable layout, or approve a Pattern mapping.", ""}, {FixAgent, "Declare native component boundary", recommendation, "loom patterns:transfer <source.xaml> --from winui3 --to macos --format json"}}
+		return []SuggestedFix{{FixUser, "choose native-boundary strategy", "keep native, replace with portable layout, or approve a pattern mapping.", ""}, {FixAgent, "declare native component boundary", recommendation, "loom patterns:transfer <source.xaml> --from winui3 --to macos --format json"}}
 	case "AUDIT020":
 		return []SuggestedFix{{FixUser, "Name the button", recommendation, ""}, {FixAgent, "Add accessible-name metadata", "Prefer visible label text or AutomationProperties.Name.", ""}}
 	default:

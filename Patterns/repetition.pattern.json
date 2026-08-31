@@ -1,9 +1,0 @@
-{
-  "schema_version":"1","id":"repetition","version":"1.0.0","name":"Repetition","kind":"loop","status":"stable","category":"structure",
-  "intent":{"summary":"Instantiates a pattern subtree once for each item in an identified data sequence.","useWhen":["A repeated subtree is driven by data"],"avoidWhen":["Items require collection interaction that should be modeled as a list"]},
-  "semantics":{"role":"data-driven structural expansion","childPolicy":"one template subtree evaluated per data item","sizing":"determined by parent layout and instantiated children","ordering":"data sequence order"},
-  "attributes":[{"name":"items","valueType":"binding","required":true,"description":"Ordered input sequence."},{"name":"identity","valueType":"string","required":true,"description":"Stable item identity expression."},{"name":"template","valueType":"reference","required":true,"description":"Pattern subtree instantiated for each item."}],
-  "constraints":[{"expression":"identity is stable and unique within items","message":"Repeated instances require stable unique identity."}],
-  "accessibility":{"role":"none","nameSource":"none","focusBehavior":"generated descendants participate in normal order","notes":["The structural operator itself is not exposed."]},
-  "mappings":[{"platform":"swiftui","constructs":["ForEach"],"strategy":"Capture sequence, identity, and content closure separately.","caveats":[]},{"platform":"winui3","constructs":["ItemsRepeater","ItemsControl","DataTemplate"],"strategy":"Bind the sequence and translate the template subtree.","caveats":[]}],"tags":["structure","data","template"]
-}

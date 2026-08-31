@@ -1,0 +1,9 @@
+{
+  "schema_version":"1","id":"toggle","version":"1.0.0","name":"toggle","kind":"toggle","status":"stable","category":"input",
+  "intent":{"summary":"Displays and changes a persistent binary or mixed state.","useWhen":["The choice takes effect as a durable on/off state"],"avoidWhen":["The user is invoking a one-time action"]},
+  "semantics":{"role":"state selection control","childPolicy":"one label subtree associated with the state","sizing":"minimum interactive target plus label and state indicator","ordering":"label and indicator order follows locale and presentation policy"},
+  "attributes":[{"name":"value","valueType":"binding","required":true,"description":"Readable and writable selection state."},{"name":"label","valueType":"reference","required":true,"description":"Visible or explicitly associated state description."},{"name":"stateModel","valueType":"enum","required":false,"description":"Permitted state domain.","defaultValue":"binary","allowedValues":["binary","tri-state"]},{"name":"enabled","valueType":"binding","required":false,"description":"Whether user state changes are accepted.","defaultValue":"true"}],
+  "constraints":[{"expression":"label has a non-empty accessible name","message":"Every toggle requires a state description."}],
+  "accessibility":{"role":"switch or checkbox according to interaction convention","nameSource":"label","focusBehavior":"focusable when enabled and operable by primary activation keys","notes":["Expose checked, unchecked, or mixed state."]},
+  "mappings":[{"platform":"swiftui","constructs":["Toggle","Picker with binary options"],"strategy":"Capture binding, label, state domain, and enabled state independently of style.","caveats":[]},{"platform":"winui3","constructs":["ToggleSwitch","CheckBox","ToggleButton"],"strategy":"Select representation from interaction convention and stateModel.","caveats":[]}],"tags":["input","state","selection"]
+}

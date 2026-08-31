@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.20.0 - 2026-08-30
+
+- Normalized public repository folders to lowercase: `patterns` and
+  `examples/sampleapp`.
+- Replaced private sample app references with neutral public sample app
+  terminology and a checked-in `examples/sampleapp/mainwindow.xaml` fixture.
+- Updated default pattern discovery so loom uses its own `patterns` catalog from
+  the repository or from `/opt/homebrew/share/loom/patterns` after install.
+- Updated `make build` to install both `/opt/homebrew/bin/loom` and loom's
+  shared pattern catalog.
+- Lowercased public-facing command help, diagnostics, and documentation labels
+  where practical while preserving Go exported type names and stable JSON fields.
+
 ## 0.19.0 - 2026-08-30
 
 - Added repository line-ending policy through `.gitattributes`.
@@ -27,27 +40,27 @@
 
 ## 0.17.0 - 2026-08-30
 
-- Started the Go migration so Loom can ship as a single cross-platform CLI for
+- Started the Go migration so loom can ship as a single cross-platform CLI for
   macOS, Windows, and Linux.
 - Added `cmd/loom` and `internal/loom` as the forward Go runtime.
-- Ported Pattern catalog operations, WinUI XAML ingestion, ASCII Pattern
-  rendering, accessibility/layout audit, Pattern transfer, OS error
+- Ported pattern catalog operations, WinUI XAML ingestion, ASCII pattern
+  rendering, accessibility/layout audit, pattern transfer, OS error
   suggestions, command listing/help, `status`, and `verify`.
 - Preserved the Swift implementation as the 0.16.0 reference while SwiftUI
   parsing, generation, project workflows, owned-region guards, and parity
   commands are ported.
-- Added Go regression tests for Pattern validation, native WinUI component
+- Added Go regression tests for pattern validation, native WinUI component
   boundaries, structured suggested fixes, transfer classification, OS error
   matching, CLI JSON output, version output, and `--quiet` write behavior.
 
 ## 0.16.0 - 2026-08-30
 
 - Added explicit `XAML.UNSUPPORTED_COMPONENT_BOUNDARY` warnings for native
-  WinUI controls without Loom semantic mappings.
+  WinUI controls without loom semantic mappings.
 - Preserved unsupported native WinUI controls as component nodes with
   `componentBoundary`, `unsupportedXamlElement`, and
   `requiresNativeImplementation` metadata.
-- Surfaced native WinUI component boundaries in accessibility audit and Pattern
+- Surfaced native WinUI component boundaries in accessibility audit and pattern
   transfer reports.
 - Added structured `suggested_fixes` to accessibility audit findings for user
   decisions and AI-agent implementation actions.
@@ -55,7 +68,7 @@
   XAML, macOS, and Windows issues.
 - Added `suggestions:os-errors` and automatic `suggested_fixes` enrichment for
   `inspect:errors` findings.
-- Added `docs/OS_ERROR_SUGGESTIONS.md`.
+- Added `docs/os-error-suggestions.md`.
 - Added tests for native WinUI component-boundary diagnostics, audit/transfer
   surfacing, OS error suggestions, and enriched error inspection findings.
 
@@ -69,9 +82,9 @@
   and geometry-dependent layout.
 - Added text/JSON audit output plus `--output` and
   `--fail-on none|error|warning`.
-- Extended optional Pattern accessibility metadata with keyboard behavior,
+- Extended optional pattern accessibility metadata with keyboard behavior,
   states, required accessibility properties, and minimum target size.
-- Updated README, command docs, architecture notes, Pattern docs, AI agent
+- Updated README, command docs, architecture notes, pattern docs, AI agent
   guidance, roadmap, and VERSION.
 - Added tests for accessibility/layout/design audit findings and JSON report
   round trips.
@@ -82,10 +95,10 @@
   between SwiftUI and WinUI.
 - Added transfer dispositions for direct transfer, policy-dependent transfer,
   native-contract-dependent transfer, lossy transfer, and unsupported nodes.
-- Added `inspect:ascii` for plaintext ASCII Pattern layout trees.
-- Added optional Pattern variants to the Pattern model and schema for adaptive,
+- Added `inspect:ascii` for plaintext ASCII pattern layout trees.
+- Added optional pattern variants to the pattern model and schema for adaptive,
   dense, compact, or accessibility layout policies.
-- Updated README, command docs, architecture notes, Pattern docs, AI agent
+- Updated README, command docs, architecture notes, pattern docs, AI agent
   guidance, roadmap, and VERSION.
 - Added tests for transfer classification, ASCII rendering, and JSON report
   round trips.
@@ -93,25 +106,25 @@
 ## 0.13.0 - 2026-08-30
 
 - Added `patterns:export` to derive integration-oriented JSON from the
-  canonical Pattern catalog.
-- Added export formats for Loom-native JSON, DTCG-style token objects, Open
+  canonical pattern catalog.
+- Added export formats for loom-native JSON, DTCG-style token objects, Open
   UI-style component metadata, ARIA accessibility summaries, and Style
   Dictionary-compatible token packages.
-- Added `--format`, `--directory`, and `--output` handling for Pattern exports.
+- Added `--format`, `--directory`, and `--output` handling for pattern exports.
 - Added tests for external export shapes and command catalog visibility.
 
 ## 0.12.0 - 2026-08-30
 
-- Added `inspect:errors` to report Swift parser diagnostics, Loom extraction
-  diagnostics, XAML parse failures, manifest validation issues, and Pattern
+- Added `inspect:errors` to report Swift parser diagnostics, loom extraction
+  diagnostics, XAML parse failures, manifest validation issues, and pattern
   validation/lint issues.
 - Added `--kind swift|xaml|manifest|patterns`, `--format text|json`,
   `--output`, and `--fail-on none|error|warning` for error inspection.
 - Added SwiftParserDiagnostics integration for syntax errors without shelling
   out to a compiler.
-- Added `docs/AI_AGENTS.md` covering safe agent workflows, JSON output,
+- Added `docs/ai-agents.md` covering safe agent workflows, JSON output,
   write guards, self-healing limits, and translation boundaries.
-- Added tests for Swift syntax error inspection, XAML parse errors, Pattern
+- Added tests for Swift syntax error inspection, XAML parse errors, pattern
   errors, fail modes, and command catalog coverage.
 
 ## 0.11.0 - 2026-08-30
@@ -134,7 +147,7 @@
 - Added tests for contract extraction, JSON encoding, and command registry
   coverage.
 
-- Replaced recursive `LoomNode` aggregation helpers with iterative traversals
+- Replaced recursive `loom node` aggregation helpers with iterative traversals
   to avoid stack growth on deeply nested generated layout trees.
 - Precompiled component-graph include/exclude glob expressions once per scan
   instead of rebuilding regexes for every candidate file.
@@ -148,7 +161,7 @@
 - Added global `--quiet` / `-q` and `--verbose` / `-v` runtime output controls.
 - Added explicit `--init-region` self-healing for missing generated XAML host
   files used with `generate:xaml --replace-region`.
-- Kept existing-file writes strict: Loom still refuses to alter XAML without
+- Kept existing-file writes strict: loom still refuses to alter XAML without
   explicit ownership markers.
 - Added guard coverage for unsafe region ids, malformed marker order, malformed
   XAML, graph cycles, no-op region replacement, path-level region
@@ -158,7 +171,7 @@
 
 ## 0.8.0 - 2026-08-30
 
-- Added safe Loom-owned XAML region replacement through
+- Added safe loom-owned XAML region replacement through
   `generate:xaml --replace-region ... --region-id ...`.
 - Added strict marker validation for missing, duplicated, malformed, or
   out-of-order `LOOM-BEGIN` / `LOOM-END` comments.
@@ -177,23 +190,23 @@
 
 ## 0.6.0 - 2026-08-30
 
-- Added `inspect:xaml` to parse WinUI XAML into Loom's platform-neutral
-  `LoomNode` layout tree.
+- Added `inspect:xaml` to parse WinUI XAML into loom's platform-neutral
+  `loom node` layout tree.
 - Added XAML mappings for common WinUI controls including `Grid`, `StackPanel`,
   `TextBlock`, `Button`, `TextBox`, `Image`, `ScrollViewer`, and `ListView`.
 - Preserved original XAML attributes as `xaml.*` node properties for future
   reverse-generation work.
-- Added tests proving hand-written and Loom-generated XAML normalize into
+- Added tests proving hand-written and loom-generated XAML normalize into
   comparable IR.
 
 ## 0.5.0 - 2026-08-30
 
-- Added an operational Pattern registry for looking up semantic mappings by
-  `LoomNodeKind`.
+- Added an operational pattern registry for looking up semantic mappings by
+  `loom node kind`.
 - Added `patterns:lint` to enforce bidirectional mapping quality beyond basic
   schema validity.
 - Added `generate:xaml --patterns-dir ... --pattern-comments` to trace emitted
-  XAML nodes back to OS-agnostic Pattern ids and WinUI constructs.
+  XAML nodes back to OS-agnostic pattern ids and WinUI constructs.
 - Kept default XAML output stable unless pattern comments are explicitly
   requested.
 - Documented the direction-neutral mapping model needed for future
@@ -212,8 +225,8 @@
 
 ## 0.3.0 - 2026-08-30
 
-- Added a normative `Patterns` catalog with one OS-agnostic semantic definition
-  for every meaningful layout and control kind Loom recognizes.
+- Added a normative `patterns` catalog with one OS-agnostic semantic definition
+  for every meaningful layout and control kind loom recognizes.
 - Added precise intent, structure, sizing, typed attribute, range, constraint,
   accessibility, and platform-mapping metadata.
 - Added `patterns:list`, `patterns:show`, and `patterns:validate` commands.
@@ -230,7 +243,7 @@
   parity evidence, and a deterministic project summary in one run.
 - Preserved `analyze`, `generate`, `parity`, and `project` as compatibility
   aliases.
-- Upgraded the Voci integration to the manifest-driven project workflow.
+- Upgraded the sample app integration to the manifest-driven project workflow.
 
 ## 0.1.0 - 2026-08-29
 
@@ -238,6 +251,6 @@
 - Added the platform-neutral layout model and text/JSON analysis reports.
 - Added conservative WinUI 3 XAML generation with configurable theme prefixes.
 - Added existing-XAML parity diagnostics.
-- Added Voci analysis, generated-shell, and parity examples.
+- Added sample app analysis, generated-shell, and parity examples.
 - Added Swift Testing coverage for extraction, generation, bindings, lifecycle
   modifiers, and error reporting.

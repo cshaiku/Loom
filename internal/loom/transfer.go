@@ -91,13 +91,13 @@ func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, t
 	contracts := contractsFor(node)
 	policies := policiesFor(node)
 	disposition := TransferDirect
-	reason := "The source Pattern has a target mapping and no additional transfer risk was detected."
+	reason := "the source pattern has a target mapping and no additional transfer risk was detected."
 	if node.Properties["componentBoundary"] == "native-winui-control" {
 		disposition = TransferUnsupported
 		reason = "Native WinUI control was preserved as an unsupported component boundary and needs an explicit target mapping or handwritten implementation."
 	} else if pattern.ID == "" || len(target.Constructs) == 0 {
 		disposition = TransferUnsupported
-		reason = "No target Pattern mapping exists, or the node is explicitly unsupported."
+		reason = "no target pattern mapping exists, or the node is explicitly unsupported."
 	} else if len(contracts) > 0 {
 		disposition = TransferNeedsNativeContract
 		reason = "The visual element transfers, but behavior, state, or accessibility wiring must remain native."
@@ -122,7 +122,7 @@ func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, t
 
 func TransferText(report TransferReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom pattern transfer\nSource: %s\nRoute: %s -> %s\nView: %s.%s\n\nSummary\n  direct: %d\n  needs-policy: %d\n  needs-native-contract: %d\n  lossy: %d\n  unsupported: %d\n\nASCII Pattern\n%s\nTransfer items\n", report.SourcePath, report.From, report.To, report.RootView, report.Component, report.Summary.Direct, report.Summary.NeedsPolicy, report.Summary.NeedsNativeContract, report.Summary.Lossy, report.Summary.Unsupported, report.ASCIIPattern)
+	fmt.Fprintf(&b, "loom pattern transfer\nsource: %s\nroute: %s -> %s\nview: %s.%s\n\nsummary\n  direct: %d\n  needs-policy: %d\n  needs-native-contract: %d\n  lossy: %d\n  unsupported: %d\n\nascii pattern\n%s\ntransfer items\n", report.SourcePath, report.From, report.To, report.RootView, report.Component, report.Summary.Direct, report.Summary.NeedsPolicy, report.Summary.NeedsNativeContract, report.Summary.Lossy, report.Summary.Unsupported, report.ASCIIPattern)
 	for _, item := range report.Items {
 		fmt.Fprintf(&b, "[%s] %s %s pattern=%s\n  target: %s\n  reason: %s\n", item.Disposition, item.Path, item.Kind, item.PatternID, strings.Join(item.TargetConstructs, ", "), item.Reason)
 	}

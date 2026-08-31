@@ -428,7 +428,7 @@ func ShouldFailForInspection(report LoomErrorInspectionReport, mode string) bool
 func ManifestSchemaJSON() (string, error) {
 	const schema = `{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Loom project manifest",
+  "title": "loom project manifest",
   "type": "object",
   "required": ["schema_version", "project", "source", "rootView", "target", "components"],
   "properties": {
@@ -462,7 +462,7 @@ func ManifestSchemaJSON() (string, error) {
 
 func LoomErrorInspectionText(report LoomErrorInspectionReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom error inspection\nStatus: %s\nKind: %s\nSource: %s\nFindings: %d\n", report.Status, report.InspectedKind, report.Source, len(report.Findings))
+	fmt.Fprintf(&b, "loom error inspection\nstatus: %s\nkind: %s\nsource: %s\nfindings: %d\n", report.Status, report.InspectedKind, report.Source, len(report.Findings))
 	if len(report.Findings) == 0 {
 		b.WriteString("  none\n")
 		return b.String()
@@ -490,8 +490,8 @@ func LoomErrorInspectionText(report LoomErrorInspectionReport) string {
 
 func LoomStatusText(report LoomStatusReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom status\nVersion: %s\nWorking directory: %s\nCommands: %d\nPattern directory: %s\nPatterns: %s (%d)\n", report.Version, report.WorkingDirectory, report.Commands, report.PatternDirectory, report.PatternStatus, report.PatternCount)
-	fmt.Fprintf(&b, "Issues: %d\n", len(report.Issues))
+	fmt.Fprintf(&b, "loom status\nversion: %s\nworking directory: %s\ncommands: %d\npattern directory: %s\npatterns: %s (%d)\n", report.Version, report.WorkingDirectory, report.Commands, report.PatternDirectory, report.PatternStatus, report.PatternCount)
+	fmt.Fprintf(&b, "issues: %d\n", len(report.Issues))
 	for _, issue := range report.Issues {
 		fmt.Fprintf(&b, "  [%s] %s %s\n", issue.Severity, issue.Code, issue.Message)
 	}
@@ -500,7 +500,7 @@ func LoomStatusText(report LoomStatusReport) string {
 
 func LoomCommandCatalogCheckText(report LoomCommandCatalogCheckReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom command catalog check\nStatus: %s\nCommands: %d\nAliases: %d\nIssues: %d\n", report.Status, report.Commands, report.Aliases, len(report.Issues))
+	fmt.Fprintf(&b, "loom command catalog check\nstatus: %s\ncommands: %d\naliases: %d\nissues: %d\n", report.Status, report.Commands, report.Aliases, len(report.Issues))
 	for _, issue := range report.Issues {
 		fmt.Fprintf(&b, "  [%s] %s %s\n", issue.Severity, issue.Code, issue.Message)
 	}
@@ -509,18 +509,18 @@ func LoomCommandCatalogCheckText(report LoomCommandCatalogCheckReport) string {
 
 func LoomVerifyText(report LoomVerifyReport) string {
 	var b strings.Builder
-	b.WriteString("Loom verify\n")
-	fmt.Fprintf(&b, "Status: %s\n", report.Status)
-	fmt.Fprintf(&b, "Command catalog: %s\n", report.CommandCatalog.Status)
-	fmt.Fprintf(&b, "Patterns: %s\n", report.Patterns.Status)
-	fmt.Fprintf(&b, "Pattern lint: %s\n", report.PatternLint.Status)
-	fmt.Fprintf(&b, "Issues: %d\n", len(report.CommandCatalog.Issues)+len(report.Patterns.Issues)+len(report.PatternLint.Issues))
+	b.WriteString("loom verify\n")
+	fmt.Fprintf(&b, "status: %s\n", report.Status)
+	fmt.Fprintf(&b, "command catalog: %s\n", report.CommandCatalog.Status)
+	fmt.Fprintf(&b, "patterns: %s\n", report.Patterns.Status)
+	fmt.Fprintf(&b, "pattern lint: %s\n", report.PatternLint.Status)
+	fmt.Fprintf(&b, "issues: %d\n", len(report.CommandCatalog.Issues)+len(report.Patterns.Issues)+len(report.PatternLint.Issues))
 	return b.String()
 }
 
 func LoomGuardsSummaryText(report LoomGuardsReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom guards summary\nStatus: %s\nWriting commands: %d\n\n", report.Status, len(report.Entries))
+	fmt.Fprintf(&b, "loom guards summary\nstatus: %s\nwriting commands: %d\n\n", report.Status, len(report.Entries))
 	for _, entry := range report.Entries {
 		flags := "always writes"
 		if len(entry.WriteFlags) > 0 {
@@ -535,7 +535,7 @@ func LoomGuardsSummaryText(report LoomGuardsReport) string {
 
 func LoomSelfHealPlanText(report LoomSelfHealPlan) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom self-heal plan\nStatus: %s\nHealable actions: %d\n\n", report.Status, len(report.Entries))
+	fmt.Fprintf(&b, "loom self-heal plan\nstatus: %s\nhealable actions: %d\n\n", report.Status, len(report.Entries))
 	for _, entry := range report.Entries {
 		b.WriteString(fmt.Sprintf("%s %s\n", entry.Command, entry.Flag))
 		b.WriteString(fmt.Sprintf("  scope: %s\n", entry.Scope))
@@ -546,7 +546,7 @@ func LoomSelfHealPlanText(report LoomSelfHealPlan) string {
 
 func LoomManifestValidationText(report LoomManifestValidationReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Loom manifest validation\nStatus: %s\nProject: %s\nIssues: %d\n", report.Status, report.Project, len(report.Issues))
+	fmt.Fprintf(&b, "loom manifest validation\nstatus: %s\nproject: %s\nissues: %d\n", report.Status, report.Project, len(report.Issues))
 	for _, issue := range report.Issues {
 		fmt.Fprintf(&b, "  [%s] %s %s: %s\n  fix: %s\n", issue.Severity, issue.Code, issue.Path, issue.Detail, issue.Fix)
 	}

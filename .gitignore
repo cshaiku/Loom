@@ -5,7 +5,7 @@ DerivedData/
 *.xcworkspace/
 *.swp
 .DS_Store
-Generated/
+generated/
 /loom
 *.test
 coverage.out

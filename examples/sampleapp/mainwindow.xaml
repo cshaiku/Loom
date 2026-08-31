@@ -1,0 +1,36 @@
+<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      RowSpacing="12"
+      ColumnSpacing="16"
+      Padding="24">
+  <Grid.RowDefinitions>
+    <RowDefinition Height="Auto" />
+    <RowDefinition Height="*" />
+    <RowDefinition Height="Auto" />
+  </Grid.RowDefinitions>
+  <Grid.ColumnDefinitions>
+    <ColumnDefinition Width="2*" />
+    <ColumnDefinition Width="*" />
+  </Grid.ColumnDefinitions>
+
+  <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Spacing="4">
+    <TextBlock Text="Sample workspace" Style="{StaticResource TitleTextBlockStyle}" />
+    <TextBlock Text="A neutral interface layout used to demonstrate loom analysis." />
+  </StackPanel>
+
+  <ListView Grid.Row="1" Grid.Column="0"
+            AutomationProperties.Name="Primary items">
+    <ListViewItem Content="First item" />
+    <ListViewItem Content="Second item" />
+  </ListView>
+
+  <StackPanel Grid.Row="1" Grid.Column="1" Spacing="8">
+    <TextBlock Text="Details" />
+    <TextBox Header="Name" Text="Example item" />
+    <CheckBox Content="Enabled" IsChecked="True" />
+    <Button Content="Save changes" />
+  </StackPanel>
+
+  <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+             Text="Ready"
+             AutomationProperties.Name="Status message" />
+</Grid>
