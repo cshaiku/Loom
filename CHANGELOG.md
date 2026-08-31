@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.21.0 - 2026-08-30
+
+- Added initial Go-native `inspect:swiftui` support for common SwiftUI layout
+  and control constructs.
+- Implemented `inspect:source` as an auto-detecting source inspector for
+  SwiftUI and WinUI XAML inputs.
+- Added macOS/SwiftUI → Windows/WinUI transfer planning through the existing
+  OS-agnostic `patterns` vocabulary.
+- Added SwiftUI delimiter diagnostics to `inspect:errors --kind swift`.
+- Added regression coverage for SwiftUI inspection, auto-detection, parse
+  diagnostics, and Mac → Windows transfer mappings.
+
 ## 0.20.0 - 2026-08-30
 
 - Normalized public repository folders to lowercase: `patterns` and

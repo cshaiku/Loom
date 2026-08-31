@@ -150,6 +150,11 @@ func ResolvePatternDirectory(directory string) string {
 		return directory
 	}
 	candidates := []string{DefaultPatternDirectory}
+	if cwd, err := os.Getwd(); err == nil {
+		for dir := cwd; dir != filepath.Dir(dir); dir = filepath.Dir(dir) {
+			candidates = append(candidates, filepath.Join(dir, DefaultPatternDirectory))
+		}
+	}
 	if executable, err := os.Executable(); err == nil {
 		executableDir := filepath.Dir(executable)
 		candidates = append(candidates,

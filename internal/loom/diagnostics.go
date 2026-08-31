@@ -623,11 +623,19 @@ func inspectPatternErrors(directory string) []LoomErrorInspectionFinding {
 func inspectSwiftErrors(path, rootView, component string) []LoomErrorInspectionFinding {
 	_ = rootView
 	_ = component
-	_, err := os.ReadFile(path)
+	analysis, err := AnalyzeSwiftUI(path)
 	if err != nil {
-		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "SOURCE001", Source: path, Message: "Could not read source."}}
+		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "SOURCE001", Source: path, Message: "could not read source."}}
 	}
-	return []LoomErrorInspectionFinding{}
+	findings := []LoomErrorInspectionFinding{}
+	for _, diagnostic := range analysis.Diagnostics {
+		finding := LoomErrorInspectionFinding{Severity: diagnostic.Severity, Code: diagnostic.Code, Source: path, Message: diagnostic.Message}
+		if diagnostic.SourceOffset != nil {
+			finding.Offset = diagnostic.SourceOffset
+		}
+		findings = append(findings, finding)
+	}
+	return findings
 }
 
 func suggestFixesForInspectionFinding(finding LoomErrorInspectionFinding) []SuggestedFix {

@@ -26,6 +26,7 @@ The `.pattern.json` files are the source of truth. Export formats are derived.
 ## transfer and audit entry points
 
 - `loom patterns:transfer mainwindow.xaml --from winui3 --to macos`
+- `loom patterns:transfer contentview.swift --from swiftui --to windows`
 - `loom accessibility:audit mainwindow.xaml --json`
 - `loom inspect:errors mainwindow.xaml --kind xaml --json`
 

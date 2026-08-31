@@ -17,6 +17,7 @@ Before touching files:
 
 - `loom inspect:errors <path> --json --fail-on error`
 - `loom accessibility:audit <xaml-file> --json --fail-on warning`
+- `loom patterns:transfer <swift-file> --from swiftui --to windows --json`
 
 If these return errors, stop and either fix input or escalate to a human decision.
 
@@ -41,7 +42,6 @@ Generation and project commands are currently catalog-compatible only and are no
 - `generate:swiftui`
 - `generate:contracts`
 - `project:build`
-- `inspect:source`
 - `inspect:parity`
 - `graph:components`
 
@@ -50,6 +50,7 @@ targets.
 
 ## Diagnostics and suggestions
 
+- `inspect:source` supports `.swift`, `.xaml`, and `.xml` inputs.
 - `inspect:errors` supports `xaml`, `manifest`, `patterns`, and `swift` kinds.
 - `config:validate` validates manifest shape and referenced files.
 - `suggestions:os-errors` returns user/agent fix guidance and command suggestions

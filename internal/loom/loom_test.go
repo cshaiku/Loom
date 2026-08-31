@@ -20,6 +20,24 @@ func fixtureXAML(t *testing.T, body string) string {
 	return path
 }
 
+func fixtureSwiftUI(t *testing.T, body string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "contentview.swift")
+	source := `import SwiftUI
+
+struct ContentView: View {
+  var body: some View {
+` + body + `
+  }
+}
+`
+	if err := os.WriteFile(path, []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestLoadAndValidatePatterns(t *testing.T) {
 	patterns, err := LoadPatterns("../../patterns")
 	if err != nil {
@@ -31,6 +49,125 @@ func TestLoadAndValidatePatterns(t *testing.T) {
 	report := ValidatePatterns("../../patterns")
 	if report.Status != "ok" {
 		t.Fatalf("expected valid patterns, got %#v", report.Issues)
+	}
+}
+
+func TestAnalyzeSwiftUICommonLayout(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack(spacing: 12) {
+  Text("Hello")
+  Button("Save") {
+    Text("Save")
+  }
+  TextField("Name", text: $name)
+  Spacer()
+}`)
+	analysis, err := AnalyzeSwiftUI(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if analysis.Layout.Properties["sourceDialect"] != "swiftui" {
+		t.Fatalf("expected swiftui dialect, got %#v", analysis.Layout.Properties)
+	}
+	if analysis.Component != "ContentView" {
+		t.Fatalf("expected component name from struct, got %q", analysis.Component)
+	}
+	if len(analysis.Layout.Children) != 1 || analysis.Layout.Children[0].Kind != KindVerticalStack {
+		t.Fatalf("expected root VStack, got %#v", analysis.Layout.Children)
+	}
+	stack := analysis.Layout.Children[0]
+	if len(stack.Children) < 4 {
+		t.Fatalf("expected parsed SwiftUI children, got %#v", stack.Children)
+	}
+	if stack.Children[0].Kind != KindText || stack.Children[1].Kind != KindButton || stack.Children[2].Kind != KindTextField || stack.Children[3].Kind != KindSpacer {
+		t.Fatalf("unexpected SwiftUI child kinds: %#v", stack.Children)
+	}
+}
+
+func TestSwiftUIToWindowsTransferUsesWinUIMappings(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Title")
+  Button("Save") {}
+}`)
+	analysis, err := AnalyzeSwiftUI(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	patterns, err := LoadPatterns("../../patterns")
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := Transfer(analysis, patterns, "swiftui", "windows")
+	if report.To != "windows" {
+		t.Fatalf("expected public target to remain windows, got %q", report.To)
+	}
+	foundButton := false
+	for _, item := range report.Items {
+		if item.Kind == KindButton {
+			foundButton = true
+			if !contains(item.TargetConstructs, "Button") {
+				t.Fatalf("expected WinUI button mapping, got %#v", item)
+			}
+		}
+	}
+	if !foundButton {
+		t.Fatalf("expected button transfer item, got %#v", report.Items)
+	}
+}
+
+func TestCLISwiftUIInspectionAndTransfer(t *testing.T) {
+	path := fixtureSwiftUI(t, `HStack {
+  Image("gear")
+  Toggle("Enabled", isOn: $enabled)
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"inspect:swiftui", path, "--format", "json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var analysis Analysis
+	if err := json.Unmarshal(stdout.Bytes(), &analysis); err != nil {
+		t.Fatal(err)
+	}
+	if analysis.Layout.Children[0].Kind != KindHorizontalStack {
+		t.Fatalf("expected hstack from CLI, got %#v", analysis.Layout.Children)
+	}
+	stdout.Reset()
+	if err := Run([]string{"patterns:transfer", path, "--from", "macos", "--to", "windows", "--format", "json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var report TransferReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.From != "macos" || report.To != "windows" || report.Summary.Unsupported != 0 {
+		t.Fatalf("expected macos to windows transfer report, got %#v", report)
+	}
+}
+
+func TestInspectSourceAutoDetectsSwiftUI(t *testing.T) {
+	path := fixtureSwiftUI(t, `Text("Auto")`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"inspect:source", path, "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stdout.String(), `"sourceDialect": "swiftui"`) {
+		t.Fatalf("expected inspect:source to auto-detect SwiftUI, got %s", stdout.String())
+	}
+}
+
+func TestInspectSwiftUIReportsDelimiterErrors(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Unclosed")
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"inspect:errors", path, "--kind", "swift", "--format", "json", "--fail-on", "error"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected malformed SwiftUI to fail")
+	}
+	if !strings.Contains(stdout.String(), "SWIFTUI.PARSE") {
+		t.Fatalf("expected SwiftUI parse finding, got %s", stdout.String())
 	}
 }
 
@@ -226,7 +363,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.20.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.21.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -280,7 +417,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.20.0\r\n" {
+	if got := stdout.String(); got != "loom 0.21.0\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 

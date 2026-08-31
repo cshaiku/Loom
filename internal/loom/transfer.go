@@ -94,16 +94,16 @@ func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, t
 	reason := "the source pattern has a target mapping and no additional transfer risk was detected."
 	if node.Properties["componentBoundary"] == "native-winui-control" {
 		disposition = TransferUnsupported
-		reason = "Native WinUI control was preserved as an unsupported component boundary and needs an explicit target mapping or handwritten implementation."
+		reason = "native WinUI control was preserved as an unsupported component boundary and needs an explicit target mapping or handwritten implementation."
 	} else if pattern.ID == "" || len(target.Constructs) == 0 {
 		disposition = TransferUnsupported
 		reason = "no target pattern mapping exists, or the node is explicitly unsupported."
 	} else if len(contracts) > 0 {
 		disposition = TransferNeedsNativeContract
-		reason = "The visual element transfers, but behavior, state, or accessibility wiring must remain native."
+		reason = "the visual element transfers, but behavior, state, or accessibility wiring must remain native."
 	} else if len(policies) > 0 {
 		disposition = TransferNeedsPolicy
-		reason = "The element transfers after project policy decisions such as sizing, spacing, or token selection."
+		reason = "the element transfers after project policy decisions such as sizing, spacing, or token selection."
 	}
 	return TransferItem{
 		Path:             path,
@@ -143,6 +143,8 @@ func canonicalPatternPlatform(platform string) string {
 	switch strings.ToLower(strings.TrimSpace(platform)) {
 	case "macos", "mac", "apple":
 		return "swiftui"
+	case "windows", "winui", "xaml":
+		return "winui3"
 	default:
 		return strings.ToLower(strings.TrimSpace(platform))
 	}

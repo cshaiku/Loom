@@ -89,11 +89,15 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runPattern(command.Command, args[1:], stdout, stderr, runtime)
 	case "inspect:xaml":
 		return runInspectXAML(args[1:], stdout, stderr, runtime)
+	case "inspect:swiftui":
+		return runInspectSwiftUI(args[1:], stdout, stderr, runtime)
+	case "inspect:source":
+		return runInspectSource(args[1:], stdout, stderr, runtime)
 	case "inspect:ascii":
 		return runASCII(args[1:], stdout, stderr, runtime)
 	case "inspect:errors":
 		return runInspectErrors(args[1:], stdout, stderr, runtime)
-	case "inspect:source", "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
+	case "inspect:parity", "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
 		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
@@ -310,12 +314,50 @@ func runInspectXAML(args []string, stdout, stderr io.Writer, runtime runtimeOpti
 	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
 }
 
+func runInspectSwiftUI(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	path, format, output, err := sourceArgs(args)
+	if err != nil {
+		return err
+	}
+	analysis, err := AnalyzeSwiftUI(path)
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		text, err := prettyJSON(analysis)
+		if err != nil {
+			return err
+		}
+		return writeOrPrint(text, output, stdout, stderr, runtime)
+	}
+	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+}
+
+func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	path, format, output, err := sourceArgs(args)
+	if err != nil {
+		return err
+	}
+	analysis, err := AnalyzeByPlatform(path, flagValue(args, "--from"))
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		text, err := prettyJSON(analysis)
+		if err != nil {
+			return err
+		}
+		return writeOrPrint(text, output, stdout, stderr, runtime)
+	}
+	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+}
+
 func runASCII(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	path, _, output, err := sourceArgs(args)
 	if err != nil {
 		return err
 	}
-	analysis, err := AnalyzeXAML(path)
+	analysis, err := AnalyzeByPlatform(path, flagValue(args, "--from"))
 	if err != nil {
 		return err
 	}
@@ -355,9 +397,9 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 		return err
 	}
 	patternDir := firstNonEmpty(flagValue(args, "--patterns-dir"), DefaultPatternDirectory)
-	from := firstNonEmpty(flagValue(args, "--from"), "winui3")
-	to := firstNonEmpty(flagValue(args, "--to"), "macos")
-	analysis, err := AnalyzeXAML(path)
+	from := firstNonEmpty(flagValue(args, "--from"), InferSourcePlatform(path))
+	to := firstNonEmpty(flagValue(args, "--to"), defaultTransferTarget(from))
+	analysis, err := AnalyzeByPlatform(path, from)
 	if err != nil {
 		return err
 	}

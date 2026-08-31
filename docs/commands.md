@@ -10,6 +10,8 @@
 - `config:validate`
 - `config:schema`
 - `accessibility:audit`
+- `inspect:source`
+- `inspect:swiftui`
 - `inspect:xaml`
 - `inspect:ascii`
 - `inspect:errors`
@@ -26,7 +28,6 @@
 The following are not implemented in the Go runtime yet and return a clear
 `not yet available` message:
 
-- `inspect:source`
 - `inspect:parity`
 - `graph:components`
 - `generate:xaml`
@@ -51,8 +52,11 @@ loom verify --json
 loom checks:command-catalog --json
 loom guards:summary
 loom self-heal:plan
+loom inspect:source contentview.swift --json
+loom inspect:swiftui contentview.swift --format json
 loom inspect:errors mainwindow.xaml --kind xaml --json --fail-on error
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos --format json
+loom patterns:transfer contentview.swift --from swiftui --to windows --format json
 loom accessibility:audit mainwindow.xaml --fail-on warning
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 ```

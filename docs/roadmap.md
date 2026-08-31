@@ -5,13 +5,15 @@
 - Forward Go CLI introduced under `cmd/loom`.
 - Command catalog, status/verification diagnostics, pattern operations, and command
   guard outputs.
-- `inspect:xaml`, `inspect:ascii`, `inspect:errors`, `accessibility:audit`,
+- `inspect:xaml`, `inspect:swiftui`, `inspect:source`, `inspect:ascii`,
+  `inspect:errors`, `accessibility:audit`,
   `patterns:*`, and OS error suggestions.
 - CLI output contracts for automation (`--json`, `--quiet`, `--verbose`).
 
 ## 0.18 - Go analyzer baseline
 
-- `inspect:errors` and `inspect:source` path planning moved toward Go ownership.
+- `inspect:errors` and `inspect:source` moved into Go ownership for WinUI XAML
+  and common SwiftUI layout constructs.
 - `graph:components` command retained in catalog and prepared for re-implementation.
 - Cross-command consistency checks expanded (`checks:command-catalog`).
 
@@ -24,9 +26,9 @@
 
 ## Current compatibility layer
 
-`inspect:source`, `inspect:parity`, `graph:components`, `generate:xaml`,
-`generate:swiftui`, `generate:contracts`, and `project:build` remain catalog
-placeholders until they are implemented in the Go runtime.
+`inspect:parity`, `graph:components`, `generate:xaml`, `generate:swiftui`,
+`generate:contracts`, and `project:build` remain catalog placeholders until they
+are implemented in the Go runtime.
 
 ## Near-term priorities
 

@@ -5,10 +5,17 @@ loom_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 sample_root="$loom_root/examples/sampleapp"
 output_dir="$sample_root/generated"
 xaml_path="${1:-$sample_root/mainwindow.xaml}"
+swiftui_path="${2:-$sample_root/contentview.swift}"
 
 if [[ ! -f "$xaml_path" ]]; then
   echo "loom sample app error: XAML source not found at $xaml_path" >&2
   echo "pass a XAML file path as the first argument, or run this script from a complete loom checkout." >&2
+  exit 1
+fi
+
+if [[ ! -f "$swiftui_path" ]]; then
+  echo "loom sample app error: SwiftUI source not found at $swiftui_path" >&2
+  echo "pass a SwiftUI file path as the second argument, or run this script from a complete loom checkout." >&2
   exit 1
 fi
 
@@ -18,3 +25,5 @@ go run "$loom_root/cmd/loom" inspect:xaml "$xaml_path" --format json --output "$
 go run "$loom_root/cmd/loom" inspect:ascii "$xaml_path" --output "$output_dir/layout.txt"
 go run "$loom_root/cmd/loom" accessibility:audit "$xaml_path" --format json --output "$output_dir/audit.json"
 go run "$loom_root/cmd/loom" patterns:transfer "$xaml_path" --from winui3 --to macos --format json --output "$output_dir/transfer.json"
+go run "$loom_root/cmd/loom" inspect:swiftui "$swiftui_path" --format json --output "$output_dir/swiftui-layout.json"
+go run "$loom_root/cmd/loom" patterns:transfer "$swiftui_path" --from swiftui --to windows --format json --output "$output_dir/swiftui-to-windows-transfer.json"
