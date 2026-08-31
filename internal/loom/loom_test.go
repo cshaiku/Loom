@@ -178,6 +178,48 @@ func TestOSErrorSuggestionsMatchStaticResource(t *testing.T) {
 	}
 }
 
+func TestOSErrorSuggestionsPlatformAndQueryFiltering(t *testing.T) {
+	allWinUI := OSErrorSuggestions("winui3", "")
+	if allWinUI.Status != "ok" || len(allWinUI.Suggestions) < 3 {
+		t.Fatalf("expected all WinUI suggestions, got %#v", allWinUI)
+	}
+	xamlParse := OSErrorSuggestions("xaml", "")
+	if xamlParse.Status != "ok" || len(xamlParse.Suggestions) != 1 || xamlParse.Suggestions[0].Category != "parse" {
+		t.Fatalf("expected xaml parse suggestion, got %#v", xamlParse)
+	}
+	empty := OSErrorSuggestions("windows", "no matching issue")
+	if empty.Status != "empty" || len(empty.Suggestions) != 0 {
+		t.Fatalf("expected empty windows no-match report, got %#v", empty)
+	}
+}
+
+func TestQueryMatchesCaseAndTokenizedInput(t *testing.T) {
+	haystack := "winui3 resources staticresource unresolved resource dictionaries"
+	for _, query := range []string{"StaticResource", "static-resource failed", "RESOURCE_DICTIONARY"} {
+		if !queryMatches(haystack, query) {
+			t.Fatalf("expected query %q to match %q", query, haystack)
+		}
+	}
+	if queryMatches(haystack, "xml") {
+		t.Fatal("short unrelated tokens should not match")
+	}
+}
+
+func TestUnknownCommandGuidesHumansAndAgents(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"not:a-command"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected unknown command to fail")
+	}
+	message := err.Error()
+	for _, needle := range []string{"not:a-command", "loom help", "loom list --json"} {
+		if !strings.Contains(message, needle) {
+			t.Fatalf("expected unknown command guidance to include %q, got %q", needle, message)
+		}
+	}
+}
+
 func TestCLIJSONAndVersion(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

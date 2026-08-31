@@ -126,7 +126,11 @@ func DiagnosticsStatus(patternDirectory string) LoomStatusReport {
 	for _, issue := range patternReport.Issues {
 		issues = append(issues, Diagnostic{Severity: issue.Severity, Code: issue.Code, Message: issue.Detail})
 	}
-	cwd, _ := os.Getwd()
+	cwd, err := os.Getwd()
+	if err != nil {
+		issues = append(issues, Diagnostic{Severity: SeverityWarning, Code: "STATUS001", Message: fmt.Sprintf("Working directory could not be resolved: %v.", err)})
+		cwd = ""
+	}
 	return LoomStatusReport{
 		SchemaVersion:    "1",
 		Version:          Version,

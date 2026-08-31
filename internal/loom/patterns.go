@@ -115,7 +115,7 @@ type PatternValidationReport struct {
 func LoadPatterns(directory string) ([]Pattern, error) {
 	entries, err := os.ReadDir(directory)
 	if err != nil {
-		return nil, fmt.Errorf("could not read pattern directory at %s", directory)
+		return nil, fmt.Errorf("could not read pattern directory at %s: %w", directory, err)
 	}
 	var files []string
 	for _, entry := range entries {
@@ -128,7 +128,7 @@ func LoadPatterns(directory string) ([]Pattern, error) {
 	for _, file := range files {
 		data, err := os.ReadFile(file)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not read pattern file %s: %w", file, err)
 		}
 		var pattern Pattern
 		if err := json.Unmarshal(data, &pattern); err != nil {

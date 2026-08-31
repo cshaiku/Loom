@@ -65,7 +65,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 	command, ok := resolveCommand(args[0])
 	if !ok {
-		return fmt.Errorf("unknown command %s", args[0])
+		return fmt.Errorf("unknown command %q; run `loom help` to see available commands or `loom list --json` for agent-readable command metadata", args[0])
 	}
 	if len(args) > 1 && (args[1] == "--help" || args[1] == "-h") {
 		return writeText(manual(command.Command), stdout, runtime)

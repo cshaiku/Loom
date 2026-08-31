@@ -6,6 +6,12 @@ loom_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 output_dir="$loom_root/Examples/Voci/Generated"
 xaml_path="${2:-$voci_root/platform/windows-winui/VociWindows/MainWindow.xaml}"
 
+if [[ ! -f "$xaml_path" ]]; then
+  echo "Loom Voci example error: XAML source not found at $xaml_path" >&2
+  echo "Pass the Voci root as the first argument or a XAML file path as the second argument." >&2
+  exit 1
+fi
+
 mkdir -p "$output_dir"
 
 go run "$loom_root/cmd/loom" inspect:xaml "$xaml_path" --format json --output "$output_dir/layout.json"
