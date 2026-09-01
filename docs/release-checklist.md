@@ -33,11 +33,11 @@ go run ./cmd/loom patterns:lint --json
 
 `v1.0.0` additionally requires:
 
-- implemented `graph:components`;
 - implemented `generate:xaml`;
 - implemented `generate:swiftui`;
 - implemented `generate:contracts`;
-- implemented `project:build`;
+- project builds that include generated fragments and contracts, not only
+  analysis bundles;
 - stable JSON schemas for analysis, transfer, audit, parity, visual parity, and
   generation reports;
 - documented support and deprecation policies;

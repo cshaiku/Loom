@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.24.0 - 2026-09-01
+
+- Implemented `graph:components` for component and dependency discovery across
+  SwiftUI, WinUI XAML, and Qt source trees, with text, JSON, and DOT output.
+- Implemented `project:build` as an analysis-only manifest workflow that emits
+  validation, source analysis, component graph, transfer, parity, and summary
+  artifacts under a guarded output directory.
+- Updated the sample app workflow to produce a component graph and full project
+  build bundle.
+- Added regression coverage for component graph discovery and project build
+  artifact creation.
+- Kept `generate:xaml`, `generate:swiftui`, and `generate:contracts` as the
+  remaining v1.0 generator blockers.
+
 ## 0.23.0 - 2026-09-01
 
 - Clarified the `v1.0.0` product goal as analyzer, generator, and translator.

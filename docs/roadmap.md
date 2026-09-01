@@ -3,11 +3,11 @@
 Loom's `v1.0.0` target is a complete analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt.
 
-The current `0.23.0` release is the analyzer and transfer-planning foundation.
-It validates pattern catalogs, inspects source layouts, compares structural and
-visual parity, audits layout/accessibility risk, and reports deterministic JSON
-for automation. Generator and project workflow commands are cataloged but still
-release-blocking.
+The current `0.24.0` release is the analyzer, transfer-planning,
+component-graph, and analysis-only project build foundation. It validates
+pattern catalogs, inspects source layouts, compares structural and visual
+parity, audits layout/accessibility risk, and reports deterministic JSON for
+automation. Generator commands are cataloged but still release-blocking.
 
 ## Completed Foundation
 
@@ -54,33 +54,34 @@ release-blocking.
 - Font material inspection added for OpenType, TrueType, TrueType Collection,
   WOFF, and installed family names.
 
+### 0.24 - Component Graph And Project Build
+
+- `graph:components` added for source-tree component and dependency discovery.
+- `project:build` added for manifest-directed analysis bundles.
+- Sample workflow now emits component graph and project build artifacts.
+
 ## Current Compatibility Layer
 
-The following commands define the planned generator and project workflow surface
-but remain unavailable in the current Go runtime:
+The remaining generator commands are cataloged but unavailable in the current Go
+runtime:
 
-- `graph:components`
 - `generate:xaml`
 - `generate:swiftui`
 - `generate:contracts`
-- `project:build`
 
 They return deterministic unavailable-command errors so automation can fail
 closed.
 
 ## v1.0.0 Release Blockers
 
-- Implement `graph:components` for reachable layout component and dependency
-  discovery.
 - Implement `generate:xaml` for reviewable WinUI XAML fragments and owned-region
   replacement.
 - Implement `generate:swiftui` for reviewable SwiftUI scaffolds from normalized
   WinUI/Qt source.
 - Implement `generate:contracts` for native behavior, state, action, and
   accessibility handoff reports.
-- Implement `project:build` for manifest-directed translation workflows that
-  emit analysis, generated fragments, contracts, transfer reports, and parity
-  reports.
+- Extend `project:build` beyond analysis-only bundles once generator commands
+  exist, including generated fragments and contracts.
 - Freeze public JSON schemas for analyzer, generator, translator, audit, parity,
   and diagnostics output.
 - Add cross-platform CI and release artifacts for macOS, Linux, and Windows.

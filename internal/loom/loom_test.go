@@ -975,6 +975,105 @@ func TestCLISwiftUIInspectionAndTransfer(t *testing.T) {
 	}
 }
 
+func TestGraphComponentsReportsDependencies(t *testing.T) {
+	dir := t.TempDir()
+	source := `import SwiftUI
+
+struct ContentView: View {
+  var body: some View {
+    VStack {
+      CustomRow()
+      Text("Title")
+    }
+  }
+}
+`
+	if err := os.WriteFile(filepath.Join(dir, "contentview.swift"), []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	child := `import SwiftUI
+
+struct CustomRow: View {
+  var body: some View {
+    Text("Row")
+  }
+}
+`
+	if err := os.WriteFile(filepath.Join(dir, "customrow.swift"), []byte(child), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"graph:components", dir, "--format", "json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	report := ComponentGraphReport{}
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "ok" {
+		t.Fatalf("expected ok graph, got %#v", report)
+	}
+	if len(report.Components) != 2 || len(report.Edges) != 1 {
+		t.Fatalf("expected two components and one edge, got %#v", report)
+	}
+	if report.Edges[0].From != "ContentView" || report.Edges[0].To != "CustomRow" {
+		t.Fatalf("unexpected graph edge: %#v", report.Edges)
+	}
+}
+
+func TestProjectBuildWritesAnalysisBundle(t *testing.T) {
+	dir := t.TempDir()
+	source := `import SwiftUI
+
+struct ContentView: View {
+  var body: some View {
+    VStack {
+      Text("Title")
+      Button("Save") {}
+    }
+  }
+}
+`
+	if err := os.WriteFile(filepath.Join(dir, "contentview.swift"), []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "mainwindow.xaml"), []byte(`<StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"><TextBlock Text="Title" /><Button Content="Save" /></StackPanel>`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{
+  "schema_version": "1",
+  "project": "test app",
+  "source": "contentview.swift",
+  "rootView": "ContentView",
+  "target": "winui3",
+  "existingXaml": "mainwindow.xaml",
+  "components": ["ContentView"]
+}`
+	manifestPath := filepath.Join(dir, "loom.json")
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0644); err != nil {
+		t.Fatal(err)
+	}
+	outputDir := filepath.Join(dir, "build")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"project:build", manifestPath, "--project-root", dir, "--output-dir", outputDir, "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	report := ProjectBuildReport{}
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "warning" {
+		t.Fatalf("expected warning build due transfer/parity review items, got %#v", report)
+	}
+	for _, name := range []string{"manifest-validation.json", "source-analysis.json", "component-graph.json", "source-transfer.json", "existing-xaml-analysis.json", "source-existing-parity.json", "project-summary.json"} {
+		if _, err := os.Stat(filepath.Join(outputDir, name)); err != nil {
+			t.Fatalf("expected artifact %s: %v", name, err)
+		}
+	}
+}
+
 func TestInspectSourceAutoDetectsSwiftUI(t *testing.T) {
 	path := fixtureSwiftUI(t, `Text("Auto")`)
 	var stdout bytes.Buffer
@@ -1194,7 +1293,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.23.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.24.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -1248,7 +1347,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.23.0\r\n" {
+	if got := stdout.String(); got != "loom 0.24.0\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 

@@ -345,13 +345,9 @@ func DiagnosticsProjectConfigSchema() (string, error) {
 }
 
 func DiagnosticsProjectBuild(manifestPath, projectRoot, outputDir string) ([]byte, error) {
-	_ = outputDir
-	report := DiagnosticsProjectConfigValidate(manifestPath, projectRoot)
+	report, err := ProjectBuild(manifestPath, projectRoot, outputDir, false)
 	text, _ := json.MarshalIndent(report, "", "  ")
-	if report.Status != "ok" {
-		return append(text, '\n'), fmt.Errorf("project:build preconditions failed")
-	}
-	return append(text, '\n'), fmt.Errorf("project:build is reserved for catalog parity only and is not yet available in the Go runtime")
+	return append(text, '\n'), err
 }
 
 func InspectErrors(path string, kind, rootView, component, failOn string) LoomErrorInspectionReport {

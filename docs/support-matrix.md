@@ -1,8 +1,8 @@
 # Loom Support Matrix
 
-Loom `0.23.0` is a pre-1.0 analyzer and transfer-planning release. The `v1.0.0`
-target is analyzer, generator, and translator support across SwiftUI, WinUI XAML,
-and Qt.
+Loom `0.24.0` is a pre-1.0 analyzer, transfer-planning, component-graph, and
+analysis-only project build release. The `v1.0.0` target is analyzer,
+generator, and translator support across SwiftUI, WinUI XAML, and Qt.
 
 ## Current Analyzer Support
 
@@ -41,11 +41,11 @@ and Qt.
 | `patterns:transfer` | Implemented | Stable transfer planning across supported source/target pairs. |
 | `inspect:parity` | Implemented | Stable structural parity report. |
 | `inspect:visual-parity` | Implemented foundation | Stable profile-normalized visual parity report. |
-| `graph:components` | Placeholder | Discover reachable layout components and custom dependencies. |
+| `graph:components` | Implemented | Discover source-tree layout components and custom dependencies. |
 | `generate:xaml` | Placeholder | Emit reviewable WinUI XAML and support guarded owned-region replacement. |
 | `generate:swiftui` | Placeholder | Emit reviewable SwiftUI scaffolds. |
 | `generate:contracts` | Placeholder | Emit target native contracts for behavior, state, action, and accessibility. |
-| `project:build` | Placeholder | Run manifest-directed analyzer/generator/translator workflows. |
+| `project:build` | Implemented analysis bundle | Run manifest-directed validation, analysis, graph, transfer, parity, and summary workflows. |
 
 For current releases, generated output should not be advertised as available.
 Transfer reports identify structure, policy decisions, native behavior contracts,

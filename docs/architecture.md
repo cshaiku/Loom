@@ -19,8 +19,9 @@ The `v1.0.0` product is an analyzer, generator, and translator:
 - **Translator**: run manifest-directed source-to-target workflows with transfer,
   parity, accessibility, and generated artifact outputs.
 
-`0.23.0` implements the analyzer and transfer-planning foundation. Generator
-commands are cataloged but remain release-blocking.
+`0.24.0` implements the analyzer, transfer-planning, component-graph, and
+analysis-only project build foundation. Generator commands are cataloged but
+remain release-blocking.
 
 ## Current Go-Owned Surface
 
@@ -36,6 +37,8 @@ commands are cataloged but remain release-blocking.
   dialects.
 - `inspect:visual-parity`: compare profile-normalized visual metrics across
   supported dialects as pre-render visual regression infrastructure.
+- `graph:components`: discover component boundaries and source-tree dependency
+  edges.
 - `inspect:ascii`: render the shared tree as a plain text structure.
 - `inspect:errors`: classify and report source, XAML, manifest, and pattern
   issues.
@@ -44,18 +47,16 @@ commands are cataloged but remain release-blocking.
 - `accessibility:audit`: identify layout design and accessibility risks.
 - `suggestions:os-errors`: return curated fix recommendations.
 - `status`, `verify`, `checks:command-catalog`, `guards:summary`,
-  `config:validate`, `config:schema`, `self-heal:plan`.
+  `config:validate`, `config:schema`, `project:build`, `self-heal:plan`.
 
 ## Catalog Compatibility Placeholders
 
 These are intentionally present in the command catalog but not yet implemented in
 Go:
 
-- `graph:components`
 - `generate:xaml`
 - `generate:swiftui`
 - `generate:contracts`
-- `project:build`
 
 Invocations return a deterministic unavailable-command diagnostic so automation
 fails closed.
@@ -88,6 +89,9 @@ fails closed.
 9. **Accessibility/risk audit**: report missing names, weak interaction targets,
    malformed/redundant structures, unsupported native boundaries, and other
    transfer hazards.
+10. **Project build**: run manifest-directed analysis-only bundles that write
+    validation, source analysis, component graph, transfer, parity, and summary
+    artifacts.
 
 ## v1.0.0 Pipeline
 

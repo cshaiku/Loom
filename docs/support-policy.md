@@ -15,12 +15,12 @@ has actually exercised.
 
 ## Current Support State
 
-`0.22.x` is supported as the current analyzer and transfer-planning line. It is
-not a stable generator/translator release.
+`0.24.x` is supported as the current analyzer, transfer-planning,
+component-graph, and analysis-only project build line. It is not a stable
+generator/translator release.
 
 No stable `v1.0.0` line exists yet. `v1.0.0` is blocked until generation,
-translation, project workflow, release, documentation, and CI evidence are
-complete.
+translation, release, documentation, and CI evidence are complete.
 
 ## Platform Evidence
 

@@ -3,7 +3,8 @@
 Use this guide when working with the Go-only Loom runtime.
 
 Loom's `v1.0.0` target is an analyzer, generator, and translator. The current
-`0.23.0` runtime implements the analyzer and transfer-planning foundation.
+`0.24.0` runtime implements the analyzer, transfer-planning, component graph,
+and analysis-only project build foundation.
 
 ## Preferred workflow
 
@@ -22,6 +23,7 @@ Before touching files:
 - `loom accessibility:audit <xaml-file> --json --fail-on warning`
 - `loom patterns:transfer <swift-file> --from swiftui --to windows --json`
 - `loom inspect:parity <swift-file> --target <qt-file> --from swiftui --to qt --json`
+- `loom graph:components <source-dir> --json`
 
 If these return errors, stop and either fix input or escalate to a human decision.
 
@@ -41,17 +43,14 @@ loom --verbose patterns:validate --json
 
 ## Current Generation Path
 
-Generation and project commands are catalog-compatible only and are not yet
-available in Go:
+Generation commands are catalog-compatible only and are not yet available in Go:
 
 - `generate:xaml`
 - `generate:swiftui`
 - `generate:contracts`
-- `project:build`
-- `graph:components`
 
-When these are available, treat them as write-capable and run with explicit
-output targets.
+Use `project:build` for manifest-directed analysis bundles. It writes outputs to
+`--output-dir`; use `--overwrite` when replacing an existing bundle.
 
 ## Diagnostics and suggestions
 
@@ -75,16 +74,16 @@ Use JSON output for downstream automations and preserve `platform`, `query`, and
 - Use `--line-ending lf` for deterministic cross-OS artifacts, `--line-ending crlf`
   for Windows-facing text files, and `--line-ending native` only when matching
   the current host is explicitly useful.
-- Reserved commands return a deterministic unavailable-command error; do not
-  retry them as implementation steps.
+- Reserved generator commands return a deterministic unavailable-command error;
+  do not retry them as implementation steps.
 - Use `--quiet` when also passing `--output` so successful writes do not add
   extra chatter around file artifacts.
 
 ## Command Availability Policy
 
-- If a command is cataloged as a future-Go feature, stop execution and route the
-  workflow through supported analysis, transfer, audit, and parity commands
-  instead.
+- If a generator command is cataloged as a future-Go feature, stop execution and
+  route the workflow through supported analysis, transfer, audit, graph, project
+  build, and parity commands instead.
 - Keep `--quiet` and `--json` for automation, and always preserve command output
   fields required for machine interpretation.
 

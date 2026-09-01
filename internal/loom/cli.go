@@ -112,7 +112,11 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runInspectParity(args[1:], stdout, stderr, runtime)
 	case "inspect:visual-parity":
 		return runInspectVisualParity(args[1:], stdout, stderr, runtime)
-	case "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
+	case "graph:components":
+		return runGraphComponents(args[1:], stdout, stderr, runtime)
+	case "project:build":
+		return runProjectBuild(args[1:], stdout, stderr, runtime)
+	case "generate:xaml", "generate:swiftui", "generate:contracts":
 		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
@@ -622,6 +626,75 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 		text, _ = prettyJSON(report)
 	}
 	return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
+}
+
+func runGraphComponents(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--root-view": true, "--component": true, "--format": true, "--include": true, "--exclude": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("graph:components requires a source file or directory")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" && format != "dot" {
+		return fmt.Errorf("--format must be text, json, or dot")
+	}
+	report, err := GraphComponents(parsed.Positionals[0], parsed.Values["--root-view"], parsed.Values["--component"], parsed.Values["--include"], parsed.Values["--exclude"])
+	if err != nil {
+		return err
+	}
+	text := ComponentGraphText(report)
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	} else if format == "dot" {
+		text = ComponentGraphDOT(report)
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], parsed.Positionals[0], parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runProjectBuild(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--project-root": true, "--output-dir": true, "--format": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("project:build requires a manifest path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	report, err := ProjectBuild(parsed.Positionals[0], parsed.Values["--project-root"], parsed.Values["--output-dir"], parsed.Bools["--overwrite"])
+	text := ProjectBuildText(report)
+	if format == "json" {
+		text, _ = prettyJSON(report)
+	}
+	if writeErr := writeOrPrint(text, "", stdout, stderr, runtime); writeErr != nil {
+		return writeErr
+	}
+	if err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
 }
 
 func runSuggestions(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {

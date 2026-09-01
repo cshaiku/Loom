@@ -21,6 +21,7 @@ private app code.
 
 Outputs are written to `examples/sampleapp/generated/` and are ignored by git.
 
-The workflow validates the manifest, inspects each source, audits the XAML,
-plans SwiftUI/WinUI/Qt transfers, compares structural parity, and compares
+The workflow validates the manifest, inspects each source, writes a component
+graph, runs the manifest-directed project build bundle, audits the XAML, plans
+SwiftUI/WinUI/Qt transfers, compares structural parity, and compares
 profile-normalized visual metrics.

@@ -70,6 +70,9 @@ write_findings_report() {
 }
 
 write_stdout_report "$output_dir/manifest-validation.json" "$loom_bin" --quiet config:validate "$sample_root/loom.json" --project-root "$sample_root" --format json
+"$loom_bin" --quiet graph:components "$sample_root" --format json --output "$output_dir/component-graph.json" $overwrite_flag
+"$loom_bin" --quiet graph:components "$sample_root" --format dot --output "$output_dir/component-graph.dot" $overwrite_flag
+write_stdout_report "$output_dir/project-build-summary.json" "$loom_bin" --quiet project:build "$sample_root/loom.json" --project-root "$sample_root" --output-dir "$output_dir/project-build" $overwrite_flag --json
 "$loom_bin" --quiet inspect:xaml "$xaml_path" --format json --output "$output_dir/winui-layout.json" $overwrite_flag
 "$loom_bin" --quiet inspect:ascii "$xaml_path" --output "$output_dir/winui-layout.txt" $overwrite_flag
 "$loom_bin" --quiet accessibility:audit "$xaml_path" --format json --output "$output_dir/winui-audit.json" $overwrite_flag

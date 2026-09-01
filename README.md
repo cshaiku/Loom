@@ -1,6 +1,6 @@
 # loom
 
-Version: **0.23.0**
+Version: **0.24.0**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
@@ -8,9 +8,9 @@ diagnostics.
 
 The product goal for `v1.0.0` is an analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
-`0.23.0` release is the analyzer and transfer-planning foundation. Generation
-commands are visible in the catalog as stable targets, but they remain
-release-blocking work for `v1.0.0`.
+`0.24.0` release is the analyzer, transfer-planning, component-graph, and
+analysis-only project build foundation. Generator commands are visible in the
+catalog as stable targets, but they remain release-blocking work for `v1.0.0`.
 
 ## What Loom Does Today
 
@@ -33,6 +33,9 @@ release-blocking work for `v1.0.0`.
 - Audit accessibility/layout quality for unsupported boundaries, small targets,
   malformed or redundant structures, and scan-friendly risks (`accessibility:audit`).
 - Run manifest validation (`config:validate` / `config:schema`).
+- Discover source-tree component dependencies (`graph:components`).
+- Run manifest-directed analysis builds that write validation, analysis, graph,
+  transfer, parity, and summary artifacts (`project:build`).
 - Report errors for source analysis, XAML parsing, manifests, and patterns
   (`inspect:errors`).
 - Provide curated cross-platform error guidance and suggested fixes (`suggestions:os-errors`).
@@ -52,15 +55,13 @@ installed with `make build`, the same catalog is copied to
 `/opt/homebrew/share/loom/patterns` so the installed `loom` command can validate,
 lint, list, export, and transfer-plan against loom's own pattern definitions.
 
-The following commands define the planned generator/translator surface for
-`v1.0.0`. They are retained in the catalog for parity but are intentionally not
-yet implemented in the Go runtime. They return a clear message when invoked:
+The following generator commands define the remaining planned generation surface
+for `v1.0.0`. They are retained in the catalog for parity but are intentionally
+not yet implemented in the Go runtime. They return a clear message when invoked:
 
-- `graph:components`
 - `generate:xaml`
 - `generate:swiftui`
 - `generate:contracts`
-- `project:build`
 
 ## Build And Test
 
@@ -90,10 +91,12 @@ loom inspect:visual-parity contentview.swift --target mainwindow.xaml --source-f
 loom inspect:ascii mainwindow.xaml --output layout.txt
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 loom accessibility:audit mainwindow.xaml --format json --fail-on warning
+loom graph:components examples/sampleapp --format dot --output component-graph.dot
 loom patterns:lint
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos
 loom patterns:transfer contentview.swift --from swiftui --to windows
 loom patterns:transfer mainwindow.qml --from qt --to windows
+loom project:build examples/sampleapp/loom.json --output-dir examples/sampleapp/generated/project-build --overwrite --json
 ```
 
 ## Example Workflow
@@ -102,8 +105,8 @@ loom patterns:transfer mainwindow.qml --from qt --to windows
 ./examples/sampleapp/analyze-sample-app.sh --overwrite
 ```
 
-The sample produces analysis, audit, transfer, parity, and visual-parity reports
-under `examples/sampleapp/generated/`.
+The sample produces analysis, audit, transfer, component graph, project build,
+parity, and visual-parity reports under `examples/sampleapp/generated/`.
 
 ## Repository Layout
 
@@ -139,4 +142,4 @@ Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 4. Review [TODO.md](TODO.md) before declaring `v1.0.0`.
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
-   `git tag -a v0.23.0 -m "public pre-1.0 analyzer release"; git push --tags`.
+   `git tag -a v0.24.0 -m "pre-1.0 analyzer project build release"; git push --tags`.
