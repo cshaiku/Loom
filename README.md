@@ -1,6 +1,6 @@
 # loom
 
-Version: **0.25.0-dev**
+Version: **1.0.0**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
@@ -8,10 +8,9 @@ diagnostics.
 
 The product goal for `v1.0.0` is an analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
-`0.24.0` release is the analyzer, transfer-planning, component-graph, and
-analysis-only project build foundation. On `main`, reviewable generator
-scaffolds and project build generator artifacts are now implemented toward the
-`v1.0.0` release.
+`1.0.0` release includes analyzer reports, transfer planning, component graphs,
+reviewable generator scaffolds, target contracts, and manifest-directed project
+build bundles.
 
 ## What Loom Does Today
 

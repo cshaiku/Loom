@@ -1,12 +1,11 @@
 # Loom Roadmap
 
-Loom's `v1.0.0` target is a complete analyzer, generator, and translator for
-moving UI layout intent between SwiftUI, WinUI XAML, and Qt.
+Loom `v1.0.0` is a complete analyzer, generator, and translator for moving UI
+layout intent between SwiftUI, WinUI XAML, and Qt.
 
-The current `0.24.0` release is the analyzer, transfer-planning,
-component-graph, and analysis-only project build foundation. Main now adds
-reviewable generator scaffolds, target contracts, and project-build generator
-artifacts toward `v1.0.0`.
+The `1.0.0` release includes analyzer reports, transfer planning, component
+graphs, reviewable generator scaffolds, target contracts, and project-build
+generator artifacts.
 
 ## Completed Foundation
 
@@ -59,7 +58,7 @@ artifacts toward `v1.0.0`.
 - `project:build` added for manifest-directed analysis bundles.
 - Sample workflow now emits component graph and project build artifacts.
 
-### Main - Generator Scaffolds And Contracts
+### 1.0 - Generator Scaffolds And Contracts
 
 - `generate:xaml` emits reviewable WinUI XAML fragments and supports guarded
   owned-region replacement.
@@ -70,13 +69,11 @@ artifacts toward `v1.0.0`.
 - `project:build` now includes generated XAML, generated SwiftUI, and target
   contract artifacts.
 
-## v1.0.0 Release Blockers
+## After v1.0.0
 
-- Freeze public JSON schemas for analyzer, generator, translator, audit, parity,
-  and diagnostics output.
-- Add cross-platform CI and release artifacts for macOS, Linux, and Windows.
-- Add release evidence for generated artifact reviewability, overwrite guards,
-  malformed input, large input, and platform path behavior.
+- Record tag workflow and native smoke evidence in release notes.
+- Deepen generated code quality beyond conservative scaffolds.
+- Expand native target-specific generation policies.
 
 ## Near-Term Priorities
 

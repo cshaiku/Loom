@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.goos }} ${{ matrix.goarch }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
@@ -19,23 +19,35 @@ jobs:
           - goos: linux
             goarch: amd64
             suffix: linux-amd64
+            runner: ubuntu-latest
+            archive: tar
           - goos: linux
             goarch: arm64
             suffix: linux-arm64
+            runner: ubuntu-24.04-arm
+            archive: tar
           - goos: darwin
             goarch: amd64
             suffix: macos-amd64
+            runner: macos-15-intel
+            archive: tar
           - goos: darwin
             goarch: arm64
             suffix: macos-arm64
+            runner: macos-latest
+            archive: tar
           - goos: windows
             goarch: amd64
             suffix: windows-amd64
             ext: .exe
+            runner: windows-latest
+            archive: zip
           - goos: windows
             goarch: arm64
             suffix: windows-arm64
             ext: .exe
+            runner: windows-11-arm
+            archive: zip
 
     steps:
       - name: Check out
@@ -55,24 +67,31 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
+        shell: bash
         run: |
           mkdir -p dist/loom-${{ matrix.suffix }}
           go build -trimpath -ldflags="-s -w" -o dist/loom-${{ matrix.suffix }}/loom${{ matrix.ext }} ./cmd/loom
           cp -R patterns dist/loom-${{ matrix.suffix }}/patterns
           cp README.md LICENSE VERSION dist/loom-${{ matrix.suffix }}/
 
-      - name: Smoke archive command
-        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
-        run: ./dist/loom-${{ matrix.suffix }}/loom verify --json
+      - name: Native smoke
+        shell: bash
+        run: |
+          ./dist/loom-${{ matrix.suffix }}/loom${{ matrix.ext }} version
+          ./dist/loom-${{ matrix.suffix }}/loom${{ matrix.ext }} verify --json
 
-      - name: Archive
+      - name: Archive Unix
+        if: matrix.archive == 'tar'
+        shell: bash
         run: |
           cd dist
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip -r loom-${{ github.ref_name }}-${{ matrix.suffix }}.zip loom-${{ matrix.suffix }}
-          else
-            tar -czf loom-${{ github.ref_name }}-${{ matrix.suffix }}.tar.gz loom-${{ matrix.suffix }}
-          fi
+          tar -czf loom-${{ github.ref_name }}-${{ matrix.suffix }}.tar.gz loom-${{ matrix.suffix }}
+
+      - name: Archive Windows
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/loom-${{ matrix.suffix }}" -DestinationPath "dist/loom-${{ github.ref_name }}-${{ matrix.suffix }}.zip"
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2

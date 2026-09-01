@@ -1,9 +1,9 @@
 # JSON Schema Contracts
 
-Loom JSON reports use `schema_version: "1"` for the public pre-1.0 and v1.0
-automation contract. Additive fields may appear in minor releases. Existing
-documented fields should not be removed or have their meaning changed without a
-new schema version or deprecation notice.
+Loom JSON reports use `schema_version: "1"` for the v1 automation contract.
+Additive fields may appear in minor releases. Existing documented fields should
+not be removed or have their meaning changed without a new schema version or
+deprecation notice.
 
 ## Common Fields
 

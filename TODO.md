@@ -1,11 +1,9 @@
 # TODO
 
-## v1.0.0 Release Blockers
+## v1.0.0 Release Evidence Follow-Up
 
-- Run the tag release workflow and attach cross-platform release artifacts for
-  macOS, Linux, and Windows.
-- Add native smoke evidence for supported release archives after the tag release
-  workflow runs.
+- Record tag workflow and native smoke evidence in `docs/release-evidence.md`
+  after the `v1.0.0` release workflow completes.
 
 ## Open-Source Follow-Ups
 

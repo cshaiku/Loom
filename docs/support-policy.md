@@ -15,13 +15,10 @@ has actually exercised.
 
 ## Current Support State
 
-`0.24.x` is supported as the current analyzer, transfer-planning,
-component-graph, and analysis-only project build line. Generator scaffolds on
-main are pre-release until a tagged release includes schema and platform
-evidence.
-
-No stable `v1.0.0` line exists yet. `v1.0.0` is blocked until generation,
-translation, release, documentation, and CI evidence are complete.
+`1.0.x` is supported as the current stable analyzer, generator, translator, and
+project build line. The support claim covers the documented command behavior,
+JSON schema contract, write guards, and release artifacts for supported
+platforms.
 
 ## Platform Evidence
 
@@ -29,8 +26,8 @@ The Go runtime is intended for:
 
 | Operating system | Architecture | Status |
 | --- | --- | --- |
-| macOS | amd64, arm64 | Local development target; release smoke required. |
-| Linux | amd64, arm64 | CI and release smoke required. |
+| macOS | amd64, arm64 | CI and native release smoke required. |
+| Linux | amd64, arm64 | CI and native release smoke required. |
 | Windows | amd64, arm64 | CI and native release smoke required. |
 
 Cross-compilation alone is not enough to call a platform supported. A supported

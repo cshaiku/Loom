@@ -2,12 +2,10 @@
 
 ## 2026-09-01 Open-Source And v1.0 Readiness
 
-Loom is intended to be an analyzer, generator, and translator. The current
-`0.24.0` codebase has a healthy analyzer, transfer-planning, component graph,
-and analysis-only project build foundation. Main now has conservative
-reviewable generator scaffolds and contract reports. Public release docs should
-therefore describe `0.24.x` as pre-1.0 and reserve `v1.0.0` for a tested,
-packaged, schema-frozen analyze-generate-translate product.
+Loom is intended to be an analyzer, generator, and translator. The `1.0.0`
+codebase includes analyzer reports, transfer planning, component graphs,
+reviewable generator scaffolds, contract reports, project build bundles, schema
+documentation, and release evidence tracking.
 
 Guidance taken from Vigil and SDF release discipline:
 

@@ -1,8 +1,8 @@
 # Loom Support Matrix
 
-Loom `0.24.0` is a pre-1.0 analyzer, transfer-planning, component-graph, and
-analysis-only project build release. Main now includes reviewable generator
-scaffolds and contract artifacts toward `v1.0.0`.
+Loom `1.0.0` supports analyzer reports, transfer planning, component graphs,
+reviewable generator scaffolds, target contracts, and manifest-directed project
+build bundles across SwiftUI, WinUI XAML, and Qt source inputs.
 
 ## Current Analyzer Support
 

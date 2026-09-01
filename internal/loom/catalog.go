@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const Version = "0.25.0-dev"
+const Version = "1.0.0"
 
 type CommandAccess string
 

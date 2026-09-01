@@ -2,10 +2,9 @@
 
 Use this guide when working with the Go-only Loom runtime.
 
-Loom's `v1.0.0` target is an analyzer, generator, and translator. The current
-`0.24.0` runtime implements the analyzer, transfer-planning, component graph,
-and analysis-only project build foundation. Main also includes conservative
-generator scaffolds and contract reports toward `v1.0.0`.
+Loom `v1.0.0` is an analyzer, generator, and translator. The runtime implements
+analysis, transfer planning, component graphs, conservative generator scaffolds,
+contract reports, and project build bundles.
 
 ## Preferred workflow
 

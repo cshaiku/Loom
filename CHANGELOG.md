@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 - 2026-09-01
 
 - Implemented Go-native `generate:xaml` for reviewable WinUI XAML fragments and
   guarded owned-region replacement.

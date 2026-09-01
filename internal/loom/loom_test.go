@@ -1293,7 +1293,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.25.0-dev" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 1.0.0" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -1347,7 +1347,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.25.0-dev\r\n" {
+	if got := stdout.String(); got != "loom 1.0.0\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 

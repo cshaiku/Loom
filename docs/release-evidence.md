@@ -1,7 +1,6 @@
 # Release Evidence
 
-Use this file to record the evidence for each release candidate before tagging a
-stable Loom release.
+Use this file to record the evidence for each stable Loom release.
 
 ## Required Gates
 
@@ -27,9 +26,9 @@ As of the current `main` work:
   contract reports, owned-region replacement, overwrite guards, malformed
   source reporting, and nested output path creation.
 
-## v1.0 Release Candidate Notes
+## v1.0.0 Release Notes
 
-Before tagging `v1.0.0`, record:
+After the `v1.0.0` tag workflow completes, record:
 
 - commit SHA;
 - CI run URL;

@@ -19,10 +19,9 @@ The `v1.0.0` product is an analyzer, generator, and translator:
 - **Translator**: run manifest-directed source-to-target workflows with transfer,
   parity, accessibility, and generated artifact outputs.
 
-`0.24.0` implements the analyzer, transfer-planning, component-graph, and
-analysis-only project build foundation. Main now implements conservative
-generator scaffolds, target contracts, and generated artifacts in project
-builds toward `v1.0.0`.
+`1.0.0` implements analyzer reports, transfer planning, component graphs,
+conservative generator scaffolds, target contracts, and generated artifacts in
+project builds.
 
 ## Current Go-Owned Surface
 
