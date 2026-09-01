@@ -3,7 +3,7 @@
 Loom's `v1.0.0` target is a complete analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt.
 
-The current `0.22.0` release is the analyzer and transfer-planning foundation.
+The current `0.23.0` release is the analyzer and transfer-planning foundation.
 It validates pattern catalogs, inspects source layouts, compares structural and
 visual parity, audits layout/accessibility risk, and reports deterministic JSON
 for automation. Generator and project workflow commands are cataloged but still

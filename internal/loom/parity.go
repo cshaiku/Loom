@@ -2,6 +2,7 @@ package loom
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -33,9 +34,11 @@ func InspectParity(source, target, sourcePlatform, targetPlatform string) (Parit
 	if err != nil {
 		return ParityReport{}, err
 	}
-	sourceKinds := flattenedKinds(sourceAnalysis.Layout)
-	targetKinds := flattenedKinds(targetAnalysis.Layout)
-	findings := compareKindSequences(sourceKinds, targetKinds)
+	sourceNodes := parityEntries(sourceAnalysis.Layout)
+	targetNodes := parityEntries(targetAnalysis.Layout)
+	findings := diagnosticParityFindings("source", sourceAnalysis.Diagnostics)
+	findings = append(findings, diagnosticParityFindings("target", targetAnalysis.Diagnostics)...)
+	findings = append(findings, compareParityEntries(sourceNodes, targetNodes)...)
 	status := "ok"
 	for _, finding := range findings {
 		if finding.Severity == SeverityError {
@@ -46,7 +49,7 @@ func InspectParity(source, target, sourcePlatform, targetPlatform string) (Parit
 			status = "warning"
 		}
 	}
-	return ParityReport{"1", status, source, target, sourceAnalysis.Layout.Properties["sourceDialect"], targetAnalysis.Layout.Properties["sourceDialect"], len(sourceKinds), len(targetKinds), findings}, nil
+	return ParityReport{"1", status, source, target, sourceAnalysis.Layout.Properties["sourceDialect"], targetAnalysis.Layout.Properties["sourceDialect"], len(sourceNodes), len(targetNodes), findings}, nil
 }
 
 func flattenedKinds(root Node) []NodeKind {
@@ -85,6 +88,113 @@ func compareKindSequences(source, target []NodeKind) []ParityFinding {
 		return []ParityFinding{}
 	}
 	return findings
+}
+
+type parityEntry struct {
+	Path           string
+	Kind           NodeKind
+	ChildCount     int
+	Arguments      string
+	VisibleLabel   string
+	AccessibleName string
+	Identifier     string
+	Placeholder    string
+	Resource       string
+	Decorative     bool
+	Properties     map[string]string
+}
+
+func parityEntries(root Node) []parityEntry {
+	entries := []parityEntry{}
+	var walk func(Node, string)
+	walk = func(node Node, path string) {
+		entries = append(entries, parityEntry{
+			Path:           path,
+			Kind:           node.Kind,
+			ChildCount:     len(node.Children),
+			Arguments:      node.Arguments,
+			VisibleLabel:   node.VisibleLabel,
+			AccessibleName: node.AccessibleName,
+			Identifier:     node.Identifier,
+			Placeholder:    node.Placeholder,
+			Resource:       node.Resource,
+			Decorative:     node.Decorative,
+			Properties:     parityProperties(node.Properties),
+		})
+		siblingCounts := map[NodeKind]int{}
+		for _, child := range node.Children {
+			index := siblingCounts[child.Kind]
+			siblingCounts[child.Kind]++
+			walk(child, path+"/"+indexedPathPart(child.Kind, index))
+		}
+	}
+	siblingCounts := map[NodeKind]int{}
+	for _, child := range root.Children {
+		index := siblingCounts[child.Kind]
+		siblingCounts[child.Kind]++
+		walk(child, "/"+indexedPathPart(child.Kind, index))
+	}
+	return entries
+}
+
+func compareParityEntries(source, target []parityEntry) []ParityFinding {
+	findings := []ParityFinding{}
+	if len(source) != len(target) {
+		findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.COUNT", Path: "/", Message: fmt.Sprintf("source has %d layout nodes; target has %d.", len(source), len(target))})
+	}
+	targetByPath := map[string]parityEntry{}
+	for _, entry := range target {
+		targetByPath[entry.Path] = entry
+	}
+	for _, sourceEntry := range source {
+		targetEntry, ok := targetByPath[sourceEntry.Path]
+		if !ok {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.PATH", Path: sourceEntry.Path, Message: "source node has no matching target node at the same tree path."})
+			continue
+		}
+		if sourceEntry.Kind != targetEntry.Kind {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.KIND", Path: sourceEntry.Path, Message: fmt.Sprintf("source kind %s differs from target kind %s.", sourceEntry.Kind, targetEntry.Kind)})
+		}
+		if sourceEntry.ChildCount != targetEntry.ChildCount {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.CHILDREN", Path: sourceEntry.Path, Message: fmt.Sprintf("source has %d children; target has %d.", sourceEntry.ChildCount, targetEntry.ChildCount)})
+		}
+		if !reflect.DeepEqual(sourceEntry.Properties, targetEntry.Properties) {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.PROPERTIES", Path: sourceEntry.Path, Message: "semantic properties differ."})
+		}
+		if sourceEntry.VisibleLabel != targetEntry.VisibleLabel || sourceEntry.AccessibleName != targetEntry.AccessibleName || sourceEntry.Placeholder != targetEntry.Placeholder || sourceEntry.Resource != targetEntry.Resource || sourceEntry.Decorative != targetEntry.Decorative {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.SEMANTICS", Path: sourceEntry.Path, Message: "semantic label, accessibility, placeholder, resource, or decorative metadata differs."})
+		}
+	}
+	sourceByPath := map[string]bool{}
+	for _, entry := range source {
+		sourceByPath[entry.Path] = true
+	}
+	for _, targetEntry := range target {
+		if !sourceByPath[targetEntry.Path] {
+			findings = append(findings, ParityFinding{Severity: SeverityWarning, Code: "PARITY.PATH", Path: targetEntry.Path, Message: "target node has no matching source node at the same tree path."})
+		}
+	}
+	return findings
+}
+
+func diagnosticParityFindings(side string, diagnostics []Diagnostic) []ParityFinding {
+	findings := []ParityFinding{}
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == SeverityError {
+			findings = append(findings, ParityFinding{Severity: SeverityError, Code: "PARITY.INVALID_SOURCE", Path: "/", Message: fmt.Sprintf("%s analysis has error diagnostic %s: %s", side, diagnostic.Code, diagnostic.Message)})
+		}
+	}
+	return findings
+}
+
+func parityProperties(properties map[string]string) map[string]string {
+	out := map[string]string{}
+	for _, key := range []string{"componentBoundary", "requiresNativeImplementation", "xaml.Grid.RowDefinitions", "xaml.Grid.ColumnDefinitions"} {
+		if value := properties[key]; value != "" {
+			out[key] = value
+		}
+	}
+	return out
 }
 
 func ParityText(report ParityReport) string {

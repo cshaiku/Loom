@@ -44,7 +44,7 @@ type OSErrorSuggestionReport struct {
 }
 
 var osSuggestionCatalog = []OSErrorSuggestion{
-	{PlatformSwiftUI, "syntax", "SWIFT.PARSE", "Swift parser diagnostics mean the SwiftUI body cannot be reliably extracted.", []SuggestedFix{{FixUser, "Fix source syntax first", "Do not transfer until source parses cleanly.", ""}, {FixAgent, "Reduce failing expression", "Check bracket/brace balance, string literals, trailing closures, and modifier chains.", "loom inspect:errors <source-file> --kind swift --json"}}, "Apple Swift language and SwiftSyntax diagnostics"},
+	{PlatformSwiftUI, "syntax", "SWIFTUI.PARSE", "Swift parser diagnostics mean the SwiftUI body cannot be reliably extracted.", []SuggestedFix{{FixUser, "Fix source syntax first", "Do not transfer until source parses cleanly.", ""}, {FixAgent, "Reduce failing expression", "Check bracket/brace balance, string literals, trailing closures, and modifier chains.", "loom inspect:errors <source-file> --kind swift --json"}}, "Apple Swift language and SwiftSyntax diagnostics"},
 	{PlatformSwiftUI, "accessibility", "accessibilityLabel", "Icon-only or non-text SwiftUI controls need explicit labels.", []SuggestedFix{{FixUser, "Name the control", "Provide the phrase users should hear.", ""}, {FixAgent, "Add SwiftUI accessibility label", "Use .accessibilityLabel and rerun audit after source inspection is available.", ""}}, "Apple SwiftUI accessibilityLabel documentation"},
 	{PlatformXAML, "parse", "LOOM.XAML", "XAML parse/load failures usually come from malformed XML, namespace issues, property elements, or unresolved resources.", []SuggestedFix{{FixUser, "Confirm intended XAML structure", "Review whether the element belongs in markup or native code-behind.", ""}, {FixAgent, "Check XAML syntax", "Validate matching tags, namespace declarations, property elements, and attribute quoting.", "loom inspect:errors <source.xaml> --kind xaml --json"}}, "Microsoft WinUI/XAML parse exception guidance"},
 	{PlatformWinUI3, "native-boundary", "XAML.UNSUPPORTED_COMPONENT_BOUNDARY", "a native WinUI control has no loom semantic mapping and was preserved as a component boundary.", []SuggestedFix{{FixUser, "choose native-boundary strategy", "keep native, replace with portable layout, or approve a new pattern mapping.", ""}, {FixAgent, "document boundary contract", "keep as handwritten WinUI and record source/target expectations.", "loom patterns:transfer <source.xaml> --from winui3 --to macos --format json"}}, "loom native WinUI component-boundary policy"},
@@ -54,12 +54,20 @@ var osSuggestionCatalog = []OSErrorSuggestion{
 }
 
 func OSErrorSuggestions(platform, query string) OSErrorSuggestionReport {
+	platform = canonicalSuggestionPlatform(platform)
 	out := []OSErrorSuggestion{}
 	for _, suggestion := range osSuggestionCatalog {
-		if platform != "" && string(suggestion.Platform) != platform {
+		if platform != "" && string(suggestion.Platform) != platform && !sameSuggestionFamily(platform, string(suggestion.Platform)) {
 			continue
 		}
 		if query != "" {
+			if strings.EqualFold(query, suggestion.Matcher) {
+				out = append(out, suggestion)
+				continue
+			}
+			if looksLikeDiagnosticCode(query) {
+				continue
+			}
 			haystack := strings.ToLower(string(suggestion.Platform) + " " + suggestion.Category + " " + suggestion.Matcher + " " + suggestion.Issue)
 			if !queryMatches(haystack, query) {
 				continue
@@ -74,6 +82,33 @@ func OSErrorSuggestions(platform, query string) OSErrorSuggestionReport {
 		status = "matched"
 	}
 	return OSErrorSuggestionReport{"1", status, OSErrorPlatform(platform), query, out}
+}
+
+func canonicalSuggestionPlatform(platform string) string {
+	switch strings.ToLower(strings.TrimSpace(platform)) {
+	case "swift", "swiftui", "mac", "macos":
+		return "swiftui"
+	case "winui", "winui3":
+		return "winui3"
+	case "windows":
+		return "windows"
+	case "xaml":
+		return "xaml"
+	default:
+		return strings.ToLower(strings.TrimSpace(platform))
+	}
+}
+
+func sameSuggestionFamily(requested, candidate string) bool {
+	if requested == "winui3" {
+		return candidate == "windows" || candidate == "xaml"
+	}
+	return false
+}
+
+func looksLikeDiagnosticCode(query string) bool {
+	query = strings.TrimSpace(query)
+	return strings.Contains(query, ".") && strings.ToUpper(query) == query
 }
 
 func queryMatches(haystack, query string) bool {

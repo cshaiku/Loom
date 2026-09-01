@@ -1,6 +1,7 @@
 package loom
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -133,8 +134,8 @@ func LoadPatterns(directory string) ([]Pattern, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read pattern file %s: %w", file, err)
 		}
-		var pattern Pattern
-		if err := json.Unmarshal(data, &pattern); err != nil {
+		pattern, err := decodePattern(data)
+		if err != nil {
 			return nil, fmt.Errorf("%s: %w", filepath.Base(file), err)
 		}
 		patterns = append(patterns, pattern)
@@ -177,39 +178,90 @@ func ResolvePatternDirectory(directory string) string {
 func ValidatePatterns(directory string) PatternValidationReport {
 	resolved := ResolvePatternDirectory(directory)
 	abs, _ := filepath.Abs(resolved)
-	patterns, err := LoadPatterns(resolved)
+	files, err := patternFiles(resolved)
 	if err != nil {
 		return PatternValidationReport{"1", "error", abs, 0, []PatternIssue{{SeverityError, "PATTERN001", abs, "pattern directory cannot be read."}}}
 	}
 	issues := []PatternIssue{}
-	if len(patterns) == 0 {
+	if len(files) == 0 {
 		issues = append(issues, PatternIssue{SeverityError, "PATTERN003", abs, "No .pattern.json files were found."})
 	}
 	ids := map[string]bool{}
 	kinds := map[NodeKind]bool{}
-	for _, pattern := range patterns {
-		path := pattern.ID + ".pattern.json"
+	patternCount := 0
+	for _, file := range files {
+		path := filepath.Base(file)
+		data, err := os.ReadFile(file)
+		if err != nil {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN002", path, "pattern file cannot be read."})
+			continue
+		}
+		pattern, err := decodePattern(data)
+		if err != nil {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN002", path, err.Error()})
+			continue
+		}
+		patternCount++
+		if pattern.ID != "" {
+			path = pattern.ID + ".pattern.json"
+		}
 		if pattern.SchemaVersion != "1" {
 			issues = append(issues, PatternIssue{SeverityError, "PATTERN004", path, "schema_version must be 1."})
 		}
-		if pattern.ID == "" || strings.Contains(pattern.ID, "_") {
+		if !validPatternID(pattern.ID) {
 			issues = append(issues, PatternIssue{SeverityError, "PATTERN005", path, "id must use lowercase letters, numbers, and hyphens."})
+		}
+		if !validSemver(pattern.Version) {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN006", path, "version must be a semantic version such as 1.0.0."})
+		}
+		if !validPatternStatus(pattern.Status) {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN010", path, "status must be draft, stable, or deprecated."})
 		}
 		if ids[pattern.ID] {
 			issues = append(issues, PatternIssue{SeverityError, "PATTERN007", path, "Duplicate pattern id " + pattern.ID + "."})
 		}
 		ids[pattern.ID] = true
+		if !knownNodeKind(pattern.Kind) {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN011", path, "unknown semantic kind " + string(pattern.Kind) + "."})
+		}
 		if kinds[pattern.Kind] {
 			issues = append(issues, PatternIssue{SeverityError, "PATTERN008", path, "Duplicate semantic kind " + string(pattern.Kind) + "."})
 		}
 		kinds[pattern.Kind] = true
-		if pattern.Intent.Summary == "" || pattern.Semantics.Role == "" || pattern.Category == "" {
-			issues = append(issues, PatternIssue{SeverityError, "PATTERN009", path, "Intent, semantic role, and category must be non-empty."})
+		if pattern.Name == "" || pattern.Intent.Summary == "" || pattern.Semantics.Role == "" || pattern.Semantics.ChildPolicy == "" || pattern.Semantics.Sizing == "" || pattern.Semantics.Ordering == "" || pattern.Category == "" {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN009", path, "name, intent, semantic role, child policy, sizing, ordering, and category must be non-empty."})
+		}
+		if pattern.Accessibility.Role == "" || pattern.Accessibility.NameSource == "" || pattern.Accessibility.FocusBehavior == "" {
+			issues = append(issues, PatternIssue{SeverityError, "PATTERN014", path, "accessibility role, nameSource, and focusBehavior are required."})
 		}
 		if len(pattern.Mappings) == 0 {
 			issues = append(issues, PatternIssue{SeverityError, "PATTERN015", path, "Mappings must be non-empty."})
 		}
+		platforms := map[string]bool{}
+		for _, mapping := range pattern.Mappings {
+			if !validPatternPlatform(mapping.Platform) {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN016", path, "unknown platform " + mapping.Platform + "."})
+			}
+			if platforms[mapping.Platform] {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN017", path, "duplicate platform mapping " + mapping.Platform + "."})
+			}
+			platforms[mapping.Platform] = true
+			if len(mapping.Constructs) == 0 || mapping.Strategy == "" {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN018", path, "mapping constructs and strategy must be non-empty."})
+			}
+		}
+		attributeNames := map[string]bool{}
 		for _, attribute := range pattern.Attributes {
+			if attribute.Name == "" || attribute.ValueType == "" || attribute.Description == "" {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN019", path + "#attributes." + attribute.Name, "attribute name, valueType, and description are required."})
+			}
+			if attributeNames[attribute.Name] {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN020", path + "#attributes." + attribute.Name, "duplicate attribute name."})
+			}
+			attributeNames[attribute.Name] = true
+			if !validAttributeDefault(attribute) {
+				issues = append(issues, PatternIssue{SeverityError, "PATTERN021", path + "#attributes." + attribute.Name, "defaultValue must match allowedValues and numeric bounds when supplied."})
+			}
 			if attribute.Minimum != nil && attribute.Maximum != nil && *attribute.Minimum > *attribute.Maximum {
 				issues = append(issues, PatternIssue{SeverityError, "PATTERN012", path + "#attributes." + attribute.Name, "minimum cannot exceed maximum."})
 			}
@@ -219,7 +271,101 @@ func ValidatePatterns(directory string) PatternValidationReport {
 	if len(issues) > 0 {
 		status = "error"
 	}
-	return PatternValidationReport{"1", status, abs, len(patterns), issues}
+	return PatternValidationReport{"1", status, abs, patternCount, issues}
+}
+
+func patternFiles(directory string) ([]string, error) {
+	directory = ResolvePatternDirectory(directory)
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".pattern.json") {
+			files = append(files, filepath.Join(directory, entry.Name()))
+		}
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
+func decodePattern(data []byte) (Pattern, error) {
+	var pattern Pattern
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&pattern); err != nil {
+		return Pattern{}, err
+	}
+	return pattern, nil
+}
+
+func validPatternID(id string) bool {
+	if id == "" || strings.HasPrefix(id, "-") || strings.HasSuffix(id, "-") {
+		return false
+	}
+	for _, r := range id {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func validSemver(version string) bool {
+	parts := strings.Split(version, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func validPatternStatus(status PatternStatus) bool {
+	switch status {
+	case "draft", "stable", "deprecated":
+		return true
+	default:
+		return false
+	}
+}
+
+func knownNodeKind(kind NodeKind) bool {
+	switch kind {
+	case KindRoot, KindGeometryReader, KindVerticalStack, KindHorizontalStack, KindOverlayStack, KindSplitView, KindGrid, KindScrollView, KindList, KindText, KindTextField, KindButton, KindImage, KindSlider, KindToggle, KindSpacer, KindDivider, KindConditional, KindLoop, KindColor, KindComponent, KindUnsupported:
+		return true
+	default:
+		return false
+	}
+}
+
+func validAttributeDefault(attribute PatternAttribute) bool {
+	if attribute.DefaultValue == "" {
+		return true
+	}
+	if len(attribute.AllowedValues) > 0 {
+		found := false
+		for _, value := range attribute.AllowedValues {
+			if value == attribute.DefaultValue {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func LintPatterns(directory string) PatternValidationReport {

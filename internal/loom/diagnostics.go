@@ -267,9 +267,8 @@ func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestVali
 	}
 
 	if manifest.SchemaVersion == "" {
-		manifest.SchemaVersion = "1"
-	}
-	if manifest.SchemaVersion != "1" {
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.schema_version.missing", Path: "schema_version", Detail: "schema_version is required.", Fix: "Set schema_version to \"1\"."})
+	} else if manifest.SchemaVersion != "1" {
 		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.schema_version", Path: "schema_version", Detail: "Expected schema_version 1.", Fix: "Set schema_version to \"1\"."})
 	}
 	if strings.TrimSpace(manifest.Project) == "" {

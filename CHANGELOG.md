@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.23.0 - 2026-09-01
 
 - Clarified the `v1.0.0` product goal as analyzer, generator, and translator.
 - Added public contribution, security, conduct, support, testing, release,
@@ -10,6 +10,8 @@
 - Expanded the sample app with a manifest, visual profile, README, repeatable
   report workflow, and generated analysis/parity/transfer output targets.
 - Changed Loom's repository license from MIT to 0BSD.
+- Prepared public GitHub and `sltd.ca` release positioning for the pre-1.0
+  analyzer and transfer-planning line.
 
 ## 0.22.0 - 2026-08-31
 

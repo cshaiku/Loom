@@ -1,6 +1,6 @@
 # Loom Support Matrix
 
-Loom `0.22.0` is a pre-1.0 analyzer and transfer-planning release. The `v1.0.0`
+Loom `0.23.0` is a pre-1.0 analyzer and transfer-planning release. The `v1.0.0`
 target is analyzer, generator, and translator support across SwiftUI, WinUI XAML,
 and Qt.
 

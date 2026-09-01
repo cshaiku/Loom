@@ -53,6 +53,11 @@ type AuditReport struct {
 
 func Audit(analysis Analysis) AuditReport {
 	findings := []AuditFinding{}
+	for _, diagnostic := range analysis.Diagnostics {
+		if diagnostic.Severity == SeverityError {
+			findings = append(findings, auditFinding(SeverityError, AuditMalformed, "AUDIT001", "/", KindRoot, diagnostic.Message, "Fix source parse errors before relying on the audit report."))
+		}
+	}
 	var walk func(Node, string, int, []NodeKind)
 	walk = func(node Node, path string, depth int, ancestors []NodeKind) {
 		if node.Properties["componentBoundary"] == "native-winui-control" {
@@ -78,7 +83,7 @@ func Audit(analysis Analysis) AuditReport {
 			}
 		case KindTextField:
 			if accessibleName(node) == "" {
-				findings = append(findings, auditFinding(SeverityError, AuditAccessibility, "AUDIT031", path, node.Kind, "Text input has no label, placeholder, or accessible name.", "Provide a stable label or target accessibility name."))
+				findings = append(findings, auditFinding(SeverityError, AuditAccessibility, "AUDIT031", path, node.Kind, "Text input has no stable label or accessible name.", "Provide a visible label or target accessibility name; placeholders are treated as transient hints."))
 			}
 		case KindColor:
 			findings = append(findings, auditFinding(SeverityInfo, AuditAccessibility, "AUDIT040", path, node.Kind, "Color surface has no inherent accessible meaning.", "Ensure color is decorative or that meaning is also conveyed by text, icon label, or state."))
@@ -93,12 +98,18 @@ func Audit(analysis Analysis) AuditReport {
 			}
 		}
 		auditTargetSize(node, path, &findings)
+		siblingCounts := map[NodeKind]int{}
 		for _, child := range node.Children {
-			walk(child, path+"/"+string(child.Kind), depth+1, append(ancestors, node.Kind))
+			index := siblingCounts[child.Kind]
+			siblingCounts[child.Kind]++
+			walk(child, path+"/"+indexedPathPart(child.Kind, index), depth+1, append(ancestors, node.Kind))
 		}
 	}
+	siblingCounts := map[NodeKind]int{}
 	for _, child := range analysis.Layout.Children {
-		walk(child, string(child.Kind), 1, nil)
+		index := siblingCounts[child.Kind]
+		siblingCounts[child.Kind]++
+		walk(child, indexedPathPart(child.Kind, index), 1, nil)
 	}
 	summary := summarizeAudit(findings)
 	status := "ok"
@@ -182,20 +193,26 @@ func isContainer(kind NodeKind) bool {
 }
 
 func accessibleName(node Node) string {
-	if value := strings.Trim(node.Arguments, `"`); value != "" {
+	if value := strings.TrimSpace(node.AccessibleName); value != "" {
+		return value
+	}
+	if value := strings.TrimSpace(node.VisibleLabel); value != "" {
 		return value
 	}
 	for _, child := range node.Children {
 		if child.Kind == KindText {
-			if value := strings.Trim(child.Arguments, `"`); value != "" {
+			if value := strings.TrimSpace(firstNonEmpty(child.VisibleLabel, strings.Trim(child.Arguments, `"`))); value != "" {
 				return value
 			}
 		}
 	}
-	return firstNonEmpty(node.Properties["xaml.Name"], node.Properties["xaml.AutomationId"], node.Properties["xaml.AutomationProperties.Name"])
+	return strings.TrimSpace(node.Properties["xaml.AutomationProperties.Name"])
 }
 
 func hasAccessibility(node Node) bool {
+	if node.Decorative {
+		return true
+	}
 	if accessibleName(node) != "" {
 		return true
 	}
@@ -222,9 +239,13 @@ func auditTargetSize(node Node, path string, findings *[]AuditFinding) {
 			}
 			label := strings.TrimSpace(pieces[0])
 			value, err := strconv.ParseFloat(strings.TrimSpace(pieces[1]), 64)
-			if err == nil && value > 0 && value < 44 && (label == "width" || label == "height" || label == "minWidth" || label == "minHeight") {
+			if err == nil && value < 44 && (label == "width" || label == "height" || label == "minWidth" || label == "minHeight") {
 				*findings = append(*findings, auditFinding(SeverityWarning, AuditAccessibility, "AUDIT060", path, node.Kind, "Interactive control target is below the 44-unit minimum target heuristic.", "Increase the effective hit target to at least 44 by 44."))
 			}
 		}
 	}
+}
+
+func indexedPathPart(kind NodeKind, index int) string {
+	return fmt.Sprintf("%s[%d]", kind, index)
 }

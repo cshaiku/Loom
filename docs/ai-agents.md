@@ -3,7 +3,7 @@
 Use this guide when working with the Go-only Loom runtime.
 
 Loom's `v1.0.0` target is an analyzer, generator, and translator. The current
-`0.22.0` runtime implements the analyzer and transfer-planning foundation.
+`0.23.0` runtime implements the analyzer and transfer-planning foundation.
 
 ## Preferred workflow
 

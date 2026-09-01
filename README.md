@@ -1,6 +1,6 @@
 # loom
 
-Version: **0.22.0**
+Version: **0.23.0**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
@@ -8,7 +8,7 @@ diagnostics.
 
 The product goal for `v1.0.0` is an analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
-`0.22.0` release is the analyzer and transfer-planning foundation. Generation
+`0.23.0` release is the analyzer and transfer-planning foundation. Generation
 commands are visible in the catalog as stable targets, but they remain
 release-blocking work for `v1.0.0`.
 
@@ -139,4 +139,4 @@ Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 4. Review [TODO.md](TODO.md) before declaring `v1.0.0`.
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
-   `git tag -a v0.22.0 -m "qt inspection and cross-platform parity"; git push --tags`.
+   `git tag -a v0.23.0 -m "public pre-1.0 analyzer release"; git push --tags`.

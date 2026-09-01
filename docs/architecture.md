@@ -19,7 +19,7 @@ The `v1.0.0` product is an analyzer, generator, and translator:
 - **Translator**: run manifest-directed source-to-target workflows with transfer,
   parity, accessibility, and generated artifact outputs.
 
-`0.22.0` implements the analyzer and transfer-planning foundation. Generator
+`0.23.0` implements the analyzer and transfer-planning foundation. Generator
 commands are cataloged but remain release-blocking.
 
 ## Current Go-Owned Surface

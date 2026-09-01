@@ -33,12 +33,18 @@ type Modifier struct {
 }
 
 type Node struct {
-	Kind       NodeKind          `json:"kind"`
-	Expression string            `json:"expression"`
-	Arguments  string            `json:"arguments,omitempty"`
-	Properties map[string]string `json:"properties,omitempty"`
-	Modifiers  []Modifier        `json:"modifiers,omitempty"`
-	Children   []Node            `json:"children,omitempty"`
+	Kind           NodeKind          `json:"kind"`
+	Expression     string            `json:"expression"`
+	Arguments      string            `json:"arguments,omitempty"`
+	VisibleLabel   string            `json:"visibleLabel,omitempty"`
+	AccessibleName string            `json:"accessibleName,omitempty"`
+	Identifier     string            `json:"identifier,omitempty"`
+	Placeholder    string            `json:"placeholder,omitempty"`
+	Resource       string            `json:"resource,omitempty"`
+	Decorative     bool              `json:"decorative,omitempty"`
+	Properties     map[string]string `json:"properties,omitempty"`
+	Modifiers      []Modifier        `json:"modifiers,omitempty"`
+	Children       []Node            `json:"children,omitempty"`
 }
 
 type DiagnosticSeverity string

@@ -2,7 +2,6 @@ package loom
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"unicode"
 )
@@ -28,12 +27,13 @@ type swiftParser struct {
 }
 
 func AnalyzeSwiftUI(path string) (Analysis, error) {
-	data, err := os.ReadFile(path)
+	data, err := readSourceFile(path, "SwiftUI source")
 	if err != nil {
 		return Analysis{}, fmt.Errorf("could not read SwiftUI source at %s: %w", path, err)
 	}
-	tokens := tokenizeSwift(string(data))
+	tokens, tokenDiagnostics := tokenizeSwift(string(data))
 	parser := &swiftParser{tokens: tokens}
+	parser.diagnostics = append(parser.diagnostics, tokenDiagnostics...)
 	parser.diagnostics = append(parser.diagnostics, swiftDelimiterDiagnostics(tokens)...)
 	children := parser.parseBlock("")
 	return Analysis{
@@ -46,8 +46,9 @@ func AnalyzeSwiftUI(path string) (Analysis, error) {
 	}, nil
 }
 
-func tokenizeSwift(source string) []swiftToken {
+func tokenizeSwift(source string) ([]swiftToken, []Diagnostic) {
 	tokens := []swiftToken{}
+	diagnostics := []Diagnostic{}
 	runes := []rune(source)
 	for i := 0; i < len(runes); {
 		r := runes[i]
@@ -62,12 +63,15 @@ func tokenizeSwift(source string) []swiftToken {
 			continue
 		}
 		if r == '/' && i+1 < len(runes) && runes[i+1] == '*' {
+			start := i
 			i += 2
 			for i+1 < len(runes) && !(runes[i] == '*' && runes[i+1] == '/') {
 				i++
 			}
 			if i+1 < len(runes) {
 				i += 2
+			} else {
+				diagnostics = append(diagnostics, Diagnostic{Severity: SeverityError, Code: "SWIFTUI.PARSE", Message: "unterminated Swift block comment.", SourceOffset: &start})
 			}
 			continue
 		}
@@ -75,19 +79,23 @@ func tokenizeSwift(source string) []swiftToken {
 			start := i
 			i++
 			var b strings.Builder
+			closed := false
 			for i < len(runes) {
 				if runes[i] == '\\' && i+1 < len(runes) {
-					b.WriteRune(runes[i])
 					b.WriteRune(runes[i+1])
 					i += 2
 					continue
 				}
 				if runes[i] == '"' {
 					i++
+					closed = true
 					break
 				}
 				b.WriteRune(runes[i])
 				i++
+			}
+			if !closed {
+				diagnostics = append(diagnostics, Diagnostic{Severity: SeverityError, Code: "SWIFTUI.PARSE", Message: "unterminated Swift string literal.", SourceOffset: &start})
 			}
 			tokens = append(tokens, swiftToken{kind: swiftTokenString, value: b.String(), offset: start})
 			continue
@@ -115,7 +123,7 @@ func tokenizeSwift(source string) []swiftToken {
 		tokens = append(tokens, swiftToken{kind: swiftTokenSymbol, value: string(r), offset: i})
 		i++
 	}
-	return tokens
+	return tokens, diagnostics
 }
 
 func isSwiftIdentifierStart(r rune) bool {
@@ -256,20 +264,25 @@ func makeSwiftUINode(name, args string, children []Node, offset int, diagnostics
 	case "Text", "Label":
 		node.Kind = KindText
 		node.Arguments = quote(firstString)
+		node.VisibleLabel = firstString
 	case "TextField", "SecureField", "TextEditor":
 		node.Kind = KindTextField
 		node.Arguments = quote(firstString)
+		node.Placeholder = firstString
 	case "Button":
 		node.Kind = KindButton
 		node.Arguments = quote(firstString)
+		node.VisibleLabel = firstString
 	case "Image", "AsyncImage":
 		node.Kind = KindImage
-		node.Arguments = quote(firstString)
+		node.Resource = firstString
+		node.Arguments = quote("")
 	case "Slider", "ProgressView", "Gauge":
 		node.Kind = KindSlider
 	case "Toggle", "Picker":
 		node.Kind = KindToggle
 		node.Arguments = quote(firstString)
+		node.VisibleLabel = firstString
 	case "Spacer":
 		node.Kind = KindSpacer
 	case "Divider":
@@ -318,16 +331,13 @@ func isLikelySwiftUIView(name string) bool {
 }
 
 func firstSwiftStringArgument(args string) string {
-	start := strings.Index(args, `"`)
-	if start < 0 {
-		return ""
+	tokens, _ := tokenizeSwift(args)
+	for _, token := range tokens {
+		if token.kind == swiftTokenString {
+			return token.value
+		}
 	}
-	rest := args[start+1:]
-	end := strings.Index(rest, `"`)
-	if end < 0 {
-		return ""
-	}
-	return strings.ReplaceAll(rest[:end], `\"`, `"`)
+	return ""
 }
 
 func componentNameFromSwiftSource(tokens []swiftToken) string {

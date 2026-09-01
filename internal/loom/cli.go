@@ -20,6 +20,13 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if len(args) > 1 && args[0] == "help" {
+		text := manual(args[1])
+		if text == "" {
+			return fmt.Errorf("unknown command manual request")
+		}
+		return writeText(text, stdout, runtime)
+	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		return writeText("loom: cross-platform interface layout analysis CLI\n\n"+catalogText(""), stdout, runtime)
 	}
@@ -99,8 +106,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runASCII(args[1:], stdout, stderr, runtime)
 	case "inspect:errors":
 		return runInspectErrors(args[1:], stdout, stderr, runtime)
+	case "inspect:font":
+		return runInspectFont(args[1:], stdout, stderr, runtime)
 	case "inspect:parity":
 		return runInspectParity(args[1:], stdout, stderr, runtime)
+	case "inspect:visual-parity":
+		return runInspectVisualParity(args[1:], stdout, stderr, runtime)
 	case "graph:components", "generate:xaml", "generate:swiftui", "generate:contracts", "project:build":
 		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
 	case "accessibility:audit":
@@ -147,24 +158,79 @@ func parseRuntime(args []string) (runtimeOptions, []string, error) {
 }
 
 func writeOrPrint(text, output string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	return writeOrPrintChecked(text, output, "", false, stdout, stderr, runtime)
+}
+
+func writeOrPrintChecked(text, output, input string, overwrite bool, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	text = applyLineEnding(text, runtime.lineEnding)
 	if output == "" {
-		fmt.Fprint(stdout, text)
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+		_, err := fmt.Fprint(stdout, text)
 		return err
 	}
-	if err := os.WriteFile(output, []byte(text), 0644); err != nil {
+	outputAbs, err := filepath.Abs(output)
+	if err != nil {
+		return err
+	}
+	if input != "" {
+		inputAbs, err := filepath.Abs(input)
+		if err != nil {
+			return err
+		}
+		if samePath(inputAbs, outputAbs) {
+			return fmt.Errorf("refusing to write output over input path %s", output)
+		}
+	}
+	if !overwrite {
+		if _, err := os.Stat(outputAbs); err == nil {
+			return fmt.Errorf("refusing to overwrite existing output %s without --overwrite", output)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+	if err := os.MkdirAll(filepath.Dir(outputAbs), 0755); err != nil {
+		return err
+	}
+	temp, err := os.CreateTemp(filepath.Dir(outputAbs), "."+filepath.Base(outputAbs)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tempName := temp.Name()
+	defer os.Remove(tempName)
+	if _, err := temp.WriteString(text); err != nil {
+		temp.Close()
+		return err
+	}
+	if err := temp.Sync(); err != nil {
+		temp.Close()
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tempName, outputAbs); err != nil {
 		return err
 	}
 	if runtime.verbose {
-		fmt.Fprint(stderr, applyLineEnding(fmt.Sprintf("[info] wrote %s (%d bytes)\n", output, len(text)), runtime.lineEnding))
+		if _, err := fmt.Fprint(stderr, applyLineEnding(fmt.Sprintf("[info] wrote %s (%d bytes)\n", output, len(text)), runtime.lineEnding)); err != nil {
+			return err
+		}
 	}
 	if !runtime.quiet {
 		return writeText(fmt.Sprintf("Wrote %s\n", output), stdout, runtime)
 	}
 	return nil
+}
+
+func samePath(a, b string) bool {
+	aEval, aErr := filepath.EvalSymlinks(a)
+	bEval, bErr := filepath.EvalSymlinks(b)
+	if aErr == nil {
+		a = aEval
+	}
+	if bErr == nil {
+		b = bEval
+	}
+	return filepath.Clean(a) == filepath.Clean(b)
 }
 
 func writeText(text string, stdout io.Writer, runtime runtimeOptions) error {
@@ -198,36 +264,33 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 	format := "text"
 	exportFormat := "loom"
 	output := ""
-	var positional []string
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--json":
-			format = "json"
-		case "--directory":
-			i++
-			if i >= len(args) {
-				return fmt.Errorf("missing value for --directory")
-			}
-			directory = args[i]
-		case "--format":
-			i++
-			if i >= len(args) {
-				return fmt.Errorf("missing value for --format")
-			}
-			if command == "patterns:export" {
-				exportFormat = args[i]
-			} else {
-				format = args[i]
-			}
-		case "--output":
-			i++
-			if i >= len(args) {
-				return fmt.Errorf("missing value for --output")
-			}
-			output = args[i]
-		default:
-			positional = append(positional, args[i])
+	parsed, err := parseArgs(args, map[string]bool{"--directory": true, "--format": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	positional := parsed.Positionals
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if parsed.Values["--directory"] != "" {
+		directory = parsed.Values["--directory"]
+	}
+	if parsed.Values["--format"] != "" {
+		if command == "patterns:export" {
+			exportFormat = parsed.Values["--format"]
+		} else {
+			format = parsed.Values["--format"]
 		}
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	output = parsed.Values["--output"]
+	if command != "patterns:show" && len(positional) > 0 {
+		if len(positional) > 1 {
+			return fmt.Errorf("%s accepts at most one positional directory", command)
+		}
+		directory = positional[0]
 	}
 	patterns, err := LoadPatterns(directory)
 	if err != nil && command != "patterns:validate" && command != "patterns:lint" {
@@ -240,9 +303,9 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 			if err != nil {
 				return err
 			}
-			return writeOrPrint(text, output, stdout, stderr, runtime)
+			return writeOrPrintChecked(text, output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime)
 		}
-		return writeOrPrint(PatternListText(patterns), output, stdout, stderr, runtime)
+		return writeOrPrintChecked(PatternListText(patterns), output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime)
 	case "patterns:show":
 		if len(positional) != 1 {
 			return fmt.Errorf("patterns:show requires one pattern id")
@@ -255,14 +318,14 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime)
 	case "patterns:validate":
 		report := ValidatePatterns(directory)
 		text := PatternReportText(report)
 		if format == "json" {
 			text, _ = prettyJSON(report)
 		}
-		if err := writeOrPrint(text, output, stdout, stderr, runtime); err != nil {
+		if err := writeOrPrintChecked(text, output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
 			return err
 		}
 		if report.Status != "ok" {
@@ -274,7 +337,7 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 		if format == "json" {
 			text, _ = prettyJSON(report)
 		}
-		if err := writeOrPrint(text, output, stdout, stderr, runtime); err != nil {
+		if err := writeOrPrintChecked(text, output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
 			return err
 		}
 		if report.Status != "ok" {
@@ -285,7 +348,7 @@ func runPattern(command string, args []string, stdout, stderr io.Writer, runtime
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, "", parsed.Bools["--overwrite"], stdout, stderr, runtime)
 	}
 	return nil
 }
@@ -300,7 +363,7 @@ func PatternReportText(report PatternValidationReport) string {
 }
 
 func runInspectXAML(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args)
 	if err != nil {
 		return err
 	}
@@ -313,13 +376,13 @@ func runInspectXAML(args []string, stdout, stderr io.Writer, runtime runtimeOpti
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
 	}
-	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runInspectSwiftUI(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args)
 	if err != nil {
 		return err
 	}
@@ -332,13 +395,13 @@ func runInspectSwiftUI(args []string, stdout, stderr io.Writer, runtime runtimeO
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
 	}
-	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runInspectQt(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args)
 	if err != nil {
 		return err
 	}
@@ -351,13 +414,13 @@ func runInspectQt(args []string, stdout, stderr io.Writer, runtime runtimeOption
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
 	}
-	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args, "--from")
 	if err != nil {
 		return err
 	}
@@ -370,26 +433,33 @@ func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOp
 		if err != nil {
 			return err
 		}
-		return writeOrPrint(text, output, stdout, stderr, runtime)
+		return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
 	}
-	return writeOrPrint(AnalysisText(analysis), output, stdout, stderr, runtime)
+	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runInspectParity(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	if len(args) == 0 {
+	parsed, err := parseArgs(args, map[string]bool{"--target": true, "--xaml": true, "--from": true, "--to": true, "--format": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
 		return fmt.Errorf("inspect:parity requires a source path")
 	}
-	source := args[0]
-	target := firstNonEmpty(flagValue(args, "--target"), flagValue(args, "--xaml"))
+	source := parsed.Positionals[0]
+	target := firstNonEmpty(parsed.Values["--target"], parsed.Values["--xaml"])
 	if target == "" {
 		return fmt.Errorf("inspect:parity requires --target path")
 	}
-	format := firstNonEmpty(flagValue(args, "--format"), "text")
-	if contains(args, "--json") {
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
 		format = "json"
 	}
-	output := flagValue(args, "--output")
-	report, err := InspectParity(source, target, flagValue(args, "--from"), flagValue(args, "--to"))
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	output := parsed.Values["--output"]
+	report, err := InspectParity(source, target, parsed.Values["--from"], parsed.Values["--to"])
 	if err != nil {
 		return err
 	}
@@ -400,11 +470,93 @@ func runInspectParity(args []string, stdout, stderr io.Writer, runtime runtimeOp
 			return err
 		}
 	}
-	return writeOrPrint(text, output, stdout, stderr, runtime)
+	if err := writeOrPrintChecked(text, output, source, parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status != "ok" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runInspectFont(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--family": true, "--format": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) > 1 {
+		return fmt.Errorf("inspect:font accepts at most one font path")
+	}
+	path := ""
+	if len(parsed.Positionals) == 1 {
+		path = parsed.Positionals[0]
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	report := InspectFontSource(path, parsed.Values["--family"])
+	text := FontInspectionText(report)
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], path, parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status != "ok" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runInspectVisualParity(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--target": true, "--xaml": true, "--from": true, "--to": true, "--profile": true, "--source-font": true, "--target-font": true, "--source-font-family": true, "--target-font-family": true, "--format": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("inspect:visual-parity requires a source path")
+	}
+	source := parsed.Positionals[0]
+	target := firstNonEmpty(parsed.Values["--target"], parsed.Values["--xaml"])
+	if target == "" {
+		return fmt.Errorf("inspect:visual-parity requires --target path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	report, err := InspectVisualParity(source, target, parsed.Values["--from"], parsed.Values["--to"], parsed.Values["--profile"], parsed.Values["--source-font"], parsed.Values["--target-font"], parsed.Values["--source-font-family"], parsed.Values["--target-font-family"])
+	if err != nil {
+		return err
+	}
+	text := VisualParityText(report)
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], source, parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status != "ok" {
+		return ErrCommandFailed
+	}
+	return nil
 }
 
 func runASCII(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, _, output, err := sourceArgs(args)
+	path, _, output, overwrite, err := sourceArgs(args, "--from")
 	if err != nil {
 		return err
 	}
@@ -412,11 +564,11 @@ func runASCII(args []string, stdout, stderr io.Writer, runtime runtimeOptions) e
 	if err != nil {
 		return err
 	}
-	return writeOrPrint(ASCIIAnalysis(analysis), output, stdout, stderr, runtime)
+	return writeOrPrintChecked(ASCIIAnalysis(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runAudit(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args, "--fail-on")
 	if err != nil {
 		return err
 	}
@@ -430,7 +582,7 @@ func runAudit(args []string, stdout, stderr io.Writer, runtime runtimeOptions) e
 	if format == "json" {
 		text, _ = prettyJSON(report)
 	}
-	if err := writeOrPrint(text, output, stdout, stderr, runtime); err != nil {
+	if err := writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime); err != nil {
 		return err
 	}
 	if failOn == "error" && report.Summary.Errors > 0 {
@@ -443,13 +595,19 @@ func runAudit(args []string, stdout, stderr io.Writer, runtime runtimeOptions) e
 }
 
 func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	path, format, output, err := sourceArgs(args)
+	path, format, output, overwrite, err := sourceArgs(args, "--patterns-dir", "--from", "--to")
 	if err != nil {
 		return err
 	}
 	patternDir := firstNonEmpty(flagValue(args, "--patterns-dir"), DefaultPatternDirectory)
 	from := firstNonEmpty(flagValue(args, "--from"), InferSourcePlatform(path))
 	to := firstNonEmpty(flagValue(args, "--to"), defaultTransferTarget(from))
+	if !validPatternPlatform(from) {
+		return fmt.Errorf("--from must be swiftui, winui3, qt, or a supported alias")
+	}
+	if !validPatternPlatform(to) {
+		return fmt.Errorf("--to must be swiftui, winui3, qt, or a supported alias")
+	}
 	analysis, err := AnalyzeByPlatform(path, from)
 	if err != nil {
 		return err
@@ -463,7 +621,7 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 	if format == "json" {
 		text, _ = prettyJSON(report)
 	}
-	return writeOrPrint(text, output, stdout, stderr, runtime)
+	return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
 }
 
 func runSuggestions(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
@@ -617,25 +775,32 @@ func runConfigValidate(args []string, stdout, stderr io.Writer, runtime runtimeO
 }
 
 func runInspectErrors(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	if len(args) < 1 {
+	parsed, err := parseArgs(args, map[string]bool{"--kind": true, "--root-view": true, "--component": true, "--format": true, "--fail-on": true, "--output": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
 		return fmt.Errorf("inspect:errors requires a source path")
 	}
-	path := args[0]
-	kind := flagValue(args, "--kind")
-	rootView := flagValue(args, "--root-view")
-	component := flagValue(args, "--component")
-	format := firstNonEmpty(flagValue(args, "--format"), "text")
-	failOn := firstNonEmpty(flagValue(args, "--fail-on"), "none")
-	output := flagValue(args, "--output")
-	if contains(args, "--json") {
+	path := parsed.Positionals[0]
+	kind := parsed.Values["--kind"]
+	rootView := parsed.Values["--root-view"]
+	component := parsed.Values["--component"]
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	failOn := firstNonEmpty(parsed.Values["--fail-on"], "none")
+	output := parsed.Values["--output"]
+	if parsed.Bools["--json"] {
 		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
 	}
 	report := InspectErrors(path, kind, rootView, component, failOn)
 	text := LoomErrorInspectionText(report)
 	if format == "json" {
 		text, _ = prettyJSON(report)
 	}
-	if err := writeOrPrint(text, output, stdout, stderr, runtime); err != nil {
+	if err := writeOrPrintChecked(text, output, path, parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
 		return err
 	}
 	if ShouldFailForInspection(report, failOn) {
@@ -654,17 +819,34 @@ func AnalysisText(analysis Analysis) string {
 	return fmt.Sprintf("loom analysis\nsource: %s\nview: %s.%s\nsource nodes: %d\nlayout nodes: %d\n\n%s", analysis.SourcePath, analysis.RootView, analysis.Component, analysis.SyntaxNodeCount, analysis.Layout.RecursiveNodeCount(), ASCIIAnalysis(analysis))
 }
 
-func sourceArgs(args []string) (path, format, output string, err error) {
-	if len(args) == 0 {
-		return "", "", "", fmt.Errorf("source path required")
+type parsedArgs struct {
+	Positionals []string
+	Values      map[string]string
+	Bools       map[string]bool
+}
+
+func sourceArgs(args []string, extraValueFlags ...string) (path, format, output string, overwrite bool, err error) {
+	valueFlags := map[string]bool{"--format": true, "--output": true}
+	for _, flag := range extraValueFlags {
+		valueFlags[flag] = true
 	}
-	path = args[0]
-	format = firstNonEmpty(flagValue(args, "--format"), "text")
-	if contains(args, "--json") {
+	parsed, err := parseArgs(args, valueFlags, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return "", "", "", false, err
+	}
+	if len(parsed.Positionals) != 1 {
+		return "", "", "", false, fmt.Errorf("source path required")
+	}
+	path = parsed.Positionals[0]
+	format = firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
 		format = "json"
 	}
-	output = flagValue(args, "--output")
-	return path, format, output, nil
+	if format != "text" && format != "json" {
+		return "", "", "", false, fmt.Errorf("--format must be text or json")
+	}
+	output = parsed.Values["--output"]
+	return path, format, output, parsed.Bools["--overwrite"], nil
 }
 
 func parseList(args []string) (string, bool, error) {
@@ -694,6 +876,36 @@ func flagValue(args []string, flag string) string {
 		}
 	}
 	return ""
+}
+
+func parseArgs(args []string, valueFlags map[string]bool, boolFlags map[string]bool) (parsedArgs, error) {
+	parsed := parsedArgs{Values: map[string]string{}, Bools: map[string]bool{}}
+	seen := map[string]bool{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if !strings.HasPrefix(arg, "--") {
+			parsed.Positionals = append(parsed.Positionals, arg)
+			continue
+		}
+		if seen[arg] {
+			return parsedArgs{}, fmt.Errorf("duplicate option %s", arg)
+		}
+		seen[arg] = true
+		if boolFlags[arg] {
+			parsed.Bools[arg] = true
+			continue
+		}
+		if valueFlags[arg] {
+			i++
+			if i >= len(args) || strings.HasPrefix(args[i], "--") {
+				return parsedArgs{}, fmt.Errorf("missing value for %s", arg)
+			}
+			parsed.Values[arg] = args[i]
+			continue
+		}
+		return parsedArgs{}, fmt.Errorf("unknown option %s", arg)
+	}
+	return parsed, nil
 }
 
 func contains(args []string, value string) bool {

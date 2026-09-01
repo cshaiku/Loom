@@ -39,6 +39,7 @@ type TransferSummary struct {
 
 type TransferReport struct {
 	SchemaVersion string          `json:"schema_version"`
+	Status        string          `json:"status"`
 	SourcePath    string          `json:"sourcePath"`
 	From          string          `json:"from"`
 	To            string          `json:"to"`
@@ -59,12 +60,18 @@ func Transfer(analysis Analysis, patterns []Pattern, from, to string) TransferRe
 	var walk func(Node, string)
 	walk = func(node Node, path string) {
 		items = append(items, transferItem(node, path, byKind, from, to))
+		siblingCounts := map[NodeKind]int{}
 		for _, child := range node.Children {
-			walk(child, path+"/"+string(child.Kind))
+			index := siblingCounts[child.Kind]
+			siblingCounts[child.Kind]++
+			walk(child, path+"/"+indexedPathPart(child.Kind, index))
 		}
 	}
+	siblingCounts := map[NodeKind]int{}
 	for _, child := range analysis.Layout.Children {
-		walk(child, string(child.Kind))
+		index := siblingCounts[child.Kind]
+		siblingCounts[child.Kind]++
+		walk(child, indexedPathPart(child.Kind, index))
 	}
 	summary := TransferSummary{}
 	for _, item := range items {
@@ -81,7 +88,17 @@ func Transfer(analysis Analysis, patterns []Pattern, from, to string) TransferRe
 			summary.Unsupported++
 		}
 	}
-	return TransferReport{"1", analysis.SourcePath, from, to, analysis.RootView, analysis.Component, ASCIIAnalysis(analysis), summary, items, nonNilDiagnostics(analysis.Diagnostics)}
+	status := "ok"
+	for _, diagnostic := range analysis.Diagnostics {
+		if diagnostic.Severity == SeverityError {
+			status = "source-invalid"
+			break
+		}
+	}
+	if status == "ok" && (summary.Unsupported > 0 || summary.NeedsNativeContract > 0 || summary.NeedsPolicy > 0 || summary.Lossy > 0) {
+		status = "partial"
+	}
+	return TransferReport{"1", status, analysis.SourcePath, from, to, analysis.RootView, analysis.Component, ASCIIAnalysis(analysis), summary, items, nonNilDiagnostics(analysis.Diagnostics)}
 }
 
 func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, to string) TransferItem {
@@ -122,7 +139,7 @@ func transferItem(node Node, path string, patterns map[NodeKind]Pattern, from, t
 
 func TransferText(report TransferReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "loom pattern transfer\nsource: %s\nroute: %s -> %s\nview: %s.%s\n\nsummary\n  direct: %d\n  needs-policy: %d\n  needs-native-contract: %d\n  lossy: %d\n  unsupported: %d\n\nascii pattern\n%s\ntransfer items\n", report.SourcePath, report.From, report.To, report.RootView, report.Component, report.Summary.Direct, report.Summary.NeedsPolicy, report.Summary.NeedsNativeContract, report.Summary.Lossy, report.Summary.Unsupported, report.ASCIIPattern)
+	fmt.Fprintf(&b, "loom pattern transfer\nstatus: %s\nsource: %s\nroute: %s -> %s\nview: %s.%s\n\nsummary\n  direct: %d\n  needs-policy: %d\n  needs-native-contract: %d\n  lossy: %d\n  unsupported: %d\n\nascii pattern\n%s\ntransfer items\n", report.Status, report.SourcePath, report.From, report.To, report.RootView, report.Component, report.Summary.Direct, report.Summary.NeedsPolicy, report.Summary.NeedsNativeContract, report.Summary.Lossy, report.Summary.Unsupported, report.ASCIIPattern)
 	for _, item := range report.Items {
 		fmt.Fprintf(&b, "[%s] %s %s pattern=%s\n  target: %s\n  reason: %s\n", item.Disposition, item.Path, item.Kind, item.PatternID, strings.Join(item.TargetConstructs, ", "), item.Reason)
 	}
@@ -149,6 +166,15 @@ func canonicalPatternPlatform(platform string) string {
 		return "qt"
 	default:
 		return strings.ToLower(strings.TrimSpace(platform))
+	}
+}
+
+func validPatternPlatform(platform string) bool {
+	switch canonicalPatternPlatform(platform) {
+	case "swiftui", "winui3", "qt":
+		return true
+	default:
+		return false
 	}
 }
 

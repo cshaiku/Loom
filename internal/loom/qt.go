@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -19,7 +18,7 @@ func AnalyzeQt(path string) (Analysis, error) {
 }
 
 func AnalyzeQtUI(path string) (Analysis, error) {
-	data, err := os.ReadFile(path)
+	data, err := readSourceFile(path, "Qt UI source")
 	if err != nil {
 		return Analysis{}, fmt.Errorf("could not read Qt UI source at %s: %w", path, err)
 	}
@@ -65,13 +64,13 @@ func AnalyzeQtUI(path string) (Analysis, error) {
 }
 
 func AnalyzeQtText(path string) (Analysis, error) {
-	data, err := os.ReadFile(path)
+	data, err := readSourceFile(path, "Qt source")
 	if err != nil {
 		return Analysis{}, fmt.Errorf("could not read Qt source at %s: %w", path, err)
 	}
 	source := string(data)
-	tokens := tokenizeSwift(source)
-	diagnostics := qtDelimiterDiagnostics(tokens)
+	tokens, tokenDiagnostics := tokenizeSwift(source)
+	diagnostics := append(qtTokenDiagnostics(tokenDiagnostics), qtDelimiterDiagnostics(tokens)...)
 	children := parseQtNodes(tokens)
 	return Analysis{SourcePath: path, RootView: "qt", Component: componentName(path), SyntaxNodeCount: countQtConstructTokens(tokens), Layout: Node{Kind: KindRoot, Expression: "qt", Properties: map[string]string{"sourceDialect": "qt"}, Children: children}, Diagnostics: nonNilDiagnostics(diagnostics)}, nil
 }
@@ -91,6 +90,11 @@ func parseQtNodes(tokens []swiftToken) []Node {
 					stack[len(stack)-1].Children = append(stack[len(stack)-1].Children, node)
 				}
 			}
+			continue
+		}
+		if len(stack) > 0 && i+2 < len(tokens) && tokens[i+1].value == ":" && tokens[i+2].kind == swiftTokenString {
+			applyQtProperty(&stack[len(stack)-1], token.value, tokens[i+2].value)
+			i += 2
 			continue
 		}
 		kind := qtConstructKind(token.value)
@@ -125,6 +129,27 @@ func parseQtNodes(tokens []swiftToken) []Node {
 	return roots
 }
 
+func applyQtProperty(node *Node, name, value string) {
+	switch name {
+	case "text", "title":
+		node.Arguments = quote(value)
+		if node.Kind == KindText || node.Kind == KindButton || node.Kind == KindToggle {
+			node.VisibleLabel = value
+		}
+	case "placeholderText", "placeholder":
+		node.Placeholder = value
+	case "accessibleName":
+		node.AccessibleName = value
+	case "objectName":
+		node.Identifier = value
+	case "source":
+		node.Resource = value
+		if node.Kind == KindImage {
+			node.Arguments = quote("")
+		}
+	}
+}
+
 func makeQtNode(className, expression, args string, children []Node) Node {
 	props := map[string]string{"qtConstruct": className}
 	node := Node{Kind: qtConstructKind(className), Expression: expression, Properties: props, Children: children}
@@ -137,6 +162,15 @@ func makeQtNode(className, expression, args string, children []Node) Node {
 		props["qt.arguments"] = args
 		if text := firstSwiftStringArgument(args); text != "" {
 			node.Arguments = quote(text)
+			switch node.Kind {
+			case KindText, KindButton, KindToggle:
+				node.VisibleLabel = text
+			case KindTextField:
+				node.Placeholder = text
+			case KindImage:
+				node.Resource = text
+				node.Arguments = quote("")
+			}
 		}
 	}
 	return node
@@ -198,6 +232,16 @@ func qtDelimiterDiagnostics(tokens []swiftToken) []Diagnostic {
 		return []Diagnostic{diagnostic}
 	}
 	return []Diagnostic{}
+}
+
+func qtTokenDiagnostics(in []Diagnostic) []Diagnostic {
+	out := make([]Diagnostic, 0, len(in))
+	for _, diagnostic := range in {
+		diagnostic.Code = "QT.PARSE"
+		diagnostic.Message = strings.ReplaceAll(diagnostic.Message, "Swift", "Qt")
+		out = append(out, diagnostic)
+	}
+	return out
 }
 
 func componentName(path string) string {
