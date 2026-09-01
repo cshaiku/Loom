@@ -2,8 +2,7 @@
 
 ## v1.0.0 Release Evidence Follow-Up
 
-- Record tag workflow and native smoke evidence in `docs/release-evidence.md`
-  after the `v1.0.0` release workflow completes.
+- Complete. Evidence is recorded in `docs/release-evidence.md`.
 
 ## Open-Source Follow-Ups
 
