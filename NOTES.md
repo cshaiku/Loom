@@ -4,9 +4,10 @@
 
 Loom is intended to be an analyzer, generator, and translator. The current
 `0.24.0` codebase has a healthy analyzer, transfer-planning, component graph,
-and analysis-only project build foundation, but generator commands remain
-placeholders. Public docs should therefore describe `0.24.x` as pre-1.0 and
-reserve `v1.0.0` for the complete analyze-generate-translate product.
+and analysis-only project build foundation. Main now has conservative
+reviewable generator scaffolds and contract reports. Public release docs should
+therefore describe `0.24.x` as pre-1.0 and reserve `v1.0.0` for a tested,
+packaged, schema-frozen analyze-generate-translate product.
 
 Guidance taken from Vigil and SDF release discipline:
 

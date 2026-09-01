@@ -1,8 +1,8 @@
 # Loom Support Matrix
 
 Loom `0.24.0` is a pre-1.0 analyzer, transfer-planning, component-graph, and
-analysis-only project build release. The `v1.0.0` target is analyzer,
-generator, and translator support across SwiftUI, WinUI XAML, and Qt.
+analysis-only project build release. Main now includes reviewable generator
+scaffolds and contract artifacts toward `v1.0.0`.
 
 ## Current Analyzer Support
 
@@ -42,11 +42,12 @@ generator, and translator support across SwiftUI, WinUI XAML, and Qt.
 | `inspect:parity` | Implemented | Stable structural parity report. |
 | `inspect:visual-parity` | Implemented foundation | Stable profile-normalized visual parity report. |
 | `graph:components` | Implemented | Discover source-tree layout components and custom dependencies. |
-| `generate:xaml` | Placeholder | Emit reviewable WinUI XAML and support guarded owned-region replacement. |
-| `generate:swiftui` | Placeholder | Emit reviewable SwiftUI scaffolds. |
-| `generate:contracts` | Placeholder | Emit target native contracts for behavior, state, action, and accessibility. |
-| `project:build` | Implemented analysis bundle | Run manifest-directed validation, analysis, graph, transfer, parity, and summary workflows. |
+| `generate:xaml` | Implemented scaffold | Emit reviewable WinUI XAML and support guarded owned-region replacement. |
+| `generate:swiftui` | Implemented scaffold | Emit reviewable SwiftUI scaffolds. |
+| `generate:contracts` | Implemented | Emit target native contracts for behavior, state, action, collection, component boundaries, and accessibility review. |
+| `project:build` | Implemented bundle | Run manifest-directed validation, analysis, generated scaffold, contract, graph, transfer, parity, and summary workflows. |
 
-For current releases, generated output should not be advertised as available.
-Transfer reports identify structure, policy decisions, native behavior contracts,
-accessibility gaps, and unsupported boundaries before generation exists.
+Generated output is conservative scaffold output. Transfer and contract reports
+identify structure, policy decisions, native behavior contracts, accessibility
+gaps, and unsupported boundaries before a generated artifact is treated as
+production code.

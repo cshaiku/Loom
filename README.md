@@ -1,6 +1,6 @@
 # loom
 
-Version: **0.24.0**
+Version: **0.25.0-dev**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
@@ -9,8 +9,9 @@ diagnostics.
 The product goal for `v1.0.0` is an analyzer, generator, and translator for
 moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
 `0.24.0` release is the analyzer, transfer-planning, component-graph, and
-analysis-only project build foundation. Generator commands are visible in the
-catalog as stable targets, but they remain release-blocking work for `v1.0.0`.
+analysis-only project build foundation. On `main`, reviewable generator
+scaffolds and project build generator artifacts are now implemented toward the
+`v1.0.0` release.
 
 ## What Loom Does Today
 
@@ -35,7 +36,10 @@ catalog as stable targets, but they remain release-blocking work for `v1.0.0`.
 - Run manifest validation (`config:validate` / `config:schema`).
 - Discover source-tree component dependencies (`graph:components`).
 - Run manifest-directed analysis builds that write validation, analysis, graph,
-  transfer, parity, and summary artifacts (`project:build`).
+  generated scaffold, contract, transfer, parity, and summary artifacts
+  (`project:build`).
+- Generate reviewable WinUI XAML fragments, SwiftUI scaffolds, and target
+  contracts (`generate:xaml`, `generate:swiftui`, `generate:contracts`).
 - Report errors for source analysis, XAML parsing, manifests, and patterns
   (`inspect:errors`).
 - Provide curated cross-platform error guidance and suggested fixes (`suggestions:os-errors`).
@@ -55,13 +59,10 @@ installed with `make build`, the same catalog is copied to
 `/opt/homebrew/share/loom/patterns` so the installed `loom` command can validate,
 lint, list, export, and transfer-plan against loom's own pattern definitions.
 
-The following generator commands define the remaining planned generation surface
-for `v1.0.0`. They are retained in the catalog for parity but are intentionally
-not yet implemented in the Go runtime. They return a clear message when invoked:
+Generator output is intentionally conservative. It is suitable for review,
+handoff, and project-build evidence, but v1.0 still needs frozen JSON schemas,
+release artifacts, and native smoke evidence before stable support is claimed.
 
-- `generate:xaml`
-- `generate:swiftui`
-- `generate:contracts`
 
 ## Build And Test
 
@@ -92,6 +93,9 @@ loom inspect:ascii mainwindow.xaml --output layout.txt
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 loom accessibility:audit mainwindow.xaml --format json --fail-on warning
 loom graph:components examples/sampleapp --format dot --output component-graph.dot
+loom generate:xaml contentview.swift --output generated.xaml
+loom generate:swiftui mainwindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
+loom generate:contracts contentview.swift --target winui3 --json
 loom patterns:lint
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos
 loom patterns:transfer contentview.swift --from swiftui --to windows
@@ -120,12 +124,14 @@ parity, and visual-parity reports under `examples/sampleapp/generated/`.
 ## Documentation
 
 - [docs/commands.md](docs/commands.md)
+- [docs/json-schemas.md](docs/json-schemas.md)
 - [docs/ai-agents.md](docs/ai-agents.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/roadmap.md](docs/roadmap.md)
 - [docs/support-policy.md](docs/support-policy.md)
 - [docs/deprecations.md](docs/deprecations.md)
 - [docs/release-checklist.md](docs/release-checklist.md)
+- [docs/release-evidence.md](docs/release-evidence.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 - [TESTING.md](TESTING.md)
@@ -142,4 +148,4 @@ Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 4. Review [TODO.md](TODO.md) before declaring `v1.0.0`.
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
-   `git tag -a v0.24.0 -m "pre-1.0 analyzer project build release"; git push --tags`.
+   `git tag -a vX.Y.Z -m "Loom X.Y.Z"; git push --tags`.

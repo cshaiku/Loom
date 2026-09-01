@@ -20,6 +20,9 @@
 - `inspect:parity`
 - `inspect:visual-parity`
 - `graph:components`
+- `generate:xaml`
+- `generate:swiftui`
+- `generate:contracts`
 - `patterns:list`
 - `patterns:show`
 - `patterns:validate`
@@ -29,15 +32,11 @@
 - `project:build`
 - `suggestions:os-errors`
 
-## v1.0.0 Generator And Translator Commands
+## Generator And Translator Commands
 
-The following define Loom's remaining planned generator product surface for
-`v1.0.0`. They are not implemented in the current Go runtime yet and return a
-deterministic `not yet available` message:
-
-- `generate:xaml`
-- `generate:swiftui`
-- `generate:contracts`
+Generator output is reviewable scaffold output. It preserves unsupported
+component boundaries instead of silently inventing native behavior, and it keeps
+file mutation behind explicit output or owned-region flags.
 
 ## Notes
 
@@ -69,6 +68,10 @@ loom inspect:visual-parity contentview.swift --target mainwindow.xaml --from swi
 loom inspect:visual-parity contentview.swift --target mainwindow.xaml --source-font Inter.ttf --target-font-family "Segoe UI" --json
 loom graph:components examples/sampleapp --format json
 loom graph:components examples/sampleapp --format dot --output component-graph.dot
+loom generate:xaml contentview.swift --output generated.xaml
+loom generate:xaml contentview.swift --replace-region mainwindow.xaml --region-id main --overwrite
+loom generate:swiftui mainwindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
+loom generate:contracts contentview.swift --target winui3 --json
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos --format json
 loom patterns:transfer contentview.swift --from swiftui --to windows --format json
 loom patterns:transfer mainwindow.qml --from qt --to windows --format json

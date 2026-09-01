@@ -20,8 +20,9 @@ The `v1.0.0` product is an analyzer, generator, and translator:
   parity, accessibility, and generated artifact outputs.
 
 `0.24.0` implements the analyzer, transfer-planning, component-graph, and
-analysis-only project build foundation. Generator commands are cataloged but
-remain release-blocking.
+analysis-only project build foundation. Main now implements conservative
+generator scaffolds, target contracts, and generated artifacts in project
+builds toward `v1.0.0`.
 
 ## Current Go-Owned Surface
 
@@ -39,6 +40,10 @@ remain release-blocking.
   supported dialects as pre-render visual regression infrastructure.
 - `graph:components`: discover component boundaries and source-tree dependency
   edges.
+- `generate:xaml`: emit reviewable WinUI XAML fragments and replace explicit
+  Loom-owned regions.
+- `generate:swiftui`: emit reviewable SwiftUI scaffolds.
+- `generate:contracts`: emit target native contract and policy handoff reports.
 - `inspect:ascii`: render the shared tree as a plain text structure.
 - `inspect:errors`: classify and report source, XAML, manifest, and pattern
   issues.
@@ -48,18 +53,6 @@ remain release-blocking.
 - `suggestions:os-errors`: return curated fix recommendations.
 - `status`, `verify`, `checks:command-catalog`, `guards:summary`,
   `config:validate`, `config:schema`, `project:build`, `self-heal:plan`.
-
-## Catalog Compatibility Placeholders
-
-These are intentionally present in the command catalog but not yet implemented in
-Go:
-
-- `generate:xaml`
-- `generate:swiftui`
-- `generate:contracts`
-
-Invocations return a deterministic unavailable-command diagnostic so automation
-fails closed.
 
 ## Current Pipeline
 
@@ -89,9 +82,13 @@ fails closed.
 9. **Accessibility/risk audit**: report missing names, weak interaction targets,
    malformed/redundant structures, unsupported native boundaries, and other
    transfer hazards.
-10. **Project build**: run manifest-directed analysis-only bundles that write
-    validation, source analysis, component graph, transfer, parity, and summary
-    artifacts.
+10. **Target generation**: emit conservative, reviewable WinUI XAML and SwiftUI
+    scaffold artifacts from normalized layout trees.
+11. **Contracts**: emit native behavior, state, action, collection,
+    component-boundary, accessibility, and policy handoff reports.
+12. **Project build**: run manifest-directed bundles that write validation,
+    source analysis, generated scaffold, target contract, component graph,
+    transfer, parity, and summary artifacts.
 
 ## v1.0.0 Pipeline
 

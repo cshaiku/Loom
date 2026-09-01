@@ -1067,7 +1067,7 @@ struct ContentView: View {
 	if report.Status != "warning" {
 		t.Fatalf("expected warning build due transfer/parity review items, got %#v", report)
 	}
-	for _, name := range []string{"manifest-validation.json", "source-analysis.json", "component-graph.json", "source-transfer.json", "existing-xaml-analysis.json", "source-existing-parity.json", "project-summary.json"} {
+	for _, name := range []string{"manifest-validation.json", "source-analysis.json", "target-contracts.json", "generated.xaml", "generated-xaml-report.json", "GeneratedView.swift", "generated-swiftui-report.json", "component-graph.json", "source-transfer.json", "existing-xaml-analysis.json", "source-existing-parity.json", "project-summary.json"} {
 		if _, err := os.Stat(filepath.Join(outputDir, name)); err != nil {
 			t.Fatalf("expected artifact %s: %v", name, err)
 		}
@@ -1293,7 +1293,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 0.24.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom 0.25.0-dev" {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -1347,7 +1347,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 0.24.0\r\n" {
+	if got := stdout.String(); got != "loom 0.25.0-dev\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 
@@ -1670,11 +1670,130 @@ func TestAnalyzeRejectsOversizedSource(t *testing.T) {
 	}
 }
 
-func TestUnavailableSwiftOnlyCommand(t *testing.T) {
+func TestGenerateXAMLEmitsReviewableFragment(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Title")
+  Button("Save") {}
+}`)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	err := Run([]string{"generate:xaml", "MainView.swift"}, &stdout, &stderr)
+	if err := Run([]string{"generate:xaml", path}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	for _, needle := range []string{"<StackPanel>", `<TextBlock Text="Title" />`, `<Button Content="Save" />`} {
+		if !strings.Contains(stdout.String(), needle) {
+			t.Fatalf("expected generated XAML to contain %q, got %s", needle, stdout.String())
+		}
+	}
+}
+
+func TestGenerateSwiftUIEmitsReviewableScaffold(t *testing.T) {
+	path := fixtureXAML(t, `<StackPanel><TextBlock Text="Title" /><Button Content="Save" /></StackPanel>`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:swiftui", path, "--view-name", "MainScaffold"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	for _, needle := range []string{"struct MainScaffold: View", `Text("Title")`, `Button("Save") {}`} {
+		if !strings.Contains(stdout.String(), needle) {
+			t.Fatalf("expected generated SwiftUI to contain %q, got %s", needle, stdout.String())
+		}
+	}
+}
+
+func TestGenerateContractsReportsReviewItems(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  TextField("Name", text: $name)
+  Toggle("Enabled", isOn: $enabled)
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:contracts", path, "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	report := ContractReport{}
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "review" || len(report.Contracts) < 2 {
+		t.Fatalf("expected contract review items, got %#v", report)
+	}
+}
+
+func TestGenerateXAMLReplacesOwnedRegion(t *testing.T) {
+	source := fixtureSwiftUI(t, `Text("Updated")`)
+	target := filepath.Join(t.TempDir(), "mainwindow.xaml")
+	body := `<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+  <TextBlock Text="Keep" />
+  <!-- loom:begin main -->
+  <TextBlock Text="Old" />
+  <!-- loom:end main -->
+</Grid>
+`
+	if err := os.WriteFile(target, []byte(body), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:xaml", source, "--replace-region", target, "--region-id", "main", "--overwrite"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, needle := range []string{`Text="Keep"`, `Text="Updated"`, "loom:begin main", "loom:end main"} {
+		if !strings.Contains(text, needle) {
+			t.Fatalf("expected replaced region to preserve %q, got %s", needle, text)
+		}
+	}
+	if strings.Contains(text, `Text="Old"`) {
+		t.Fatalf("expected old region content to be replaced, got %s", text)
+	}
+}
+
+func TestGenerateOutputRefusesOverwriteWithoutFlag(t *testing.T) {
+	path := fixtureSwiftUI(t, `Text("Title")`)
+	out := filepath.Join(t.TempDir(), "generated.xaml")
+	if err := os.WriteFile(out, []byte("existing"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:xaml", path, "--output", out}, &stdout, &stderr); err == nil {
+		t.Fatal("expected overwrite guard to fail")
+	}
+}
+
+func TestGenerateRejectsMalformedInput(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Broken")
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"generate:xaml", path, "--json"}, &stdout, &stderr)
 	if err == nil {
-		t.Fatal("expected go-only unsupported error")
+		t.Fatal("expected malformed source generation to fail")
+	}
+	report := GeneratedArtifactReport{}
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "error" {
+		t.Fatalf("expected malformed source to produce error status, got %#v", report)
+	}
+}
+
+func TestGenerateCreatesNestedOutputPath(t *testing.T) {
+	path := fixtureSwiftUI(t, `Text("Title")`)
+	out := filepath.Join(t.TempDir(), "nested", "generated", "view.xaml")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:xaml", path, "--output", out}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatalf("expected nested generated output path: %v", err)
 	}
 }

@@ -79,6 +79,26 @@ func ProjectBuild(manifestPath, projectRoot, outputDir string, overwrite bool) (
 	if err := writeProjectJSONArtifact(&report, outputDir, "source-analysis.json", "source-analysis", statusFromDiagnostics(sourceAnalysis.Diagnostics), sourceAnalysis, overwrite); err != nil {
 		return report, err
 	}
+	contracts := GenerateContracts(sourceAnalysis, targetPlatform)
+	if err := writeProjectJSONArtifact(&report, outputDir, "target-contracts.json", "target-contracts", contracts.Status, contracts, overwrite); err != nil {
+		return report, err
+	}
+	if targetPlatform == "winui3" || targetPlatform == "windows" {
+		xaml := GenerateXAML(sourceAnalysis, manifest.ThemeResourcePrefix, false)
+		if err := writeProjectTextArtifact(&report, outputDir, "generated.xaml", "generated-xaml", xaml.Status, xaml.Text, overwrite); err != nil {
+			return report, err
+		}
+		if err := writeProjectJSONArtifact(&report, outputDir, "generated-xaml-report.json", "generated-xaml-report", xaml.Status, xaml, overwrite); err != nil {
+			return report, err
+		}
+	}
+	swift := GenerateSwiftUI(sourceAnalysis, manifest.RootView)
+	if err := writeProjectTextArtifact(&report, outputDir, "GeneratedView.swift", "generated-swiftui", swift.Status, swift.Text, overwrite); err != nil {
+		return report, err
+	}
+	if err := writeProjectJSONArtifact(&report, outputDir, "generated-swiftui-report.json", "generated-swiftui-report", swift.Status, swift, overwrite); err != nil {
+		return report, err
+	}
 
 	graph, err := GraphComponents(projectRoot, manifest.RootView, "", "", "")
 	if err != nil {
@@ -153,14 +173,17 @@ func readLoomManifest(path string) (LoomManifest, error) {
 }
 
 func writeProjectJSONArtifact(report *ProjectBuildReport, outputDir, name, kind, status string, value any, overwrite bool) error {
+	text, err := prettyJSON(value)
+	if err != nil {
+		return err
+	}
+	return writeProjectTextArtifact(report, outputDir, name, kind, status, text, overwrite)
+}
+
+func writeProjectTextArtifact(report *ProjectBuildReport, outputDir, name, kind, status string, text string, overwrite bool) error {
 	path := filepath.Join(outputDir, name)
 	artifact := ProjectBuildArtifact{Kind: kind, Path: path, Status: status}
 	report.Artifacts = append(report.Artifacts, artifact)
-	text, err := prettyJSON(value)
-	if err != nil {
-		report.Artifacts = report.Artifacts[:len(report.Artifacts)-1]
-		return err
-	}
 	if !overwrite {
 		if _, err := os.Stat(path); err == nil {
 			report.Artifacts = report.Artifacts[:len(report.Artifacts)-1]

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- Implemented Go-native `generate:xaml` for reviewable WinUI XAML fragments and
+  guarded owned-region replacement.
+- Implemented Go-native `generate:swiftui` for reviewable SwiftUI scaffolds from
+  normalized WinUI, Qt, or SwiftUI source.
+- Implemented Go-native `generate:contracts` for behavior, state, collection,
+  component-boundary, and policy handoff reports.
+- Extended `project:build` to include generated XAML, generated SwiftUI, and
+  target contract artifacts.
+- Added generator regression coverage for scaffold output, owned-region
+  replacement, overwrite guards, and contract reports.
+- Added public JSON schema contract documentation.
+- Added a tag-driven GitHub release workflow for macOS, Linux, and Windows
+  archives.
+- Added release-evidence documentation for v1.0 release candidate gates.
+
 ## 0.24.0 - 2026-09-01
 
 - Implemented `graph:components` for component and dependency discovery across

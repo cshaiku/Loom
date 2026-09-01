@@ -33,13 +33,11 @@ go run ./cmd/loom patterns:lint --json
 
 `v1.0.0` additionally requires:
 
-- implemented `generate:xaml`;
-- implemented `generate:swiftui`;
-- implemented `generate:contracts`;
-- project builds that include generated fragments and contracts, not only
-  analysis bundles;
 - stable JSON schemas for analysis, transfer, audit, parity, visual parity, and
-  generation reports;
+  generation reports documented in [json-schemas.md](json-schemas.md);
+- generated scaffold review evidence for supported source/target pairs;
+- owned-region replacement and overwrite guard evidence;
+- release evidence recorded in [release-evidence.md](release-evidence.md);
 - documented support and deprecation policies;
 - release archives or install instructions that work outside a Homebrew-only
   local machine.

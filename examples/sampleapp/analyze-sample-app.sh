@@ -73,6 +73,9 @@ write_stdout_report "$output_dir/manifest-validation.json" "$loom_bin" --quiet c
 "$loom_bin" --quiet graph:components "$sample_root" --format json --output "$output_dir/component-graph.json" $overwrite_flag
 "$loom_bin" --quiet graph:components "$sample_root" --format dot --output "$output_dir/component-graph.dot" $overwrite_flag
 write_stdout_report "$output_dir/project-build-summary.json" "$loom_bin" --quiet project:build "$sample_root/loom.json" --project-root "$sample_root" --output-dir "$output_dir/project-build" $overwrite_flag --json
+"$loom_bin" --quiet generate:xaml "$swiftui_path" --from swiftui --output "$output_dir/generated-from-swiftui.xaml" $overwrite_flag
+"$loom_bin" --quiet generate:swiftui "$xaml_path" --from winui3 --view-name SampleAppScaffold --output "$output_dir/generated-from-xaml.swift" $overwrite_flag
+"$loom_bin" --quiet generate:contracts "$swiftui_path" --target winui3 --json --output "$output_dir/generated-contracts.json" $overwrite_flag
 "$loom_bin" --quiet inspect:xaml "$xaml_path" --format json --output "$output_dir/winui-layout.json" $overwrite_flag
 "$loom_bin" --quiet inspect:ascii "$xaml_path" --output "$output_dir/winui-layout.txt" $overwrite_flag
 "$loom_bin" --quiet accessibility:audit "$xaml_path" --format json --output "$output_dir/winui-audit.json" $overwrite_flag

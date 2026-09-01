@@ -116,8 +116,12 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runGraphComponents(args[1:], stdout, stderr, runtime)
 	case "project:build":
 		return runProjectBuild(args[1:], stdout, stderr, runtime)
-	case "generate:xaml", "generate:swiftui", "generate:contracts":
-		return runUnavailableCommand(command.Command, stdout, stderr, runtime)
+	case "generate:xaml":
+		return runGenerateXAML(args[1:], stdout, stderr, runtime)
+	case "generate:swiftui":
+		return runGenerateSwiftUI(args[1:], stdout, stderr, runtime)
+	case "generate:contracts":
+		return runGenerateContracts(args[1:], stdout, stderr, runtime)
 	case "accessibility:audit":
 		return runAudit(args[1:], stdout, stderr, runtime)
 	case "patterns:transfer":
@@ -697,6 +701,126 @@ func runProjectBuild(args []string, stdout, stderr io.Writer, runtime runtimeOpt
 	return nil
 }
 
+func runGenerateXAML(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--root-view": true, "--component": true, "--theme-prefix": true, "--patterns-dir": true, "--format": true, "--output": true, "--replace-region": true, "--region-id": true, "--from": true}, map[string]bool{"--json": true, "--overwrite": true, "--pattern-comments": true, "--init-region": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("generate:xaml requires a source path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	analysis, err := AnalyzeByPlatform(parsed.Positionals[0], parsed.Values["--from"])
+	if err != nil {
+		return err
+	}
+	report := GenerateXAML(analysis, parsed.Values["--theme-prefix"], parsed.Bools["--pattern-comments"])
+	text := report.Text
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if target := parsed.Values["--replace-region"]; target != "" {
+		if format == "json" {
+			return fmt.Errorf("generate:xaml --replace-region writes XAML text; use --output for JSON reports")
+		}
+		if err := ReplaceOwnedRegion(target, report.Text, parsed.Values["--region-id"], parsed.Bools["--init-region"], parsed.Bools["--overwrite"]); err != nil {
+			return err
+		}
+		if !runtime.quiet {
+			return writeText(fmt.Sprintf("Updated %s\n", target), stdout, runtime)
+		}
+		return nil
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], parsed.Positionals[0], parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runGenerateSwiftUI(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--view-name": true, "--format": true, "--output": true, "--from": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("generate:swiftui requires a source path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	analysis, err := AnalyzeByPlatform(parsed.Positionals[0], parsed.Values["--from"])
+	if err != nil {
+		return err
+	}
+	report := GenerateSwiftUI(analysis, parsed.Values["--view-name"])
+	text := report.Text
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], parsed.Positionals[0], parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runGenerateContracts(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--root-view": true, "--component": true, "--theme-prefix": true, "--format": true, "--output": true, "--target": true, "--to": true, "--from": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("generate:contracts requires a source path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	analysis, err := AnalyzeByPlatform(parsed.Positionals[0], parsed.Values["--from"])
+	if err != nil {
+		return err
+	}
+	report := GenerateContracts(analysis, firstNonEmpty(parsed.Values["--target"], parsed.Values["--to"]))
+	text := ContractsText(report)
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], parsed.Positionals[0], parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
 func runSuggestions(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	platform := flagValue(args, "--platform")
 	query := firstNonEmpty(flagValue(args, "--message"), flagValue(args, "--query"))
@@ -880,12 +1004,6 @@ func runInspectErrors(args []string, stdout, stderr io.Writer, runtime runtimeOp
 		return ErrCommandFailed
 	}
 	return nil
-}
-
-func runUnavailableCommand(command string, stdout, stderr io.Writer, runtime runtimeOptions) error {
-	_ = stderr
-	_ = runtime
-	return fmt.Errorf("%s is reserved for catalog parity only and is not yet available in the Go runtime", command)
 }
 
 func AnalysisText(analysis Analysis) string {

@@ -4,7 +4,8 @@ Use this guide when working with the Go-only Loom runtime.
 
 Loom's `v1.0.0` target is an analyzer, generator, and translator. The current
 `0.24.0` runtime implements the analyzer, transfer-planning, component graph,
-and analysis-only project build foundation.
+and analysis-only project build foundation. Main also includes conservative
+generator scaffolds and contract reports toward `v1.0.0`.
 
 ## Preferred workflow
 
@@ -48,14 +49,18 @@ loom --verbose patterns:validate --json
 
 ## Current Generation Path
 
-Generation commands are catalog-compatible only and are not yet available in Go:
+Generation commands emit reviewable scaffold output:
 
-- `generate:xaml`
-- `generate:swiftui`
-- `generate:contracts`
+- `generate:xaml`: WinUI XAML fragment output and guarded owned-region
+  replacement.
+- `generate:swiftui`: SwiftUI scaffold output.
+- `generate:contracts`: target behavior, state, collection, component-boundary,
+  accessibility, and policy handoff reports.
 
-Use `project:build` for manifest-directed analysis bundles. It writes outputs to
-`--output-dir`; use `--overwrite` when replacing an existing bundle.
+Use `project:build` for manifest-directed bundles. It writes outputs to
+`--output-dir`; use `--overwrite` when replacing an existing bundle. Treat
+generated code as reviewable scaffolding until a human accepts target-specific
+behavior and styling choices.
 
 ## Diagnostics and suggestions
 
@@ -79,16 +84,15 @@ Use JSON output for downstream automations and preserve `platform`, `query`, and
 - Use `--line-ending lf` for deterministic cross-OS artifacts, `--line-ending crlf`
   for Windows-facing text files, and `--line-ending native` only when matching
   the current host is explicitly useful.
-- Reserved generator commands return a deterministic unavailable-command error;
-  do not retry them as implementation steps.
+- Preserve generated scaffolds, transfer reports, and contract reports together
+  when handing work to another agent.
 - Use `--quiet` when also passing `--output` so successful writes do not add
   extra chatter around file artifacts.
 
 ## Command Availability Policy
 
-- If a generator command is cataloged as a future-Go feature, stop execution and
-  route the workflow through supported analysis, transfer, audit, graph, project
-  build, and parity commands instead.
+- If generator output contains component-boundary or unsupported-node comments,
+  keep them visible and route the decision to a human or target-platform owner.
 - Keep `--quiet` and `--json` for automation, and always preserve command output
   fields required for machine interpretation.
 
