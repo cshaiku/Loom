@@ -1,0 +1,14 @@
+{
+  "schema_version": "1",
+  "project": "loom sample app",
+  "source": "contentview.swift",
+  "rootView": "ContentView",
+  "target": "winui3",
+  "existingXaml": "mainwindow.xaml",
+  "referenceLayout": "mainwindow.qml",
+  "translationGuide": "README.md",
+  "components": [
+    "ContentView"
+  ],
+  "themeResourcePrefix": "LoomSample"
+}

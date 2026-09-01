@@ -1,0 +1,110 @@
+{
+  "schema_version": "1",
+  "languages": {
+    "php": false,
+    "javascript": false,
+    "go": true,
+    "shell": true,
+    "extensions": [
+      ".go",
+      ".swift",
+      ".qml",
+      ".ui",
+      ".xaml",
+      ".xml",
+      ".sh",
+      ".md",
+      ".json",
+      ".yml",
+      ".yaml"
+    ]
+  },
+  "tools": {
+    "git": "git",
+    "gitleaks": "gitleaks",
+    "go": "go"
+  },
+  "paths": {
+    "temp_dir": "tmp",
+    "timing_dir": "tmp/ci-timings",
+    "evidence_dir": "tmp/evidence",
+    "cache_dir": "tmp/vigil-cache",
+    "stamp_dir": "tmp/vigil-stamps",
+    "version_file": "VERSION",
+    "test_directories": [
+      "internal"
+    ]
+  },
+  "hooks": {
+    "jobs": 4,
+    "pre_commit_gates": [
+      "checks:staged-sensitive",
+      "checks:command-catalog"
+    ],
+    "pre_push_fast_gates": [
+      "checks:staged-sensitive",
+      "checks:command-catalog"
+    ]
+  },
+  "environment": {
+    "inherit_process": true,
+    "load_env_files": false,
+    "files": []
+  },
+  "evidence": {
+    "enabled": true,
+    "jsonl": "tmp/evidence/vigil-evidence.jsonl",
+    "tsv": "tmp/evidence/vigil-evidence.tsv"
+  },
+  "planner": {
+    "enabled": true,
+    "phpstan_paths": [],
+    "javascript_paths": [],
+    "policy_paths": [
+      "vigil.config.json",
+      "go.mod",
+      "Makefile",
+      ".github/workflows",
+      "cmd",
+      "internal",
+      "patterns"
+    ],
+    "documentation_paths": [
+      "README.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "SUPPORT.md",
+      "docs",
+      "examples"
+    ],
+    "translation_indicators": [
+      "generate:xaml",
+      "generate:swiftui",
+      "generate:contracts",
+      "project:build",
+      "patterns:transfer",
+      "inspect:parity"
+    ]
+  },
+  "policies": {
+    "sensitive_path_allowlist": [
+      "vigil.config.json",
+      "docs/",
+      ".github/"
+    ],
+    "sensitive_path_patterns": [
+      "(^|/)\\.env($|\\.)",
+      "(^|/)\\.envrc$",
+      "(^|/)\\.DS_Store$",
+      "(^|/)tmp/",
+      "(^|/)logs/",
+      "(^|/)keys/",
+      "\\.(pem|p12|pfx|key|crt|csr)$"
+    ],
+    "block_phpstan_baseline": true,
+    "mutation_requires": [
+      "explicit-confirmation",
+      "clean-config"
+    ]
+  }
+}

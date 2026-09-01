@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Clarified the `v1.0.0` product goal as analyzer, generator, and translator.
+- Added public contribution, security, conduct, support, testing, release,
+  support-policy, deprecation, notes, and todo documentation.
+- Added GitHub CI, Dependabot, issue templates, and pull request template.
+- Added a Vigil-style repository policy configuration.
+- Expanded the sample app with a manifest, visual profile, README, repeatable
+  report workflow, and generated analysis/parity/transfer output targets.
+- Changed Loom's repository license from MIT to 0BSD.
+
 ## 0.22.0 - 2026-08-31
 
 - Added initial `inspect:qt` support for Qt QML, Qt Designer `.ui`, and common
@@ -8,6 +19,23 @@
   planning.
 - Implemented `inspect:parity` for structural layout comparison across SwiftUI,
   WinUI XAML, and Qt sources.
+- Added `inspect:visual-parity` infrastructure for profile-normalized visual
+  regression metrics across SwiftUI, WinUI XAML, and Qt sources.
+- Added `inspect:font` to extract intrinsic font material properties from
+  supplied OpenType/TrueType fonts or installed family names.
+- Extended `inspect:visual-parity` with source/target font material overrides.
+- Added visual parity provenance, per-finding confidence, and strict visual
+  profile validation.
+- Extended visual parity source extraction for SwiftUI visual modifiers and XAML
+  visual attributes/resource references.
+- Added local XAML resource and implicit style resolution for visual parity
+  provenance.
+- Extended XAML visual parity trust to load local merged resource dictionaries
+  and warn when referenced dictionaries cannot be resolved.
+- Added explicit XAML style and simple BasedOn style-chain resolution for visual
+  parity provenance.
+- Added object-valued XAML visual resource/setter extraction, resource alias
+  chain resolution, and unresolved explicit style diagnostics.
 - Extended `inspect:source` auto-detection to `.qml`, `.ui`, and common Qt C++
   file extensions.
 - Added neutral Qt sample input and sample outputs for Qt transfer/parity.

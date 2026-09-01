@@ -2,22 +2,34 @@
 
 Version: **0.22.0**
 
-loom is a cross-platform Go CLI for UI layout analysis, pattern catalog
-validation, transfer planning, and workflow diagnostics.
+loom is a cross-platform Go CLI for UI layout analysis, generation planning,
+translation, pattern catalog validation, transfer planning, and workflow
+diagnostics.
 
-## what loom does today
+The product goal for `v1.0.0` is an analyzer, generator, and translator for
+moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
+`0.22.0` release is the analyzer and transfer-planning foundation. Generation
+commands are visible in the catalog as stable targets, but they remain
+release-blocking work for `v1.0.0`.
+
+## What Loom Does Today
 
 - Parse WinUI XAML and normalize it into loom's shared layout model (`inspect:xaml`).
 - Parse common SwiftUI layout/control constructs into the same shared model
   (`inspect:swiftui`, `inspect:source`).
 - Parse common Qt QML, Qt Designer UI, and Qt C++ layout constructs into the
   same shared model (`inspect:qt`, `inspect:source`).
+- Extract intrinsic font material properties from supplied TrueType, OpenType,
+  TrueType Collection, and WOFF font files or installed family names
+  (`inspect:font`).
 - Preserve WinUI Grid row/column definitions as layout metadata for transfer planning.
 - Render parsed layouts as a compact plaintext ASCII tree (`inspect:ascii`).
 - Validate and lint the `patterns` catalog (`patterns:validate`, `patterns:lint`).
 - Transfer-plan layout compatibility in both WinUI → macOS and macOS/SwiftUI →
   Windows directions (`patterns:transfer`).
 - Compare layout parity across supported source dialects (`inspect:parity`).
+- Compare profile-normalized visual metrics such as typography, spacing, control
+  minimums, padding, margins, and sizing (`inspect:visual-parity`).
 - Audit accessibility/layout quality for unsupported boundaries, small targets,
   malformed or redundant structures, and scan-friendly risks (`accessibility:audit`).
 - Run manifest validation (`config:validate` / `config:schema`).
@@ -40,8 +52,9 @@ installed with `make build`, the same catalog is copied to
 `/opt/homebrew/share/loom/patterns` so the installed `loom` command can validate,
 lint, list, export, and transfer-plan against loom's own pattern definitions.
 
-The following commands are retained in the catalog for parity but are intentionally
-not yet implemented in the Go runtime. They return a clear message when invoked:
+The following commands define the planned generator/translator surface for
+`v1.0.0`. They are retained in the catalog for parity but are intentionally not
+yet implemented in the Go runtime. They return a clear message when invoked:
 
 - `graph:components`
 - `generate:xaml`
@@ -49,14 +62,15 @@ not yet implemented in the Go runtime. They return a clear message when invoked:
 - `generate:contracts`
 - `project:build`
 
-## build and test
+## Build And Test
 
 ```sh
-make build      # installs /opt/homebrew/bin/loom
-make test       # or: go test ./...
+make build      # installs /opt/homebrew/bin/loom on local Homebrew systems
+make test       # runs go test ./...
+go vet ./...    # static correctness check
 ```
 
-## command quickstart
+## Command Quickstart
 
 ```sh
 loom list
@@ -67,8 +81,12 @@ loom checks:command-catalog --json
 loom inspect:source contentview.swift --json
 loom inspect:swiftui contentview.swift --format json
 loom inspect:qt mainwindow.qml --format json
+loom inspect:font Inter.ttf --json
+loom inspect:font --family "Segoe UI" --json
 loom inspect:xaml mainwindow.xaml --format json
 loom inspect:parity contentview.swift --target mainwindow.qml --from swiftui --to qt --json
+loom inspect:visual-parity contentview.swift --target mainwindow.xaml --from swiftui --to winui3 --profile visual-profile.json --json
+loom inspect:visual-parity contentview.swift --target mainwindow.xaml --source-font Inter.ttf --target-font-family "Segoe UI" --json
 loom inspect:ascii mainwindow.xaml --output layout.txt
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 loom accessibility:audit mainwindow.xaml --format json --fail-on warning
@@ -78,7 +96,16 @@ loom patterns:transfer contentview.swift --from swiftui --to windows
 loom patterns:transfer mainwindow.qml --from qt --to windows
 ```
 
-## repository layout
+## Example Workflow
+
+```sh
+./examples/sampleapp/analyze-sample-app.sh --overwrite
+```
+
+The sample produces analysis, audit, transfer, parity, and visual-parity reports
+under `examples/sampleapp/generated/`.
+
+## Repository Layout
 
 - `cmd/loom`: Go CLI entrypoint
 - `internal/loom`: CLI runtime, parsers, catalog logic, and reports
@@ -87,17 +114,29 @@ loom patterns:transfer mainwindow.qml --from qt --to windows
 - `docs`: operating docs, commands, and guides
 - `README`: project context and command surface
 
-## documentation
+## Documentation
 
 - [docs/commands.md](docs/commands.md)
 - [docs/ai-agents.md](docs/ai-agents.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/roadmap.md](docs/roadmap.md)
+- [docs/support-policy.md](docs/support-policy.md)
+- [docs/deprecations.md](docs/deprecations.md)
+- [docs/release-checklist.md](docs/release-checklist.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [TESTING.md](TESTING.md)
 
-## release checklist
+## License
+
+Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
+
+## Release Checklist
 
 1. Ensure `VERSION` and `internal/loom/catalog.go` version constants match.
-2. Run `make test`.
-3. Run `git add`, commit, and push.
-4. Tag the release, e.g.:
+2. Run `make test`, `go vet ./...`, and `go run ./cmd/loom verify --json`.
+3. Run the sample workflow with `--overwrite`.
+4. Review [TODO.md](TODO.md) before declaring `v1.0.0`.
+5. Run `git add`, commit, and push.
+6. Tag the release, e.g.:
    `git tag -a v0.22.0 -m "qt inspection and cross-platform parity"; git push --tags`.

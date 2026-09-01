@@ -6,6 +6,7 @@ DerivedData/
 *.swp
 .DS_Store
 generated/
+tmp/
 /loom
 *.test
 coverage.out

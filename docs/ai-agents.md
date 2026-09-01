@@ -1,6 +1,9 @@
-# AI Agents Guide for loom
+# AI Agents Guide For Loom
 
-Use this guide when working with the Go-only loom runtime.
+Use this guide when working with the Go-only Loom runtime.
+
+Loom's `v1.0.0` target is an analyzer, generator, and translator. The current
+`0.22.0` runtime implements the analyzer and transfer-planning foundation.
 
 ## Preferred workflow
 
@@ -26,6 +29,7 @@ If these return errors, stop and either fix input or escalate to a human decisio
 
 - `r` commands are read-only by catalog metadata.
 - `r/w` commands can write only with write flags (commonly `--output`).
+- Existing outputs require `--overwrite`; never assume replacement is allowed.
 - Use `--quiet` for CI/automation and `--verbose` for extra write diagnostics.
 
 examples:
@@ -35,9 +39,10 @@ loom --quiet inspect:errors mainwindow.xaml --kind xaml --json --fail-on error
 loom --verbose patterns:validate --json
 ```
 
-## Current supported generation path
+## Current Generation Path
 
-Generation and project commands are currently catalog-compatible only and are not yet available in Go:
+Generation and project commands are catalog-compatible only and are not yet
+available in Go:
 
 - `generate:xaml`
 - `generate:swiftui`
@@ -45,8 +50,8 @@ Generation and project commands are currently catalog-compatible only and are no
 - `project:build`
 - `graph:components`
 
-When these are available, treat them as write-capable and run with explicit output
-targets.
+When these are available, treat them as write-capable and run with explicit
+output targets.
 
 ## Diagnostics and suggestions
 
@@ -75,11 +80,11 @@ Use JSON output for downstream automations and preserve `platform`, `query`, and
 - Use `--quiet` when also passing `--output` so successful writes do not add
   extra chatter around file artifacts.
 
-## Command availability policy
+## Command Availability Policy
 
-- If a command is cataloged as a future-go feature (for example, any generation
-  or parity command), stop execution and route the workflow through supported
-  commands instead.
+- If a command is cataloged as a future-Go feature, stop execution and route the
+  workflow through supported analysis, transfer, audit, and parity commands
+  instead.
 - Keep `--quiet` and `--json` for automation, and always preserve command output
   fields required for machine interpretation.
 

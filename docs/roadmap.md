@@ -1,42 +1,98 @@
-# loom roadmap
+# Loom Roadmap
 
-## 0.17 - Go runtime foundation
+Loom's `v1.0.0` target is a complete analyzer, generator, and translator for
+moving UI layout intent between SwiftUI, WinUI XAML, and Qt.
+
+The current `0.22.0` release is the analyzer and transfer-planning foundation.
+It validates pattern catalogs, inspects source layouts, compares structural and
+visual parity, audits layout/accessibility risk, and reports deterministic JSON
+for automation. Generator and project workflow commands are cataloged but still
+release-blocking.
+
+## Completed Foundation
+
+### 0.17 - Go Runtime Foundation
 
 - Forward Go CLI introduced under `cmd/loom`.
-- Command catalog, status/verification diagnostics, pattern operations, and command
-  guard outputs.
-- `inspect:xaml`, `inspect:swiftui`, `inspect:qt`, `inspect:source`,
-  `inspect:ascii`, `inspect:errors`, `inspect:parity`, `accessibility:audit`,
-  `patterns:*`, and OS error suggestions.
-- CLI output contracts for automation (`--json`, `--quiet`, `--verbose`).
+- Command catalog, status/verification diagnostics, pattern operations, and
+  command guard outputs.
+- `inspect:xaml`, `inspect:ascii`, `inspect:errors`, `accessibility:audit`,
+  `patterns:*`, OS error suggestions, and read/write output guards.
 
-## 0.18 - Go analyzer baseline
+### 0.18 - Analyzer Baseline
 
-- `inspect:errors` and `inspect:source` moved into Go ownership for WinUI XAML
-  and common SwiftUI layout constructs.
-- `graph:components` command retained in catalog and prepared for re-implementation.
-- Cross-command consistency checks expanded (`checks:command-catalog`).
+- Go runtime became the active implementation.
+- WinUI XAML analysis and diagnostics moved into Go ownership.
+- Unsupported native WinUI boundaries became explicit diagnostics instead of
+  silent flattening.
+- Placeholder generator/project commands were retained for catalog continuity.
 
-## 0.19 - Go emitter and manifest parity work (next)
+### 0.19 - Deterministic Output
 
-- Implement `generate:xaml`, `generate:swiftui`, `generate:contracts`,
-  and `project:build` in Go.
-- Add first-class owned-region replacement and merge safety in Go.
-- Stabilize project workflow outputs (summary/build manifests + parity reports).
+- Repository line-ending policy added.
+- `--line-ending lf|crlf|native` added for deterministic text artifacts.
+- JSON output normalized for function and automation callers.
 
-## Current compatibility layer
+### 0.20 - Public Repository Shape
 
-`graph:components`, `generate:xaml`, `generate:swiftui`, `generate:contracts`,
-and `project:build` remain catalog placeholders until they are implemented in
-the Go runtime.
+- Repository folders normalized for public source.
+- Neutral sample app fixtures added.
+- Default pattern discovery aligned with repository and installed locations.
 
-## Near-term priorities
+### 0.21 - SwiftUI Analysis
 
-- Strengthen pattern linting for malformed / redundant structures and platform
-  boundary mapping completeness.
-- Add explicit malformed-input and memory/guard regression tests.
+- SwiftUI layout/control inspection added.
+- `inspect:source` auto-detection added for SwiftUI and WinUI XAML.
+- SwiftUI-to-Windows transfer planning added.
+
+### 0.22 - Qt, Parity, And Visual Material
+
+- Qt QML, Qt Designer UI, and common Qt C++ layout inspection added.
+- SwiftUI, WinUI XAML, and Qt structural parity added.
+- Visual parity infrastructure added for typography, spacing, controls,
+  provenance, and profile-normalized comparisons.
+- Font material inspection added for OpenType, TrueType, TrueType Collection,
+  WOFF, and installed family names.
+
+## Current Compatibility Layer
+
+The following commands define the planned generator and project workflow surface
+but remain unavailable in the current Go runtime:
+
+- `graph:components`
+- `generate:xaml`
+- `generate:swiftui`
+- `generate:contracts`
+- `project:build`
+
+They return deterministic unavailable-command errors so automation can fail
+closed.
+
+## v1.0.0 Release Blockers
+
+- Implement `graph:components` for reachable layout component and dependency
+  discovery.
+- Implement `generate:xaml` for reviewable WinUI XAML fragments and owned-region
+  replacement.
+- Implement `generate:swiftui` for reviewable SwiftUI scaffolds from normalized
+  WinUI/Qt source.
+- Implement `generate:contracts` for native behavior, state, action, and
+  accessibility handoff reports.
+- Implement `project:build` for manifest-directed translation workflows that
+  emit analysis, generated fragments, contracts, transfer reports, and parity
+  reports.
+- Freeze public JSON schemas for analyzer, generator, translator, audit, parity,
+  and diagnostics output.
+- Add cross-platform CI and release artifacts for macOS, Linux, and Windows.
+- Add release evidence for generated artifact reviewability, overwrite guards,
+  malformed input, large input, and platform path behavior.
+
+## Near-Term Priorities
+
+- Strengthen generator data structures without changing analyzer output.
+- Deepen Qt parsing beyond conservative QML/UI/C++ layout heuristics.
 - Improve malformed layout diagnostics for nested scroll and geometry-dependent
   constructs.
-- Deepen Qt parsing beyond conservative QML/UI/C++ layout heuristics.
-- Extend suggestions to cover additional WinUI, XAML, SwiftUI, and Windows
-  parity failure classes.
+- Extend suggestions to cover additional WinUI, XAML, SwiftUI, Qt, macOS,
+  Linux, and Windows parity failure classes.
+- Add explicit malformed-input and memory/guard regression tests.

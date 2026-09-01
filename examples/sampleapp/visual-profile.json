@@ -1,0 +1,81 @@
+{
+  "schema_version": "1",
+  "platforms": {
+    "swiftui": {
+      "typography": {
+        "fontFamily": "Inter",
+        "fallbackFonts": [
+          "Segoe UI",
+          "Arial"
+        ],
+        "fontSize": 14,
+        "kerning": 0,
+        "lineHeight": 20,
+        "baselineOffset": 0
+      },
+      "spacing": {
+        "defaultPadding": 0,
+        "defaultMargin": 0,
+        "stackSpacing": 8
+      },
+      "controls": {
+        "buttonMinHeight": 32,
+        "textFieldMinHeight": 32,
+        "toggleMinHeight": 32,
+        "listRowMinHeight": 40
+      }
+    },
+    "winui3": {
+      "typography": {
+        "fontFamily": "Inter",
+        "fallbackFonts": [
+          "Segoe UI",
+          "Arial"
+        ],
+        "fontSize": 14,
+        "kerning": 0,
+        "lineHeight": 20,
+        "baselineOffset": 0
+      },
+      "spacing": {
+        "defaultPadding": 0,
+        "defaultMargin": 0,
+        "stackSpacing": 8
+      },
+      "controls": {
+        "buttonMinHeight": 32,
+        "textFieldMinHeight": 32,
+        "toggleMinHeight": 32,
+        "listRowMinHeight": 40
+      }
+    },
+    "qt": {
+      "typography": {
+        "fontFamily": "Inter",
+        "fallbackFonts": [
+          "Segoe UI",
+          "Arial"
+        ],
+        "fontSize": 14,
+        "kerning": 0,
+        "lineHeight": 20,
+        "baselineOffset": 0
+      },
+      "spacing": {
+        "defaultPadding": 0,
+        "defaultMargin": 0,
+        "stackSpacing": 8
+      },
+      "controls": {
+        "buttonMinHeight": 32,
+        "textFieldMinHeight": 32,
+        "toggleMinHeight": 32,
+        "listRowMinHeight": 40
+      }
+    }
+  },
+  "tolerances": {
+    "distance": 0.5,
+    "typography": 0.25
+  }
+}
