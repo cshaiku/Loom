@@ -7,7 +7,7 @@ code safety, path handling, and supply-chain integrity are in scope.
 
 ## Reporting
 
-Email: `info@paycaltech.com`
+Email: `info@sltd.ca`
 
 Include:
 
@@ -57,7 +57,7 @@ Out of scope:
 | Version | Security support |
 | --- | --- |
 | `main` | Supported for coordinated reports against unreleased code. |
-| `0.22.x` | Supported as the current analyzer and transfer-planning line. |
+| `0.24.x` | Supported as the current analyzer, transfer-planning, component-graph, and analysis-only project build line. |
 | Earlier releases | Fixes target the current line unless immediate user risk requires otherwise. |
 
 No stable `v1.0.0` line exists yet. Stable support windows are defined in

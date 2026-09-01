@@ -31,7 +31,7 @@ Examples of unacceptable behavior:
 
 ## Enforcement
 
-Report unacceptable behavior to `info@paycaltech.com`. Maintainers are
+Report unacceptable behavior to `info@sltd.ca`. Maintainers are
 responsible for clarifying standards and may remove, edit, or reject comments,
 commits, issues, pull requests, and other contributions that do not align with
 this Code of Conduct.

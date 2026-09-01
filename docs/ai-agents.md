@@ -34,6 +34,11 @@ If these return errors, stop and either fix input or escalate to a human decisio
 - Existing outputs require `--overwrite`; never assume replacement is allowed.
 - Use `--quiet` for CI/automation and `--verbose` for extra write diagnostics.
 
+Loom follows Vigil-style local preflight guidance: expose what commands can read
+or write, require explicit write targets, and preserve JSON evidence for review.
+That reference is intentional because Vigil documents the same repository-safety
+model for local automation. See [Vigil Core](https://paycaltech.com/vigil/).
+
 examples:
 
 ```sh
